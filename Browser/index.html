@@ -788,6 +788,7 @@
             const [searchEngine, setSearchEngine] = useState('google');
             const [addressBarValue, setAddressBarValue] = useState('');
             const [activeModule, setActiveModule] = useState(null); // 'ai-assistant' | 'chatroom' | 'notes' | 'history' | 'bookmarks' | 'pomodoro' | null
+            const webviewRefs = useRef({});
 
             // Verify anechoicAPI on mount
             useEffect(() => {
@@ -826,6 +827,14 @@
 
             // Webview 状态引用（使用 useState 而不是 useRef）
             const [webview, setWebview] = useState(null);
+
+            // 当 activeTabId 改变时，更新当前的 webview state，以便导航按钮能控制正确的页面
+            useEffect(() => {
+                const currentWebviewEl = webviewRefs.current[activeTabId];
+                if (currentWebviewEl) {
+                    setWebview(currentWebviewEl); // 更新 state，这会触发你已有的监听事件绑定逻辑
+                }
+            }, [activeTabId]);
 
             // 更新导航状态（后退/前进按钮可用性）
             const updateNavigationState = () => {
@@ -1067,6 +1076,7 @@
                         {/* Browser Viewport Area - Using <webview> */}
                         <div className="flex-1 relative bg-white overflow-hidden">
                             {tabs.map(tab => (
+                                // 外层的 div 已经通过 className 控制了 block/hidden，所以内部不需要再销毁组件
                                 <div key={tab.id} className={`w-full h-full ${activeTabId === tab.id ? 'block' : 'hidden'}`}>
                                     {!tab.url ? (
                                         <HomeView 
@@ -1074,15 +1084,17 @@
                                             onOpenModule={(module) => setActiveModule(module)}
                                         />
                                     ) : (
-                                        <>
-                                            {tab.id === activeTabId && (
-                                                <webview
-                                                    ref={setWebview}
-                                                    src={tab.url}
-                                                    className="w-full h-full"
-                                                />
-                                            )}
-                                        </>
+                                        // ✅ 移除条件判断，直接渲染 webview
+                                        <webview
+                                            ref={(el) => {
+                                                // 将每个 tab 的 webview 实例存入 useRef 中
+                                                if (el) {
+                                                    webviewRefs.current[tab.id] = el;
+                                                }
+                                            }}
+                                            src={tab.url}
+                                            className="w-full h-full"
+                                        />
                                     )}
                                 </div>
                             ))}
