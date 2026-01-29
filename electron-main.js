@@ -11,7 +11,7 @@ try {
 }
 
 let mainWindow;
-let flaskProcess = null; // child process for Flask
+// let flaskProcess = null; // child process for Flask (Removed)
 let chatWindow = null; // separate BrowserWindow for chatroom
 let authWindow = null; // [新增]
 
@@ -157,8 +157,8 @@ ipcMain.handle('chatroom:open-window', async () => {
       }
     });
 
-    // load FLASK_URL from env
-    chatWindow.loadURL(FLASK_URL);
+    // load Placeholder message instead of FLASK_URL
+    chatWindow.loadURL('data:text/html,<h2>Chat Service Unavailable</h2><p>The backend chat service has been removed.</p>');
 
     chatWindow.on('closed', () => {
       chatWindow = null;
@@ -334,8 +334,8 @@ app.on('web-contents-created', (event, contents) => {
 
 // Electron 準備好時建立視窗
 app.whenReady().then(() => {
-  // Start Flask server automatically when Electron ready
-  startFlaskServer();
+  // Start Flask server automatically (Removed)
+  // startFlaskServer();
   createWindow();
 
   app.on('activate', function () {
@@ -348,7 +348,8 @@ app.on('window-all-closed', function () {
   if (process.platform !== 'darwin') app.quit();
 });
 
-// Ensure Flask child is killed when app is quitting
+// Ensure Flask child is killed when app is quitting (Removed)
+/*
 app.on('before-quit', () => {
   if (flaskProcess) {
     try {
@@ -360,43 +361,12 @@ app.on('before-quit', () => {
     flaskProcess = null;
   }
 });
+*/
 
 /**
  * Start Flask server as a child process (only once).
- * Uses python main.py in the ./Chatroom directory.
+ * (Removed)
  */
 function startFlaskServer() {
-  if (flaskProcess) {
-    console.log('Flask already running');
-    return;
-  }
-
-  const chatDir = path.join(__dirname, 'Chatroom');
-  const pythonCmd = process.env.PYTHON || 'python';
-
-  try {
-    flaskProcess = spawn(pythonCmd, ['main.py'], {
-      cwd: chatDir,
-      env: process.env,
-      stdio: ['ignore', 'pipe', 'pipe']
-    });
-
-    flaskProcess.stdout.on('data', (data) => {
-      console.log(`[flask stdout] ${data.toString()}`);
-    });
-
-    flaskProcess.stderr.on('data', (data) => {
-      console.error(`[flask stderr] ${data.toString()}`);
-    });
-
-    flaskProcess.on('exit', (code, signal) => {
-      console.log(`Flask process exited with code ${code} signal ${signal}`);
-      flaskProcess = null;
-    });
-
-    console.log('Started Flask server as child process');
-  } catch (e) {
-    console.error('Failed to start Flask server:', e);
-    flaskProcess = null;
-  }
+  console.log('Flask server capability removed.');
 }

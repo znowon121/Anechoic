@@ -1,1072 +1,1473 @@
-    const defaultConfig = {
-      page_title: "My Custom Homepage",
-      search_placeholder: "Search the web...",
-      background_color: "#667eea",
-      surface_color: "#ffffff",
-      text_color: "#333333",
-      primary_action_color: "#667eea",
-      secondary_action_color: "#ff4757"
-    };
+﻿        const { useState, useEffect, useRef } = React;
 
-    // 預設搜尋引擎改為 Bing（類似 Edge 的預設）
-    let currentEngine = 'bing';
-    let websites = [];
-    let isLoading = false;
-    let recentHistory = [];  // 最近頁面歷史（最多 10 筆）
-
-    const searchEngines = {
-      google: 'https://www.google.com/search?q=',
-      bing: 'https://www.bing.com/search?q=',
-      yahoo: 'https://search.yahoo.com/search?p='
-    };
-
-    const dataHandler = {
-      onDataChanged(data) {
-        websites = data.sort((a, b) => a.position - b.position);
-        renderWebsites();
-      }
-    };
-
-    async function initializeApp() {
-      if (!window.dataSdk || !window.dataSdk.init) {
-        console.warn("dataSdk is not available; skipping initialization.");
-        return;
-      }
-      const initResult = await window.dataSdk.init(dataHandler);
-      if (!initResult.isOk) {
-        console.error("Failed to initialize data SDK");
-      }
-    }
-
-
-    let currentPage = 0;
-    const itemsPerPage = 4;
-
-    function renderWebsites() {
-      const grid = document.getElementById('websites-grid');
-      const addButton = document.getElementById('add-website-btn');
-      const leftBtn = document.getElementById('carousel-left');
-      const rightBtn = document.getElementById('carousel-right');
-      
-      grid.innerHTML = '';
-      
-      websites.forEach(website => {
-        const card = document.createElement('div');
-        card.className = 'website-card';
-        card.innerHTML = `
-          <button class="delete-button" data-id="${website.__backendId}">×</button>
-          <div class="website-icon">🌐</div>
-          <div class="website-name">${website.website_name}</div>
-        `;
-        
-        // 點擊網站卡片時，透過 preload 暴露嘅 electronAPI 呼叫主進程去載入 URL
-        card.addEventListener('click', (e) => {
-          if (!e.target.classList.contains('delete-button')) {
-            // 使用 electronAPI.openUrl 代替 window.open
-            if (window.electronAPI && window.electronAPI.openUrl) {
-              window.electronAPI.openUrl(website.website_url);
-            } else {
-              // fallback 到 window.open（例如在純瀏覽器中測試）
-              window.open(website.website_url, '_blank', 'noopener,noreferrer');
-            }
-          }
-        });
-        
-        grid.appendChild(card);
-      });
-      
-      grid.appendChild(addButton);
-
-      // Show/hide carousel navigation
-      const totalItems = websites.length + 1; // +1 for add button
-      const totalPages = Math.ceil(totalItems / itemsPerPage);
-      
-      if (totalPages > 1) {
-        leftBtn.style.display = 'flex';
-        rightBtn.style.display = 'flex';
-        updateCarousel();
-      } else {
-        leftBtn.style.display = 'none';
-        rightBtn.style.display = 'none';
-        grid.style.transform = 'translateX(0)';
-      }
-    }
-
-    function updateCarousel() {
-      const grid = document.getElementById('websites-grid');
-      const leftBtn = document.getElementById('carousel-left');
-      const rightBtn = document.getElementById('carousel-right');
-      const totalItems = websites.length + 1;
-      const totalPages = Math.ceil(totalItems / itemsPerPage);
-      
-      const offset = currentPage * -100;
-      grid.style.transform = `translateX(${offset}%)`;
-      
-      leftBtn.disabled = currentPage === 0;
-      rightBtn.disabled = currentPage >= totalPages - 1;
-    }
-
-    document.getElementById('carousel-left').addEventListener('click', () => {
-      if (currentPage > 0) {
-        currentPage--;
-        updateCarousel();
-      }
-    });
-
-    document.getElementById('carousel-right').addEventListener('click', () => {
-      const totalItems = websites.length + 1;
-      const totalPages = Math.ceil(totalItems / itemsPerPage);
-      if (currentPage < totalPages - 1) {
-        currentPage++;
-        updateCarousel();
-      }
-    });
-
-    document.querySelectorAll('.engine-button').forEach(button => {
-      button.addEventListener('click', () => {
-        document.querySelectorAll('.engine-button').forEach(btn => btn.classList.remove('active'));
-        button.classList.add('active');
-        currentEngine = button.dataset.engine;
-      });
-    });
-
-    // 當使用者執行搜尋或輸入網址時，會呼叫這個函式
-    // 邏輯：如果看似 URL（有 scheme 或包含 '.'）就直接導航到該 URL，否則按目前選擇嘅搜尋引擎生成搜尋網址
-    function performSearch() {
-      const query = document.getElementById('search-input').value.trim();
-      if (!query) return;
-
-      // 簡單判斷是否為 URL
-      const hasScheme = /^https?:\/\//i.test(query);
-      const looksLikeDomain = query.includes('.');
-
-      let targetUrl = '';
-      if (hasScheme) {
-        targetUrl = query;
-      } else if (looksLikeDomain) {
-        // 若無 scheme，預設加上 https://
-        targetUrl = 'https://' + query;
-      } else {
-        // 當作搜尋詞 — 用目前選中的搜尋引擎
-        switch (currentEngine) {
-          case 'google':
-            targetUrl = `https://www.google.com/search?q=${encodeURIComponent(query)}`;
-            break;
-          case 'yahoo':
-            targetUrl = `https://search.yahoo.com/search?p=${encodeURIComponent(query)}`;
-            break;
-          case 'bing':
-          default:
-            targetUrl = `https://www.bing.com/search?q=${encodeURIComponent(query)}`;
-            break;
-        }
-      }
-
-      if (window.electronAPI && window.electronAPI.openUrl) {
-        window.electronAPI.openUrl(targetUrl);
-      } else {
-        // fallback 在一般瀏覽器中開新分頁
-        window.open(targetUrl, '_blank', 'noopener,noreferrer');
-      }
-    }
-
-    document.getElementById('search-btn').addEventListener('click', performSearch);
-
-    document.getElementById('search-input').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        performSearch();
-      }
-    });
-
-    // 瀏覽器控制按鈕 (Back / Forward / Reload)
-    const backBtn = document.getElementById('back-btn');
-    const forwardBtn = document.getElementById('forward-btn');
-    const reloadBtn = document.getElementById('reload-btn');
-    const homeBtn = document.getElementById('home-btn');
-    const addressBar = document.getElementById('address-bar');
-    const addressBarSubmitBtn = document.getElementById('address-bar-submit');
-
-    if (backBtn) {
-      backBtn.addEventListener('click', () => {
-        if (window.electronAPI && window.electronAPI.goBack) window.electronAPI.goBack();
-      });
-    }
-
-    if (forwardBtn) {
-      forwardBtn.addEventListener('click', () => {
-        if (window.electronAPI && window.electronAPI.goForward) window.electronAPI.goForward();
-      });
-    }
-
-    if (reloadBtn) {
-      reloadBtn.addEventListener('click', () => {
-        if (window.electronAPI && window.electronAPI.reload) window.electronAPI.reload();
-      });
-    }
-
-    // Home 按鈕：隱藏 BrowserView，返回首頁
-    if (homeBtn) {
-      homeBtn.addEventListener('click', () => {
-        if (window.electronAPI && window.electronAPI.hideView) {
-          window.electronAPI.hideView().then(() => {
-            // 清空地址列
-            addressBar.value = '';
-          }).catch(err => console.error('Failed to hide BrowserView:', err));
-        }
-      });
-    }
-
-    // 地址列：Enter 鍵事件
-    if (addressBar) {
-      addressBar.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') {
-          const input = addressBar.value.trim();
-          if (!input) return;
-
-          // 判斷是否為 URL
-          const hasScheme = /^https?:\/\//i.test(input);
-          const looksLikeDomain = input.includes('.');
-
-          let targetUrl = '';
-          if (hasScheme) {
-            targetUrl = input;
-          } else if (looksLikeDomain) {
-            // 無 scheme 就加上 https://
-            targetUrl = 'https://' + input;
-          } else {
-            // 當作搜尋詞，用目前選中的搜尋引擎
-            const searchUrl = searchEngines[currentEngine];
-            targetUrl = searchUrl + encodeURIComponent(input);
-          }
-
-          // 用 electronAPI 導航
-          if (window.electronAPI && window.electronAPI.openUrl) {
-            window.electronAPI.openUrl(targetUrl);
-          } else {
-            window.open(targetUrl, '_blank', 'noopener,noreferrer');
-          }
-        }
-      });
-    }
-
-    // Go 按鈕
-    if (addressBarSubmitBtn) {
-      addressBarSubmitBtn.addEventListener('click', () => {
-        if (addressBar) {
-          const event = new KeyboardEvent('keypress', { key: 'Enter' });
-          addressBar.dispatchEvent(event);
-        }
-      });
-    }
-
-    // 監聽主進程發送來嘅 URL 更新事件 (例如：BrowserView 導航後)
-    if (window.electronAPI && window.electronAPI.on) {
-      window.electronAPI.on('browser:url-updated', (url) => {
-        // 把 URL 寫進地址列
-        if (addressBar) {
-          addressBar.value = url;
-        }
-        
-        // 把 URL 加入歷史列表
-        addToHistory(url);
-        
-        console.log('Browser navigated to:', url);
-      });
-    }
-
-    /**
-     * 把 URL 加入最近頁面歷史
-     * 避免連續重複，只保留最新 10 筆
-     */
-    function addToHistory(url) {
-      // 如果最後一筆同一個 URL，就唔好重複加
-      if (recentHistory.length > 0 && recentHistory[0] === url) {
-        return;
-      }
-
-      recentHistory.unshift(url);
-
-      // 只保留最新 10 筆
-      if (recentHistory.length > 10) {
-        recentHistory.pop();
-      }
-
-      // 更新 sidebar 顯示
-      renderHistoryList();
-    }
-
-    /**
-     * 渲染 sidebar 歷史列表
-     */
-    function renderHistoryList() {
-      const historyList = document.getElementById('history-list');
-      if (!historyList) return;
-
-      historyList.innerHTML = '';
-
-      recentHistory.forEach((url) => {
-        const li = document.createElement('li');
-        
-        // 提取 domain 或簡短 URL
-        let domain = '';
-        let displayText = '';
-        try {
-          const urlObj = new URL(url);
-          domain = urlObj.hostname;
-          displayText = domain;
-        } catch (e) {
-          displayText = url.substring(0, 20);
-        }
-
-        // 簡單 icon（用域名首字母或 icon）
-        const icon = domain.charAt(0).toUpperCase() || '🌐';
-
-        li.innerHTML = `
-          <span class="domain-icon">${icon}</span>
-          <span class="domain-text">${displayText}</span>
-        `;
-
-        li.addEventListener('click', () => {
-          // 點擊歷史項目，打開該 URL
-          if (window.electronAPI && window.electronAPI.openUrl) {
-            window.electronAPI.openUrl(url);
-          }
-        });
-
-        historyList.appendChild(li);
-      });
-    }
-
-    /**
-     * Sidebar hover 行為
-     */
-    const chromeSide = document.getElementById('chrome-side');
-    if (chromeSide) {
-      chromeSide.addEventListener('mouseenter', () => {
-        chromeSide.classList.add('expanded');
-      });
-
-      chromeSide.addEventListener('mouseleave', () => {
-        chromeSide.classList.remove('expanded');
-      });
-    }
-
-    document.getElementById('add-website-btn').addEventListener('click', () => {
-      if (websites.length >= 999) {
-        showModal('settings-modal');
-        const infoTextEl = document.querySelector('#settings-modal .info-text');
-        if (infoTextEl) {
-          infoTextEl.textContent = 'Maximum limit of 999 websites reached. Please delete some websites first.';
-        }
-        return;
-      }
-      document.getElementById('add-website-modal').classList.add('active');
-    });
-
-    document.getElementById('cancel-btn').addEventListener('click', () => {
-      document.getElementById('add-website-modal').classList.remove('active');
-      document.getElementById('add-website-form').reset();
-    });
-
-    document.getElementById('add-website-form').addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      if (isLoading) return;
-      
-      const name = document.getElementById('website-name').value.trim();
-      const url = document.getElementById('website-url').value.trim();
-      
-      if (!url.startsWith('http://') && !url.startsWith('https://')) {
-        alert('Please enter a valid URL starting with http:// or https://');
-        return;
-      }
-      
-      isLoading = true;
-      document.getElementById('loading-indicator').classList.add('active');
-      
-      const newWebsite = {
-        id: Date.now().toString(),
-        website_name: name,
-        website_url: url,
-        position: websites.length
-      };
-      
-      const result = await window.dataSdk.create(newWebsite);
-      
-      isLoading = false;
-      document.getElementById('loading-indicator').classList.remove('active');
-      
-      if (result.isOk) {
-        document.getElementById('add-website-modal').classList.remove('active');
-        document.getElementById('add-website-form').reset();
-      } else {
-        alert('Failed to add website. Please try again.');
-      }
-    });
-
-    document.getElementById('websites-grid').addEventListener('click', async (e) => {
-      if (e.target.classList.contains('delete-button')) {
-        e.stopPropagation();
-        
-        if (isLoading) return;
-        
-        const backendId = e.target.dataset.id;
-        const website = websites.find(w => w.__backendId === backendId);
-        
-        if (website) {
-          isLoading = true;
-          document.getElementById('loading-indicator').classList.add('active');
-          
-          const result = await window.dataSdk.delete(website);
-          
-          isLoading = false;
-          document.getElementById('loading-indicator').classList.remove('active');
-          
-          if (!result.isOk) {
-            alert('Failed to delete website. Please try again.');
-          }
-        }
-      }
-    });
-
-    function showModal(modalId) {
-      document.getElementById(modalId).classList.add('active');
-    }
-
-    function hideModal(modalId) {
-      document.getElementById(modalId).classList.remove('active');
-    }
-
-    // Top navigation handlers
-    // Chatroom 按鈕：優先使用 preload.openChatroom() 開啟專用 Chatroom 視窗
-    document.getElementById('chatroom-btn').addEventListener('click', () => {
-      const chatUrl = (window.FLASK_URL) ? window.FLASK_URL : 'http://localhost:5000';
-
-      // Prefer the dedicated chat BrowserWindow via preload -> main ipc
-      if (window.electronAPI && window.electronAPI.openChatroom) {
-        // openChatroom returns a Promise (ipcRenderer.invoke). If it fails,
-        // fall back to BrowserView navigation or the in-page modal.
-        window.electronAPI.openChatroom().catch(() => {
-          if (window.electronAPI && window.electronAPI.openUrl) {
-            window.electronAPI.openUrl(chatUrl);
-          } else {
-            showModal('chatroom-modal');
-          }
-        });
-        return;
-      }
-
-      // If openChatroom is not available, fall back to BrowserView navigation
-      if (window.electronAPI && window.electronAPI.openUrl) {
-        window.electronAPI.openUrl(chatUrl);
-      } else {
-        // fallback: 在純瀏覽器環境顯示內建 modal（原本行為）
-        showModal('chatroom-modal');
-      }
-    });
-
-    document.getElementById('settings-btn').addEventListener('click', () => showModal('settings-modal'));
-    document.getElementById('account-btn').addEventListener('click', () => showModal('account-modal'));
-
-    document.getElementById('close-chatroom').addEventListener('click', () => hideModal('chatroom-modal'));
-    document.getElementById('close-settings').addEventListener('click', () => hideModal('settings-modal'));
-    document.getElementById('close-account').addEventListener('click', () => hideModal('account-modal'));
-
-    // Toolbar dropdown toggle
-    const toolbarToggle = document.getElementById('toolbar-toggle');
-    const toolbarDropdown = document.getElementById('toolbar-dropdown');
-
-    toolbarToggle.addEventListener('click', (e) => {
-      e.stopPropagation();
-      toolbarDropdown.classList.toggle('active');
-    });
-
-    document.addEventListener('click', (e) => {
-      if (!toolbarDropdown.contains(e.target) && e.target !== toolbarToggle) {
-        toolbarDropdown.classList.remove('active');
-      }
-    });
-
-    // Toolbar item handlers
-    document.querySelectorAll('.toolbar-item').forEach(item => {
-      item.addEventListener('click', () => {
-        const tool = item.dataset.tool;
-        toolbarDropdown.classList.remove('active');
-        
-        switch(tool) {
-          case 'notes':
-            showModal('notes-modal');
-            loadNotes();
-            break;
-          case 'translate':
-            showModal('translate-modal');
-            break;
-          case 'minigames':
-            showModal('minigames-modal');
-            break;
-          case 'calendar':
-            showModal('calendar-modal');
-            renderCalendar();
-            break;
-          case 'timer':
-            showModal('timer-modal');
-            break;
-          case 'weather':
-            showModal('weather-modal');
-            break;
-          case 'travel':
-            showModal('travel-modal');
-            break;
-        }
-      });
-    });
-
-    document.getElementById('close-notes').addEventListener('click', () => hideModal('notes-modal'));
-    document.getElementById('close-translate').addEventListener('click', () => hideModal('translate-modal'));
-    document.getElementById('close-minigames').addEventListener('click', () => hideModal('minigames-modal'));
-    document.getElementById('close-calendar').addEventListener('click', () => hideModal('calendar-modal'));
-    document.getElementById('close-timer').addEventListener('click', () => hideModal('timer-modal'));
-    document.getElementById('close-weather').addEventListener('click', () => hideModal('weather-modal'));
-    document.getElementById('close-travel').addEventListener('click', () => hideModal('travel-modal'));
-
-    document.getElementById('google-login-btn').addEventListener('click', () => {
-      const message = document.createElement('div');
-      message.style.cssText = 'position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #667eea; color: white; padding: 15px 30px; border-radius: 10px; z-index: 10000; box-shadow: 0 5px 20px rgba(0,0,0,0.3);';
-      message.textContent = 'Google Sign-In requires backend server integration with OAuth 2.0.';
-      document.body.appendChild(message);
-      setTimeout(() => message.remove(), 3000);
-    });
-
-    // Dark mode toggle
-    let isDarkMode = localStorage.getItem('darkMode') === 'true';
-    const darkModeToggle = document.getElementById('dark-mode-toggle');
-    
-    if (isDarkMode) {
-      document.body.classList.add('dark-mode');
-      darkModeToggle.classList.add('active');
-    }
-
-    darkModeToggle.addEventListener('click', () => {
-      isDarkMode = !isDarkMode;
-      document.body.classList.toggle('dark-mode');
-      darkModeToggle.classList.toggle('active');
-      localStorage.setItem('darkMode', isDarkMode);
-    });
-
-    // Background upload
-    document.getElementById('upload-bg-btn').addEventListener('click', () => {
-      document.getElementById('bg-upload').click();
-    });
-
-    document.getElementById('bg-upload').addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const imageUrl = event.target.result;
-          document.body.style.backgroundImage = `url(${imageUrl})`;
-          document.body.classList.add('custom-bg');
-          localStorage.setItem('customBg', imageUrl);
-          
-          const message = document.createElement('div');
-          message.style.cssText = 'position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #667eea; color: white; padding: 15px 30px; border-radius: 10px; z-index: 10000; box-shadow: 0 5px 20px rgba(0,0,0,0.3);';
-          message.textContent = 'Background updated successfully!';
-          document.body.appendChild(message);
-          setTimeout(() => message.remove(), 2000);
+        // === Helper Function: Convert Hex to RGBA ===
+        const hexToRgba = (hex, alpha = 1) => {
+            const r = parseInt(hex.slice(1, 3), 16);
+            const g = parseInt(hex.slice(3, 5), 16);
+            const b = parseInt(hex.slice(5, 7), 16);
+            return `rgba(${r}, ${g}, ${b}, ${alpha})`;
         };
-        reader.readAsDataURL(file);
-      }
-    });
 
-    document.getElementById('reset-bg-btn').addEventListener('click', () => {
-      document.body.style.backgroundImage = '';
-      document.body.classList.remove('custom-bg');
-      localStorage.removeItem('customBg');
-      
-      const message = document.createElement('div');
-      message.style.cssText = 'position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #667eea; color: white; padding: 15px 30px; border-radius: 10px; z-index: 10000; box-shadow: 0 5px 20px rgba(0,0,0,0.3);';
-      message.textContent = 'Background reset to default!';
-      document.body.appendChild(message);
-      setTimeout(() => message.remove(), 2000);
-    });
-
-    // Load saved background
-    const savedBg = localStorage.getItem('customBg');
-    if (savedBg) {
-      document.body.style.backgroundImage = `url(${savedBg})`;
-      document.body.classList.add('custom-bg');
-    }
-
-    // Background color picker
-    const bgColorPicker = document.getElementById('bg-color-picker');
-    const savedBgColor = localStorage.getItem('bgColor') || '#667eea';
-    bgColorPicker.value = savedBgColor;
-
-    bgColorPicker.addEventListener('change', (e) => {
-      const color = e.target.value;
-      document.body.style.background = `linear-gradient(135deg, ${color} 0%, #764ba2 100%)`;
-      document.body.classList.remove('custom-bg');
-      document.body.style.backgroundImage = '';
-      localStorage.setItem('bgColor', color);
-      localStorage.removeItem('customBg');
-    });
-
-    // Apply saved background color
-    if (!savedBg) {
-      document.body.style.background = `linear-gradient(135deg, ${savedBgColor} 0%, #764ba2 100%)`;
-    }
-
-    // VPN functionality
-    let vpnConnected = false;
-    const vpnToggle = document.getElementById('vpn-toggle');
-    const vpnStatus = document.getElementById('vpn-status');
-    const vpnLocation = document.getElementById('vpn-location');
-
-    vpnToggle.addEventListener('click', () => {
-      vpnConnected = !vpnConnected;
-      
-      if (vpnConnected) {
-        vpnToggle.textContent = 'Disconnect';
-        vpnToggle.style.background = '#ff4757';
-        vpnStatus.style.display = 'flex';
-        vpnStatus.classList.add('connected');
-        vpnStatus.classList.remove('disconnected');
-        
-        const locationText = vpnLocation.selectedOptions[0].text;
-        vpnStatus.querySelector('.vpn-text').textContent = `Connected to ${locationText} Server`;
-        
-        const message = document.createElement('div');
-        message.style.cssText = 'position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #4caf50; color: white; padding: 15px 30px; border-radius: 10px; z-index: 10000; box-shadow: 0 5px 20px rgba(0,0,0,0.3);';
-        message.textContent = `VPN Connected to ${locationText}!`;
-        document.body.appendChild(message);
-        setTimeout(() => message.remove(), 2000);
-      } else {
-        vpnToggle.textContent = 'Connect';
-        vpnToggle.style.background = '#667eea';
-        vpnStatus.style.display = 'none';
-        
-        const message = document.createElement('div');
-        message.style.cssText = 'position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #ff4757; color: white; padding: 15px 30px; border-radius: 10px; z-index: 10000; box-shadow: 0 5px 20px rgba(0,0,0,0.3);';
-        message.textContent = 'VPN Disconnected';
-        document.body.appendChild(message);
-        setTimeout(() => message.remove(), 2000);
-      }
-    });
-
-    // Background animation
-    let animationInterval = null;
-
-    function createSnowflake() {
-      const snowflake = document.createElement('div');
-      snowflake.className = 'snowflake';
-      snowflake.textContent = '❄';
-      snowflake.style.left = Math.random() * 100 + '%';
-      snowflake.style.animationDuration = (Math.random() * 3 + 2) + 's';
-      snowflake.style.opacity = Math.random();
-      document.body.appendChild(snowflake);
-      
-      setTimeout(() => snowflake.remove(), 5000);
-    }
-
-    function createRaindrop() {
-      const raindrop = document.createElement('div');
-      raindrop.className = 'raindrop';
-      raindrop.textContent = '💧';
-      raindrop.style.left = Math.random() * 100 + '%';
-      raindrop.style.animationDuration = (Math.random() * 0.5 + 0.5) + 's';
-      document.body.appendChild(raindrop);
-      
-      setTimeout(() => raindrop.remove(), 1500);
-    }
-
-    function createSakura() {
-      const sakura = document.createElement('div');
-      sakura.className = 'sakura';
-      sakura.textContent = '🌸';
-      sakura.style.left = Math.random() * 100 + '%';
-      sakura.style.animationDuration = (Math.random() * 3 + 4) + 's';
-      sakura.style.opacity = Math.random() * 0.8 + 0.2;
-      document.body.appendChild(sakura);
-      
-      setTimeout(() => sakura.remove(), 7000);
-    }
-
-    function startAnimation(type) {
-      stopAnimation();
-      
-      if (type === 'snowfall') {
-        animationInterval = setInterval(createSnowflake, 200);
-      } else if (type === 'rain') {
-        animationInterval = setInterval(createRaindrop, 100);
-      } else if (type === 'sakura') {
-        animationInterval = setInterval(createSakura, 300);
-      }
-    }
-
-    function stopAnimation() {
-      if (animationInterval) {
-        clearInterval(animationInterval);
-        animationInterval = null;
-      }
-      document.querySelectorAll('.snowflake, .raindrop, .sakura').forEach(el => el.remove());
-    }
-
-    const bgAnimationSelect = document.getElementById('bg-animation-select');
-    const savedAnimation = localStorage.getItem('bgAnimation') || 'none';
-    bgAnimationSelect.value = savedAnimation;
-    if (savedAnimation !== 'none') {
-      startAnimation(savedAnimation);
-    }
-
-    bgAnimationSelect.addEventListener('change', (e) => {
-      const animation = e.target.value;
-      localStorage.setItem('bgAnimation', animation);
-      
-      if (animation === 'none') {
-        stopAnimation();
-      } else {
-        startAnimation(animation);
-      }
-    });
-
-    // Notes functionality
-    function loadNotes() {
-      const savedNotes = localStorage.getItem('userNotes') || '';
-      document.getElementById('notes-textarea').value = savedNotes;
-    }
-
-    document.getElementById('save-notes').addEventListener('click', () => {
-      const notes = document.getElementById('notes-textarea').value;
-      localStorage.setItem('userNotes', notes);
-      
-      const message = document.createElement('div');
-      message.style.cssText = 'position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #667eea; color: white; padding: 15px 30px; border-radius: 10px; z-index: 10000; box-shadow: 0 5px 20px rgba(0,0,0,0.3);';
-      message.textContent = 'Notes saved successfully!';
-      document.body.appendChild(message);
-      setTimeout(() => message.remove(), 2000);
-    });
-
-    // Translate functionality
-    document.getElementById('translate-upload-btn').addEventListener('click', () => {
-      document.getElementById('translate-file-upload').click();
-    });
-
-    document.getElementById('translate-file-upload').addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        document.getElementById('file-name').textContent = file.name;
-        
-        if (file.type === 'text/plain' || file.name.toLowerCase().endsWith('.txt')) {
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          document.getElementById('translate-input').value = event.target.result;
-        };
-        reader.readAsText(file);
-      } else {
-        alert('For now, only .txt text files are supported for upload in this demo.');
-      }
-      }
-    });
-
-    document.getElementById('translate-btn').addEventListener('click', () => {
-      const text = document.getElementById('translate-input').value.trim();
-      const targetLang = document.getElementById('target-language').value;
-      
-      if (!text) {
-        const message = document.createElement('div');
-        message.style.cssText = 'position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #ff4757; color: white; padding: 15px 30px; border-radius: 10px; z-index: 10000; box-shadow: 0 5px 20px rgba(0,0,0,0.3);';
-        message.textContent = 'Please enter text to translate!';
-        document.body.appendChild(message);
-        setTimeout(() => message.remove(), 2000);
-        return;
-      }
-
-      const resultDiv = document.getElementById('translate-result');
-      const translationText = document.getElementById('translation-text');
-      
-      resultDiv.style.display = 'block';
-      translationText.textContent = 'Translating... (Demo: AI translation would appear here with backend API integration)';
-      
-      setTimeout(() => {
-        translationText.textContent = `[Demo Translation to ${document.getElementById('target-language').selectedOptions[0].text}]\n\n"${text.substring(0, 100)}..."\n\nNote: Real AI translation requires backend API integration with services like Google Translate API, DeepL, or OpenAI.`;
-      }, 1000);
-    });
-
-    // Mini games functionality
-    document.querySelectorAll('.game-card').forEach(card => {
-      card.addEventListener('click', () => {
-        const game = card.dataset.game;
-        const message = document.createElement('div');
-        message.style.cssText = 'position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #667eea; color: white; padding: 15px 30px; border-radius: 10px; z-index: 10000; box-shadow: 0 5px 20px rgba(0,0,0,0.3);';
-        message.textContent = `${card.querySelector('.game-name').textContent} coming soon!`;
-        document.body.appendChild(message);
-        setTimeout(() => message.remove(), 2000);
-      });
-    });
-
-    // Timer functionality
-    let timerInterval = null;
-    let timerSeconds = 300; // 5 minutes default
-    let timerRunning = false;
-
-    function updateTimerDisplay() {
-      const hours = Math.floor(timerSeconds / 3600);
-      const minutes = Math.floor((timerSeconds % 3600) / 60);
-      const seconds = timerSeconds % 60;
-      
-      document.getElementById('timer-display').textContent = 
-        `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
-    }
-
-    function setTimerFromInputs() {
-      const hours = parseInt(document.getElementById('timer-hours').value) || 0;
-      const minutes = parseInt(document.getElementById('timer-minutes').value) || 0;
-      const seconds = parseInt(document.getElementById('timer-seconds').value) || 0;
-      timerSeconds = hours * 3600 + minutes * 60 + seconds;
-      updateTimerDisplay();
-    }
-
-    document.getElementById('timer-hours').addEventListener('change', setTimerFromInputs);
-    document.getElementById('timer-minutes').addEventListener('change', setTimerFromInputs);
-    document.getElementById('timer-seconds').addEventListener('change', setTimerFromInputs);
-
-    document.getElementById('timer-start').addEventListener('click', () => {
-      if (!timerRunning) {
-        setTimerFromInputs();
-        timerRunning = true;
-        timerInterval = setInterval(() => {
-          if (timerSeconds > 0) {
-            timerSeconds--;
-            updateTimerDisplay();
-          } else {
-            clearInterval(timerInterval);
-            timerRunning = false;
-            const message = document.createElement('div');
-            message.style.cssText = 'position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #667eea; color: white; padding: 15px 30px; border-radius: 10px; z-index: 10000; box-shadow: 0 5px 20px rgba(0,0,0,0.3);';
-            message.textContent = '⏰ Timer finished!';
-            document.body.appendChild(message);
-            setTimeout(() => message.remove(), 3000);
-          }
-        }, 1000);
-      }
-    });
-
-    document.getElementById('timer-pause').addEventListener('click', () => {
-      if (timerRunning) {
-        clearInterval(timerInterval);
-        timerRunning = false;
-      }
-    });
-
-    document.getElementById('timer-reset').addEventListener('click', () => {
-      clearInterval(timerInterval);
-      timerRunning = false;
-      setTimerFromInputs();
-    });
-
-    // Weather functionality
-    document.getElementById('weather-search').addEventListener('click', () => {
-      const city = document.getElementById('weather-city').value.trim();
-      
-      if (!city) {
-        const message = document.createElement('div');
-        message.style.cssText = 'position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: #ff4757; color: white; padding: 15px 30px; border-radius: 10px; z-index: 10000; box-shadow: 0 5px 20px rgba(0,0,0,0.3);';
-        message.textContent = 'Please enter a city name!';
-        document.body.appendChild(message);
-        setTimeout(() => message.remove(), 2000);
-        return;
-      }
-
-      document.getElementById('weather-location').textContent = city;
-      document.getElementById('weather-temp').textContent = Math.floor(Math.random() * 40 + 50) + '°F';
-      const conditions = ['Sunny', 'Partly Cloudy', 'Cloudy', 'Rainy', 'Clear'];
-      document.getElementById('weather-description').textContent = conditions[Math.floor(Math.random() * conditions.length)];
-      document.getElementById('weather-result').style.display = 'block';
-    });
-
-    // Travel planning functionality
-    document.getElementById('travel-form').addEventListener('submit', (e) => {
-      e.preventDefault();
-      
-      const destination = document.getElementById('travel-destination').value;
-      const dates = document.getElementById('travel-dates').value;
-      const budget = document.getElementById('travel-budget').value;
-      
-      document.getElementById('travel-dest-result').textContent = `${destination} - ${dates}`;
-      document.getElementById('travel-budget-result').innerHTML = `Total Budget: $${budget} USD<br>Flights: ~$${Math.floor(budget * 0.4)}<br>Accommodation: ~$${Math.floor(budget * 0.35)}<br>Food & Activities: ~$${Math.floor(budget * 0.25)}`;
-      document.getElementById('travel-result').style.display = 'block';
-    });
-
-    document.querySelectorAll('.modal').forEach(modal => {
-      modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-          modal.classList.remove('active');
-        }
-      });
-    });
-
-    // Calendar functionality
-    let currentDate = new Date();
-
-    function renderCalendar() {
-      const year = currentDate.getFullYear();
-      const month = currentDate.getMonth();
-      
-      const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-                          'July', 'August', 'September', 'October', 'November', 'December'];
-      
-      document.getElementById('calendar-month').textContent = `${monthNames[month]} ${year}`;
-      
-      const firstDay = new Date(year, month, 1).getDay();
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
-      const daysInPrevMonth = new Date(year, month, 0).getDate();
-      
-      const calendarGrid = document.getElementById('calendar-grid');
-      calendarGrid.innerHTML = '';
-      
-      const dayHeaders = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-      dayHeaders.forEach(day => {
-        const header = document.createElement('div');
-        header.className = 'calendar-day-header';
-        header.textContent = day;
-        calendarGrid.appendChild(header);
-      });
-      
-      for (let i = firstDay - 1; i >= 0; i--) {
-        const day = document.createElement('div');
-        day.className = 'calendar-day other-month';
-        day.textContent = daysInPrevMonth - i;
-        calendarGrid.appendChild(day);
-      }
-      
-      const today = new Date();
-      for (let i = 1; i <= daysInMonth; i++) {
-        const day = document.createElement('div');
-        day.className = 'calendar-day';
-        day.textContent = i;
-        
-        if (year === today.getFullYear() && month === today.getMonth() && i === today.getDate()) {
-          day.classList.add('today');
-        }
-        
-        calendarGrid.appendChild(day);
-      }
-      
-      const remainingDays = 42 - (firstDay + daysInMonth);
-      for (let i = 1; i <= remainingDays; i++) {
-        const day = document.createElement('div');
-        day.className = 'calendar-day other-month';
-        day.textContent = i;
-        calendarGrid.appendChild(day);
-      }
-    }
-
-    document.getElementById('prev-month').addEventListener('click', () => {
-      currentDate.setMonth(currentDate.getMonth() - 1);
-      renderCalendar();
-    });
-
-    document.getElementById('next-month').addEventListener('click', () => {
-      currentDate.setMonth(currentDate.getMonth() + 1);
-      renderCalendar();
-    });
-
-    async function onConfigChange(config) {
-      const pageTitle = document.getElementById('page-title');
-      const searchInput = document.getElementById('search-input');
-      
-      pageTitle.textContent = config.page_title || defaultConfig.page_title;
-      searchInput.placeholder = config.search_placeholder || defaultConfig.search_placeholder;
-      
-      document.body.style.background = `linear-gradient(135deg, ${config.background_color || defaultConfig.background_color} 0%, #764ba2 100%)`;
-    }
-
-    if (window.elementSdk) {
-      window.elementSdk.init({
-        defaultConfig,
-        onConfigChange,
-        mapToCapabilities: (config) => ({
-          recolorables: [
-            {
-              get: () => config.background_color || defaultConfig.background_color,
-              set: (value) => {
-                window.elementSdk.config.background_color = value;
-                window.elementSdk.setConfig({ background_color: value });
-              }
-            },
-            {
-              get: () => config.primary_action_color || defaultConfig.primary_action_color,
-              set: (value) => {
-                window.elementSdk.config.primary_action_color = value;
-                window.elementSdk.setConfig({ primary_action_color: value });
-              }
+        // === TOAST 系统 ===
+        const showToast = function (msg, type = 'success', duration = 3000) {
+            const container = document.getElementById('toast-container');
+            if (!container) {
+                console.warn('Toast container not found');
+                return;
             }
-          ],
-          borderables: [],
-          fontEditable: undefined,
-          fontSizeable: undefined
-        }),
-        mapToEditPanelValues: (config) => new Map([
-          ["page_title", config.page_title || defaultConfig.page_title],
-          ["search_placeholder", config.search_placeholder || defaultConfig.search_placeholder]
-        ])
-      });
-    }
 
-    // Chat functionality
-    document.getElementById('send-message').addEventListener('click', () => {
-      const chatInput = document.getElementById('chat-input');
-      const message = chatInput.value.trim();
-      
-      if (message) {
-        const chatMessages = document.getElementById('chat-messages');
-        const messageDiv = document.createElement('div');
-        messageDiv.className = 'chat-message';
-        messageDiv.innerHTML = `
-          <span class="chat-user">You:</span>
-          <span class="chat-text">${message}</span>
-          <span class="chat-time">now</span>
-        `;
-        chatMessages.appendChild(messageDiv);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
-        chatInput.value = '';
-        
-        // Simulate friend responses
-        setTimeout(() => {
-          const responses = [
-            "That's interesting! 😊",
-            "Cool! Thanks for sharing 👍",
-            "I agree with that!",
-            "Nice one! 🎉",
-            "Good point!"
-          ];
-          const randomResponse = responses[Math.floor(Math.random() * responses.length)];
-          const friends = ['Alex', 'Sarah', 'Emma'];
-          const randomFriend = friends[Math.floor(Math.random() * friends.length)];
-          
-          const responseDiv = document.createElement('div');
-          responseDiv.className = 'chat-message';
-          responseDiv.innerHTML = `
-            <span class="chat-user">${randomFriend}:</span>
-            <span class="chat-text">${randomResponse}</span>
-            <span class="chat-time">now</span>
-          `;
-          chatMessages.appendChild(responseDiv);
-          chatMessages.scrollTop = chatMessages.scrollHeight;
-        }, 1000 + Math.random() * 2000);
-      }
-    });
+            const toast = document.createElement('div');
+            toast.className = `toast toast-${type}`;
+            toast.textContent = msg; 
+            toast.style.whiteSpace = 'nowrap';
+            toast.style.minWidth = '300px';         
+            toast.style.textAlign = 'left';         
+            toast.style.willChange = 'transform';
+            toast.style.animation = 'toastIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
 
-    document.getElementById('chat-input').addEventListener('keypress', (e) => {
-      if (e.key === 'Enter') {
-        document.getElementById('send-message').click();
-      }
-    });
+            container.appendChild(toast);
 
-    initializeApp();
-    
-    // 自动测试 Toast 动画（用于验证是否工作）
-    setTimeout(() => {
-      window.showToast('🎉 应用已加载 - Toast 动画测试', 'success', 5000);
-    }, 500);
-  
+            setTimeout(() => {
+                toast.style.animation = 'toastOut 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards';
+                setTimeout(() => {
+                    toast.remove();
+                }, 500);
+            }, duration);
+        };
+
+        // --- GEMINI API SETUP ---
+        const apiKey = ""; // API Key injected by environment
+
+        async function callGeminiAPI(prompt, systemInstruction = "") {
+            let effectiveKey = apiKey;
+            if (!effectiveKey) {
+                effectiveKey = localStorage.getItem('gemini_api_key');
+            }
+            if (!effectiveKey) {
+                const userKey = window.prompt("請輸入您的 Gemini API Key (僅儲存於本地瀏覽器):");
+                if (userKey) {
+                    effectiveKey = userKey;
+                    localStorage.setItem('gemini_api_key', userKey);
+                } else {
+                    return "Error: API Key is required to use AI features.";
+                }
+            }
+
+            try {
+                const response = await fetch(
+                    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${effectiveKey}`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: prompt }] }],
+                            systemInstruction: { parts: [{ text: systemInstruction }] }
+                        })
+                    }
+                );
+
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({}));
+                    console.error("API Error Details:", errorData);
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                return data.candidates?.[0]?.content?.parts?.[0]?.text || "I couldn't generate a response.";
+            } catch (error) {
+                console.error("Gemini API Error:", error);
+                return "Sorry, I'm having trouble connecting to the AI service right now. Please check your API Key.";
+            }
+        }
+
+        // --- Icons ---
+        const Icon = ({ path, className, onClick }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className} onClick={onClick}>
+                {path}
+            </svg>
+        );
+
+        const Icons = {
+            Plus: (props) => <Icon {...props} path={<><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></>} />,
+            X: (props) => <Icon {...props} path={<><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></>} />,
+            Search: (props) => <Icon {...props} path={<><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></>} />,
+            Settings: (props) => <Icon {...props} path={<><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></>} />,
+            Home: (props) => <Icon {...props} path={<><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2-2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></>} />,
+            ChevronLeft: (props) => <Icon {...props} path={<><polyline points="15 18 9 12 15 6"></polyline></>} />,
+            ChevronRight: (props) => <Icon {...props} path={<><polyline points="9 18 15 12 9 6"></polyline></>} />,
+            RotateCw: (props) => <Icon {...props} path={<><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path></>} />,
+            MessageCircle: (props) => <Icon {...props} path={<><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></>} />,
+            FileText: (props) => <Icon {...props} path={<><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></>} />,
+            Clock: (props) => <Icon {...props} path={<><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></>} />,
+            History: (props) => <Icon {...props} path={<><path d="M3 3v5h5"></path><path d="M3.05 13A9 9 0 1 0 6 5.3L3 8"></path><path d="M12 7v5l4 2"></path></>} />,
+            Bookmark: (props) => <Icon {...props} path={<><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></>} />,
+            Sidebar: (props) => <Icon {...props} path={<><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><line x1="9" y1="3" x2="9" y2="21"></line></>} />,
+            Moon: (props) => <Icon {...props} path={<><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></>} />,
+            Sun: (props) => <Icon {...props} path={<><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></>} />,
+            Globe: (props) => <Icon {...props} path={<><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></>} />,
+            Sparkles: (props) => <Icon {...props} path={<><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" /></>} />,
+            Send: (props) => <Icon {...props} path={<><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></>} />,
+            Bot: (props) => <Icon {...props} path={<><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path><line x1="8" y1="16" x2="8" y2="16"></line><line x1="16" y1="16" x2="16" y2="16"></line></>} />,
+            Users: (props) => <Icon {...props} path={<><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></>} />,
+            LogOut: (props) => <Icon {...props} path={<><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></>} />,
+            CheckSquare: (props) => <Icon {...props} path={<><polyline points="9 11 12 14 22 4"></polyline><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path></>} />,
+            Calendar: (props) => <Icon {...props} path={<><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></>} />,
+            Trash: (props) => <Icon {...props} path={<><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></>} />,
+            Cloud: (props) => <Icon {...props} path={<><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></>} />,
+            MapPin: (props) => <Icon {...props} path={<><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></>} />,
+        };
+
+        // --- New AI Components ---
+        // AI Assistant Module
+        const AIAssistantModule = ({ isOpen, onClose }) => {
+            const [messages, setMessages] = useState([{ id: 1, role: 'ai', text: 'Hello! I am your Anechoic study assistant. How can I help you focus today?' }]);
+            const [input, setInput] = useState('');
+            const [loading, setLoading] = useState(false);
+            const messagesEndRef = useRef(null);
+
+            const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            useEffect(() => scrollToBottom(), [messages]);
+
+            const handleSend = async (e) => {
+                e.preventDefault();
+                if (!input.trim() || loading) return;
+                const userMsg = { id: Date.now(), role: 'user', text: input };
+                setMessages(prev => [...prev, userMsg]);
+                setInput('');
+                setLoading(true);
+                const systemPrompt = "You are a helpful, encouraging study assistant built into the Anechoic browser. Keep responses concise and focused on productivity and learning.";
+                const aiResponseText = await callGeminiAPI(input, systemPrompt);
+                const aiMsg = { id: Date.now() + 1, role: 'ai', text: aiResponseText };
+                setMessages(prev => [...prev, aiMsg]);
+                setLoading(false);
+            };
+
+            if (!isOpen) return null;
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm animate-fade-in">
+                    <div className="w-[450px] h-[600px] bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl flex flex-col border border-white/50 overflow-hidden animate-slide-up">
+                        <div className="h-14 border-b border-gray-200/50 flex items-center justify-between px-4 bg-white/50">
+                            <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-600"><Icons.Bot className="w-5 h-5" /></div>
+                                <span className="font-semibold text-gray-700">AI Assistant</span>
+                            </div>
+                            <button onClick={onClose} className="p-2 hover:bg-gray-200/50 rounded-full transition-colors"><Icons.X className="w-5 h-5 text-gray-500" /></button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/30">
+                            {messages.map(msg => (
+                                <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                    <div className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm shadow-sm ${msg.role === 'user' ? 'bg-purple-500 text-white rounded-br-none' : 'bg-white text-gray-700 border border-gray-100 rounded-bl-none'}`}>
+                                        <div dangerouslySetInnerHTML={{ __html: marked.parse(msg.text) }} />
+                                    </div>
+                                </div>
+                            ))}
+                            {loading && (
+                                <div className="flex justify-start"><div className="bg-white px-4 py-3 rounded-2xl rounded-bl-none shadow-sm border border-gray-100 flex gap-2 items-center"><div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce"></div><div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce delay-75"></div><div className="w-2 h-2 bg-purple-400 rounded-full animate-bounce delay-150"></div></div></div>
+                            )}
+                            <div ref={messagesEndRef} />
+                        </div>
+                        <form onSubmit={handleSend} className="p-3 bg-white border-t border-gray-200/50">
+                            <div className="relative flex items-center gap-2">
+                                <input type="text" value={input} onChange={e => setInput(e.target.value)} placeholder="Ask Gemini..." className="flex-1 bg-gray-100/50 hover:bg-gray-100 focus:bg-white border border-transparent focus:border-purple-300 rounded-xl px-4 py-2.5 text-sm transition-all focus:ring-2 focus:ring-purple-100 focus:outline-none" />
+                                <button type="submit" disabled={loading || !input.trim()} className="p-2.5 bg-purple-500 text-white rounded-xl hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-md shadow-purple-500/20"><Icons.Send className="w-4 h-4" /></button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            );
+        };
+
+        // Chat Room Module (connects to original Flask chatroom)
+        const ChatRoomModule = ({ isOpen, onClose }) => {
+            if (!isOpen) return null;
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm animate-fade-in">
+                    <div className="w-[800px] h-[700px] bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl flex flex-col border border-white/50 overflow-hidden animate-slide-up">
+                        <div className="h-14 border-b border-gray-200/50 flex items-center justify-between px-4 bg-white/50">
+                            <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600"><Icons.Users className="w-5 h-5" /></div>
+                                <span className="font-semibold text-gray-700">Chat Room</span>
+                            </div>
+                            <button onClick={onClose} className="p-2 hover:bg-gray-200/50 rounded-full transition-colors"><Icons.X className="w-5 h-5 text-gray-500" /></button>
+                        </div>
+                        <div className="flex-1 bg-gray-50">
+                            <iframe
+                                src="about:blank"
+                                className="w-full h-full border-none"
+                                title="Chat Room"
+                            />
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+
+        // AI Smart Notes Module
+        const SmartNotesModule = ({ isOpen, onClose }) => {
+            const [note, setNote] = useState('');
+            const [isGenerating, setIsGenerating] = useState(false);
+
+            const handleAIPolish = async () => {
+                if (!note.trim() || isGenerating) return;
+                setIsGenerating(true);
+                const systemPrompt = "You are an expert editor. Improve the following study notes. Fix grammar, make it more concise, and format it nicely with markdown. Keep the original meaning.";
+                const improvedNote = await callGeminiAPI(note, systemPrompt);
+                setNote(improvedNote);
+                setIsGenerating(false);
+            };
+
+            if (!isOpen) return null;
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm animate-fade-in">
+                    <div className="w-[600px] h-[700px] bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl flex flex-col border border-white/50 animate-slide-up">
+                        <div className="h-14 border-b border-gray-200/50 flex items-center justify-between px-4 bg-white/50 rounded-t-2xl">
+                            <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center text-amber-600"><Icons.FileText className="w-5 h-5" /></div>
+                                <span className="font-semibold text-gray-700">Smart Notes</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <button onClick={handleAIPolish} disabled={isGenerating || !note.trim()} className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-violet-500 to-fuchsia-500 text-white rounded-lg text-xs font-semibold shadow-md shadow-purple-500/20 hover:brightness-110 transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                                    {isGenerating ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Icons.Sparkles className="w-3 h-3" />}
+                                    AI Polish
+                                </button>
+                                <button onClick={onClose} className="p-2 hover:bg-gray-200/50 rounded-full transition-colors"><Icons.X className="w-5 h-5 text-gray-500" /></button>
+                            </div>
+                        </div>
+                        <div className="flex-1 p-0 relative">
+                            <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Start typing your notes here... &#10;&#10;Tip: Click 'AI Polish' to have Gemini format and improve your notes automatically!" className="w-full h-full p-6 bg-transparent resize-none focus:outline-none text-gray-700 leading-relaxed font-mono text-sm" />
+                        </div>
+                        <div className="h-8 bg-gray-50 border-t border-gray-200 flex items-center px-4 text-xs text-gray-400 justify-between rounded-b-2xl">
+                            <span>Markdown supported</span>
+                            <span>{note.length} chars</span>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // History Module
+        const HistoryModule = ({ isOpen, onClose, tabs, onNavigate }) => {
+            const [searchTerm, setSearchTerm] = useState('');
+            const [historyData, setHistoryData] = useState([]);
+            const [loading, setLoading] = useState(false);
+
+            // Load history from anechoicAPI when modal opens
+            useEffect(() => {
+                if (isOpen && window.anechoicAPI) {
+                    setLoading(true);
+                    window.anechoicAPI.getHistory().then(result => {
+                        if (result.ok && result.data) {
+                            setHistoryData(result.data);
+                        } else {
+                            console.warn('Failed to fetch history:', result.error);
+                            setHistoryData([]);
+                        }
+                        setLoading(false);
+                    }).catch(error => {
+                        console.error('Error fetching history:', error);
+                        setLoading(false);
+                    });
+                }
+            }, [isOpen]);
+
+            const filteredHistory = historyData.filter(item =>
+                item.url.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (item.title && item.title.toLowerCase().includes(searchTerm.toLowerCase()))
+            );
+
+            if (!isOpen) return null;
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm animate-fade-in">
+                    <div className="w-[500px] h-[600px] bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl flex flex-col border border-white/50 overflow-hidden animate-slide-up">
+                        <div className="h-14 border-b border-gray-200/50 flex items-center justify-between px-4 bg-white/50">
+                            <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600"><Icons.History className="w-5 h-5" /></div>
+                                <span className="font-semibold text-gray-700">History</span>
+                            </div>
+                            <button onClick={onClose} className="p-2 hover:bg-gray-200/50 rounded-full transition-colors"><Icons.X className="w-5 h-5 text-gray-500" /></button>
+                        </div>
+                        <div className="p-4 border-b border-gray-200/50">
+                            <div className="relative">
+                                <Icons.Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                <input
+                                    type="text"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    placeholder="Search history..."
+                                    className="w-full pl-10 pr-4 py-2 bg-gray-100/50 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                />
+                            </div>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                            {loading ? (
+                                <div className="text-center text-gray-500 py-8">Loading history...</div>
+                            ) : filteredHistory.length === 0 ? (
+                                <div className="text-center text-gray-500 py-8">No history found</div>
+                            ) : (
+                                filteredHistory.map((item, index) => (
+                                    <div key={index} className="flex items-center gap-3 p-3 hover:bg-gray-100/50 rounded-lg cursor-pointer transition-colors" onClick={() => onNavigate(item.url)}>
+                                        <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-xs font-medium text-gray-600">
+                                            {(item.title || 'Page').charAt(0).toUpperCase()}
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                            <div className="text-sm font-medium text-gray-700 truncate">{item.title || item.url}</div>
+                                            <div className="text-xs text-gray-500">{new Date(item.timestamp).toLocaleString()}</div>
+                                        </div>
+                                        <button onClick={(e) => { e.stopPropagation(); onNavigate(item.url); }} className="p-1 hover:bg-gray-200 rounded"><Icons.Globe className="w-4 h-4 text-gray-400" /></button>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Bookmarks Module
+        const BookmarksModule = ({ isOpen, onClose, onNavigate }) => {
+            const [bookmarks, setBookmarks] = useState([]);
+            const [searchTerm, setSearchTerm] = useState('');
+            const [loading, setLoading] = useState(false);
+
+                    
+            useEffect(() => {
+                if (isOpen) {
+                    setLoading(true);
+                    try {
+                        // 从 LocalStorage 读取
+                        const saved = localStorage.getItem('my_bookmarks'); // 注意保持 key 一致
+                        const data = saved ? JSON.parse(saved) : [];
+                        setBookmarks(data);
+                    } catch (e) {
+                        console.error(e);
+                        setBookmarks([]);
+                    }
+                    setLoading(false);
+                }
+            }, [isOpen]);
+
+            const handleRemoveBookmark = (url) => {
+                try {
+                    // 1. 获取当前所有书签 / Get current bookmarks
+                    const saved = localStorage.getItem('my_bookmarks');
+                    const currentBookmarks = saved ? JSON.parse(saved) : [];
+
+                    // 2. 过滤掉要删除的那个 URL / Filter out the URL to remove
+                    const updatedBookmarks = currentBookmarks.filter(b => b.url !== url);
+
+                    // 3. 保存回 localStorage / Save back to localStorage
+                    localStorage.setItem('my_bookmarks', JSON.stringify(updatedBookmarks));
+
+                    // 4. 更新当前列表状态 (让界面立即刷新) / Update state (Refresh UI immediately)
+                    setBookmarks(updatedBookmarks);
+
+                    // 5. 提示成功 / Show success message
+                    showToast('Bookmark removed', 'success');
+
+                    // (可选) 如果你正好在看这个页面，这也应该触发主按钮变灰，
+                    // 但由于 React 组件隔离，主按钮需要在下一次交互或刷新后才会变灰。
+                    // 简单的解决方法是刷新整个页面，或者这就够了。
+                } catch (error) {
+                    console.error('Remove failed:', error);
+                    showToast('Failed to remove bookmark', 'error');
+                }
+            };
+
+            const filteredBookmarks = bookmarks.filter(bookmark => {
+                const matchesSearch = bookmark.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    bookmark.url.toLowerCase().includes(searchTerm.toLowerCase());
+                return matchesSearch;
+            });
+
+            if (!isOpen) return null;
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm animate-fade-in">
+                    <div className="w-[500px] h-[600px] bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl flex flex-col border border-white/50 overflow-hidden animate-slide-up">
+                        <div className="h-14 border-b border-gray-200/50 flex items-center justify-between px-4 bg-white/50">
+                            <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600"><Icons.Bookmark className="w-5 h-5" /></div>
+                                <span className="font-semibold text-gray-700">Bookmarks</span>
+                            </div>
+                            <button onClick={onClose} className="p-2 hover:bg-gray-200/50 rounded-full transition-colors"><Icons.X className="w-5 h-5 text-gray-500" /></button>
+                        </div>
+                        <div className="p-4 border-b border-gray-200/50 space-y-3">
+                            <div className="relative">
+                                <Icons.Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                <input
+                                    type="text"
+                                    value={searchTerm}
+                                    onChange={(e) => setSearchTerm(e.target.value)}
+                                    placeholder="Search bookmarks..."
+                                    className="w-full pl-10 pr-4 py-2 bg-gray-100/50 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
+                                />
+                            </div>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4">
+                            {loading ? (
+                                <div className="text-center text-gray-500 py-8">Loading bookmarks...</div>
+                            ) : filteredBookmarks.length === 0 ? (
+                                <div className="text-center text-gray-500 py-8">No bookmarks found</div>
+                            ) : (
+                                <div className="space-y-2">
+                                    {filteredBookmarks.map((bookmark) => (
+                                        <div key={bookmark.url} className="p-3 bg-gray-50/50 rounded-lg hover:bg-gray-100/50 transition-colors flex items-center justify-between group cursor-pointer" onClick={() => onNavigate(bookmark.url)}>
+                                            <div className="flex-1 min-w-0">
+                                                <div className="text-sm font-medium text-gray-700 truncate">{bookmark.title}</div>
+                                                <div className="text-xs text-gray-500 truncate">{bookmark.url}</div>
+                                            </div>
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); handleRemoveBookmark(bookmark.url); }}
+                                                className="p-1.5 ml-2 opacity-0 group-hover:opacity-100 hover:bg-red-100 rounded transition-all text-red-500"
+                                                title="Remove bookmark"
+                                            >
+                                                <Icons.X className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Pomodoro Module
+        const PomodoroModule = ({ isOpen, onClose }) => {
+            const [timeLeft, setTimeLeft] = useState(25 * 60); // 25 minutes in seconds
+            const [isActive, setIsActive] = useState(false);
+            const [mode, setMode] = useState('work'); // 'work', 'shortBreak', 'longBreak'
+            const [cycles, setCycles] = useState(0);
+            const intervalRef = useRef(null);
+
+            const modes = {
+                work: { time: 25 * 60, label: 'Work Time', color: 'bg-red-500' },
+                shortBreak: { time: 5 * 60, label: 'Short Break', color: 'bg-green-500' },
+                longBreak: { time: 15 * 60, label: 'Long Break', color: 'bg-blue-500' }
+            };
+
+            const formatTime = (seconds) => {
+                const mins = Math.floor(seconds / 60);
+                const secs = seconds % 60;
+                return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+            };
+
+            const startTimer = () => {
+                setIsActive(true);
+                intervalRef.current = setInterval(() => {
+                    setTimeLeft(time => {
+                        if (time <= 1) {
+                            clearInterval(intervalRef.current);
+                            setIsActive(false);
+                            handleTimerComplete();
+                            return 0;
+                        }
+                        return time - 1;
+                    });
+                }, 1000);
+            };
+
+            const pauseTimer = () => {
+                setIsActive(false);
+                clearInterval(intervalRef.current);
+            };
+
+            const resetTimer = () => {
+                setIsActive(false);
+                clearInterval(intervalRef.current);
+                setTimeLeft(modes[mode].time);
+            };
+
+            const handleTimerComplete = () => {
+                if (mode === 'work') {
+                    const newCycles = cycles + 1;
+                    setCycles(newCycles);
+                    if (newCycles % 4 === 0) {
+                        setMode('longBreak');
+                        setTimeLeft(modes.longBreak.time);
+                    } else {
+                        setMode('shortBreak');
+                        setTimeLeft(modes.shortBreak.time);
+                    }
+                } else {
+                    setMode('work');
+                    setTimeLeft(modes.work.time);
+                }
+            };
+
+            const switchMode = (newMode) => {
+                setMode(newMode);
+                setTimeLeft(modes[newMode].time);
+                setIsActive(false);
+                clearInterval(intervalRef.current);
+            };
+
+            useEffect(() => {
+                return () => clearInterval(intervalRef.current);
+            }, []);
+
+            if (!isOpen) return null;
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm animate-fade-in">
+                    <div className="w-[400px] h-[500px] bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl flex flex-col border border-white/50 overflow-hidden animate-slide-up">
+                        <div className="h-14 border-b border-gray-200/50 flex items-center justify-between px-4 bg-white/50">
+                            <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600"><Icons.Clock className="w-5 h-5" /></div>
+                                <span className="font-semibold text-gray-700">Pomodoro Timer</span>
+                            </div>
+                            <button onClick={onClose} className="p-2 hover:bg-gray-200/50 rounded-full transition-colors"><Icons.X className="w-5 h-5 text-gray-500" /></button>
+                        </div>
+                        <div className="flex-1 flex flex-col items-center justify-center p-6">
+                            <div className="text-center mb-8">
+                                <div className={`w-48 h-48 rounded-full ${modes[mode].color} flex items-center justify-center mb-4 shadow-lg`}>
+                                    <span className="text-4xl font-bold text-white">{formatTime(timeLeft)}</span>
+                                </div>
+                                <h3 className="text-xl font-semibold text-gray-700 mb-2">{modes[mode].label}</h3>
+                                <p className="text-sm text-gray-500">Completed cycles: {cycles}</p>
+                            </div>
+                            <div className="flex gap-3 mb-6">
+                                <button
+                                    onClick={() => switchMode('work')}
+                                    className={`px-4 py-2 rounded-lg text-sm font-medium ${mode === 'work' ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-700'}`}
+                                >
+                                    Work
+                                </button>
+                                <button
+                                    onClick={() => switchMode('shortBreak')}
+                                    className={`px-4 py-2 rounded-lg text-sm font-medium ${mode === 'shortBreak' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'}`}
+                                >
+                                    Short Break
+                                </button>
+                                <button
+                                    onClick={() => switchMode('longBreak')}
+                                    className={`px-4 py-2 rounded-lg text-sm font-medium ${mode === 'longBreak' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}`}
+                                >
+                                    Long Break
+                                </button>
+                            </div>
+                            <div className="flex gap-3">
+                                {!isActive ? (
+                                    <button onClick={startTimer} className="px-6 py-3 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors">
+                                        Start
+                                    </button>
+                                ) : (
+                                    <button onClick={pauseTimer} className="px-6 py-3 bg-yellow-500 text-white rounded-lg font-medium hover:bg-yellow-600 transition-colors">
+                                        Pause
+                                    </button>
+                                )}
+                                <button onClick={resetTimer} className="px-6 py-3 bg-gray-500 text-white rounded-lg font-medium hover:bg-gray-600 transition-colors">
+                                    Reset
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Todo List Module
+        const TodoListModule = ({ isOpen, onClose }) => {
+            const [todos, setTodos] = useState([]);
+            const [input, setInput] = useState('');
+            const [loading, setLoading] = useState(false);
+
+            useEffect(() => {
+                if (isOpen) {
+                    setLoading(true);
+                    try {
+                        const saved = localStorage.getItem('anechoic_todos');
+                        const data = saved ? JSON.parse(saved) : [];
+                        setTodos(data);
+                    } catch (e) {
+                        console.error(e);
+                        setTodos([]);
+                    }
+                    setLoading(false);
+                }
+            }, [isOpen]);
+
+            const saveTodos = (newTodos) => {
+                localStorage.setItem('anechoic_todos', JSON.stringify(newTodos));
+                setTodos(newTodos);
+            };
+
+            const addTodo = (e) => {
+                e.preventDefault();
+                if (!input.trim()) return;
+                const newTodo = { id: Date.now(), text: input.trim(), completed: false };
+                const newTodos = [...todos, newTodo];
+                saveTodos(newTodos);
+                setInput('');
+                showToast('Task added', 'success');
+            };
+
+            const toggleTodo = (id) => {
+                const newTodos = todos.map(todo =>
+                    todo.id === id ? { ...todo, completed: !todo.completed } : todo
+                );
+                saveTodos(newTodos);
+            };
+
+            const deleteTodo = (id) => {
+                const newTodos = todos.filter(todo => todo.id !== id);
+                saveTodos(newTodos);
+                showToast('Task deleted', 'success');
+            };
+
+            if (!isOpen) return null;
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm animate-fade-in">
+                    <div className="w-[500px] h-[600px] bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl flex flex-col border border-white/50 overflow-hidden animate-slide-up">
+                        <div className="h-14 border-b border-gray-200/50 flex items-center justify-between px-4 bg-white/50">
+                            <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center text-pink-600"><Icons.CheckSquare className="w-5 h-5" /></div>
+                                <span className="font-semibold text-gray-700">Todo List</span>
+                            </div>
+                            <button onClick={onClose} className="p-2 hover:bg-gray-200/50 rounded-full transition-colors"><Icons.X className="w-5 h-5 text-gray-500" /></button>
+                        </div>
+                        <div className="p-4 border-b border-gray-200/50">
+                            <form onSubmit={addTodo} className="flex gap-2">
+                                <input
+                                    type="text"
+                                    value={input}
+                                    onChange={(e) => setInput(e.target.value)}
+                                    placeholder="Add a new task..."
+                                    className="flex-1 bg-gray-100/50 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
+                                />
+                                <button type="submit" disabled={!input.trim()} className="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"><Icons.Plus className="w-4 h-4" /></button>
+                            </form>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                            {loading ? (
+                                <div className="text-center text-gray-500 py-8">Loading todos...</div>
+                            ) : todos.length === 0 ? (
+                                <div className="text-center text-gray-500 py-8">No tasks yet. Add one above!</div>
+                            ) : (
+                                todos.map((todo) => (
+                                    <div key={todo.id} className="flex items-center gap-3 p-3 bg-gray-50/50 rounded-lg hover:bg-gray-100/50 transition-colors group">
+                                        <button
+                                            onClick={() => toggleTodo(todo.id)}
+                                            className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                                                todo.completed
+                                                    ? 'bg-pink-500 border-pink-500 text-white'
+                                                    : 'border-gray-300 hover:border-pink-400'
+                                            }`}
+                                        >
+                                            {todo.completed && <Icons.CheckSquare className="w-3 h-3" />}
+                                        </button>
+                                        <span className={`flex-1 text-sm ${todo.completed ? 'line-through text-gray-500' : 'text-gray-700'}`}>
+                                            {todo.text}
+                                        </span>
+                                        <button
+                                            onClick={() => deleteTodo(todo.id)}
+                                            className="p-1 opacity-0 group-hover:opacity-100 hover:bg-red-100 rounded transition-all text-red-500"
+                                            title="Delete task"
+                                        >
+                                            <Icons.Trash className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Schedule Module
+        const ScheduleModule = ({ isOpen, onClose }) => {
+            const [schedule, setSchedule] = useState([]);
+            const [input, setInput] = useState({ day: 'Monday', time: '', subject: '', room: '' });
+            const [loading, setLoading] = useState(false);
+
+            useEffect(() => {
+                if (isOpen) {
+                    setLoading(true);
+                    try {
+                        const saved = localStorage.getItem('anechoic_schedule');
+                        const data = saved ? JSON.parse(saved) : [];
+                        setSchedule(data);
+                    } catch (e) {
+                        console.error(e);
+                        setSchedule([]);
+                    }
+                    setLoading(false);
+                }
+            }, [isOpen]);
+
+            const saveSchedule = (newSchedule) => {
+                localStorage.setItem('anechoic_schedule', JSON.stringify(newSchedule));
+                setSchedule(newSchedule);
+            };
+
+            const addClass = (e) => {
+                e.preventDefault();
+                if (!input.time.trim() || !input.subject.trim()) return;
+                const newClass = { id: Date.now(), ...input };
+                const newSchedule = [...schedule, newClass];
+                saveSchedule(newSchedule);
+                setInput({ day: 'Monday', time: '', subject: '', room: '' });
+                showToast('Class added', 'success');
+            };
+
+            const deleteClass = (id) => {
+                const newSchedule = schedule.filter(cls => cls.id !== id);
+                saveSchedule(newSchedule);
+                showToast('Class deleted', 'success');
+            };
+
+            const groupedSchedule = schedule.reduce((acc, cls) => {
+                if (!acc[cls.day]) acc[cls.day] = [];
+                acc[cls.day].push(cls);
+                return acc;
+            }, {});
+
+            const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+            if (!isOpen) return null;
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm animate-fade-in">
+                    <div className="w-[600px] h-[700px] bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl flex flex-col border border-white/50 overflow-hidden animate-slide-up">
+                        <div className="h-14 border-b border-gray-200/50 flex items-center justify-between px-4 bg-white/50">
+                            <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600"><Icons.Calendar className="w-5 h-5" /></div>
+                                <span className="font-semibold text-gray-700">Student Schedule</span>
+                            </div>
+                            <button onClick={onClose} className="p-2 hover:bg-gray-200/50 rounded-full transition-colors"><Icons.X className="w-5 h-5 text-gray-500" /></button>
+                        </div>
+                        <div className="p-4 border-b border-gray-200/50">
+                            <form onSubmit={addClass} className="grid grid-cols-2 gap-3">
+                                <select
+                                    value={input.day}
+                                    onChange={(e) => setInput({...input, day: e.target.value})}
+                                    className="bg-gray-100/50 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                >
+                                    {days.map(day => <option key={day} value={day}>{day}</option>)}
+                                </select>
+                                <input
+                                    type="text"
+                                    value={input.time}
+                                    onChange={(e) => setInput({...input, time: e.target.value})}
+                                    placeholder="Time (e.g., 9:00 AM)"
+                                    className="bg-gray-100/50 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                />
+                                <input
+                                    type="text"
+                                    value={input.subject}
+                                    onChange={(e) => setInput({...input, subject: e.target.value})}
+                                    placeholder="Subject"
+                                    className="bg-gray-100/50 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                />
+                                <div className="flex gap-2">
+                                    <input
+                                        type="text"
+                                        value={input.room}
+                                        onChange={(e) => setInput({...input, room: e.target.value})}
+                                        placeholder="Room (optional)"
+                                        className="flex-1 bg-gray-100/50 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                                    />
+                                    <button type="submit" disabled={!input.time.trim() || !input.subject.trim()} className="px-3 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"><Icons.Plus className="w-4 h-4" /></button>
+                                </div>
+                            </form>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                            {loading ? (
+                                <div className="text-center text-gray-500 py-8">Loading schedule...</div>
+                            ) : Object.keys(groupedSchedule).length === 0 ? (
+                                <div className="text-center text-gray-500 py-8">No classes scheduled. Add one above!</div>
+                            ) : (
+                                days.map(day => (
+                                    groupedSchedule[day] && (
+                                        <div key={day} className="space-y-2">
+                                            <h3 className="font-semibold text-gray-700 text-sm uppercase tracking-wider">{day}</h3>
+                                            {groupedSchedule[day].map((cls) => (
+                                                <div key={cls.id} className="flex items-center justify-between p-3 bg-gray-50/50 rounded-lg hover:bg-gray-100/50 transition-colors group">
+                                                    <div className="flex-1">
+                                                        <div className="text-sm font-medium text-gray-700">{cls.subject}</div>
+                                                        <div className="text-xs text-gray-500">{cls.time} {cls.room && `• ${cls.room}`}</div>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => deleteClass(cls.id)}
+                                                        className="p-1 opacity-0 group-hover:opacity-100 hover:bg-red-100 rounded transition-all text-red-500"
+                                                        title="Delete class"
+                                                    >
+                                                        <Icons.Trash className="w-4 h-4" />
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )
+                                ))
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Weather Module
+        const WeatherModule = ({ isOpen, onClose }) => {
+            const [city, setCity] = useState('');
+            const [weather, setWeather] = useState(null);
+            const [loading, setLoading] = useState(false);
+
+            const getRandomWeather = () => {
+                const conditions = ['Sunny', 'Cloudy', 'Rainy', 'Partly Cloudy'];
+                const temp = Math.floor(Math.random() * 16) + 20; // 20-35°C
+                return {
+                    condition: conditions[Math.floor(Math.random() * conditions.length)],
+                    temperature: temp,
+                    humidity: Math.floor(Math.random() * 40) + 40, // 40-80%
+                    windSpeed: Math.floor(Math.random() * 20) + 5 // 5-25 km/h
+                };
+            };
+
+            const searchWeather = (e) => {
+                e.preventDefault();
+                if (!city.trim()) return;
+                setLoading(true);
+                // Simulate API call delay
+                setTimeout(() => {
+                    setWeather(getRandomWeather());
+                    setLoading(false);
+                    showToast(`Weather for ${city}`, 'success');
+                }, 1000);
+            };
+
+            if (!isOpen) return null;
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm animate-fade-in">
+                    <div className="w-[450px] h-[550px] bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl flex flex-col border border-white/50 overflow-hidden animate-slide-up">
+                        <div className="h-14 border-b border-gray-200/50 flex items-center justify-between px-4 bg-white/50">
+                            <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-full bg-cyan-100 flex items-center justify-center text-cyan-600"><Icons.Cloud className="w-5 h-5" /></div>
+                                <span className="font-semibold text-gray-700">Weather</span>
+                            </div>
+                            <button onClick={onClose} className="p-2 hover:bg-gray-200/50 rounded-full transition-colors"><Icons.X className="w-5 h-5 text-gray-500" /></button>
+                        </div>
+                        <div className="p-4 border-b border-gray-200/50">
+                            <form onSubmit={searchWeather} className="flex gap-2">
+                                <div className="relative flex-1">
+                                    <Icons.MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                    <input
+                                        type="text"
+                                        value={city}
+                                        onChange={(e) => setCity(e.target.value)}
+                                        placeholder="Enter city name..."
+                                        className="w-full pl-10 pr-4 py-2 bg-gray-100/50 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                                    />
+                                </div>
+                                <button type="submit" disabled={loading || !city.trim()} className="px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"><Icons.Search className="w-4 h-4" /></button>
+                            </form>
+                        </div>
+                        <div className="flex-1 flex flex-col items-center justify-center p-6">
+                            {loading ? (
+                                <div className="text-center">
+                                    <div className="w-16 h-16 border-4 border-cyan-200 border-t-cyan-500 rounded-full animate-spin mx-auto mb-4"></div>
+                                    <p className="text-gray-500">Fetching weather...</p>
+                                </div>
+                            ) : weather ? (
+                                <div className="text-center">
+                                    <div className="w-32 h-32 bg-cyan-100 rounded-full flex items-center justify-center mb-6 mx-auto">
+                                        <Icons.Cloud className="w-16 h-16 text-cyan-600" />
+                                    </div>
+                                    <div className="text-6xl font-bold text-gray-800 mb-2">{weather.temperature}°C</div>
+                                    <div className="text-xl text-gray-600 mb-4">{weather.condition}</div>
+                                    <div className="text-sm text-gray-500 space-y-1">
+                                        <div>Humidity: {weather.humidity}%</div>
+                                        <div>Wind: {weather.windSpeed} km/h</div>
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="text-center text-gray-500">
+                                    <Icons.Cloud className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                                    <p>Enter a city name to get weather information</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // VPN Module
+        // 1. Sidebar Component
+        const Sidebar = ({ isOpen, toggle, mode, setMode, onOpenModule, isCustomTheme, themeColor }) => {
+            const [activeItem, setActiveItem] = useState('history');
+
+            // Define active color based on mode
+            const activeColorClass = mode === 'learning' ? 'text-blue-700 bg-blue-100' : 'text-orange-700 bg-orange-100';
+            const iconColorClass = mode === 'learning' ? 'text-blue-700' : 'text-orange-600';
+            
+            // Conditional styles for sidebar
+            const sidebarClass = isCustomTheme ? '' : `${mode === 'learning'
+                ? 'bg-[#F0F9FF]/90 border-blue-200'
+                : 'bg-[#FFF7ED]/90 border-orange-200'}`;
+            const sidebarStyle = isCustomTheme ? {
+                backgroundColor: hexToRgba(themeColor, 0.9),
+                borderColor: hexToRgba(themeColor, 0.2)
+            } : {};
+
+            return (
+                <div
+                    className={`flex flex-col h-full glass border-r transition-all duration-500 ease-in-out z-30 ${isOpen ? 'w-64' : 'w-16'} ${sidebarClass}`}
+                    style={sidebarStyle}
+                >
+                    <div className="h-10 flex items-center justify-center border-b border-gray-200/30">
+                        {isOpen ? <span className="font-bold text-lg tracking-tight text-gray-700">Anechoic</span> : <span className="font-bold text-xl">A</span>}
+                    </div>
+
+                    <div className="flex-1 py-4 flex flex-col gap-2 overflow-y-auto">
+                        <SidebarItem icon={Icons.History} label="History" isOpen={isOpen} active={activeItem === 'history'} onClick={() => { setActiveItem('history'); onOpenModule('history'); }} activeClass={activeColorClass} iconActive={iconColorClass} />
+                        <SidebarItem icon={Icons.Bookmark} label="Bookmarks" isOpen={isOpen} active={activeItem === 'bookmarks'} onClick={() => { setActiveItem('bookmarks'); onOpenModule('bookmarks'); }} activeClass={activeColorClass} iconActive={iconColorClass} />
+                        <SidebarItem icon={Icons.Clock} label="Pomodoro" isOpen={isOpen} active={activeItem === 'pomodoro'} onClick={() => { setActiveItem('pomodoro'); onOpenModule('pomodoro'); }} activeClass={activeColorClass} iconActive={iconColorClass} />
+                        <SidebarItem icon={Icons.CheckSquare} label="Todo List" isOpen={isOpen} active={activeItem === 'todo'} onClick={() => { setActiveItem('todo'); onOpenModule('todo'); }} extraClass="text-pink-600 hover:bg-pink-50" activeClass="text-pink-700 bg-pink-100" iconActive="text-pink-700" />
+                        <SidebarItem icon={Icons.Calendar} label="Schedule" isOpen={isOpen} active={activeItem === 'schedule'} onClick={() => { setActiveItem('schedule'); onOpenModule('schedule'); }} extraClass="text-indigo-600 hover:bg-indigo-50" activeClass="text-indigo-700 bg-indigo-100" iconActive="text-indigo-700" />
+                        <SidebarItem icon={Icons.Cloud} label="Weather" isOpen={isOpen} active={activeItem === 'weather'} onClick={() => { setActiveItem('weather'); onOpenModule('weather'); }} extraClass="text-cyan-600 hover:bg-cyan-50" activeClass="text-cyan-700 bg-cyan-100" iconActive="text-cyan-700" />
+
+                        <div className="my-2 border-t border-gray-200/50 mx-4"></div>
+
+                        {/* Productivity Tools in Sidebar */}
+                        <SidebarItem icon={Icons.Bot} label="AI Assistant" isOpen={isOpen} active={activeItem === 'ai-assistant'} onClick={() => { setActiveItem('ai-assistant'); onOpenModule('ai-assistant'); }} extraClass="text-purple-600 hover:bg-purple-50" activeClass="text-purple-700 bg-purple-100" iconActive="text-purple-700" />
+                        <SidebarItem icon={Icons.Users} label="Chat Room" isOpen={isOpen} active={activeItem === 'chatroom'} onClick={() => { setActiveItem('chatroom'); onOpenModule('chatroom'); }} extraClass="text-green-600 hover:bg-green-50" activeClass="text-green-700 bg-green-100" iconActive="text-green-700" />
+                        <SidebarItem icon={Icons.Sparkles} label="Smart Notes" isOpen={isOpen} active={activeItem === 'notes'} onClick={() => { setActiveItem('notes'); onOpenModule('notes'); }} extraClass="text-amber-600 hover:bg-amber-50" activeClass="text-amber-700 bg-amber-100" iconActive="text-amber-700" />
+
+                        <div className="my-2 border-t border-gray-200/50 mx-4"></div>
+
+                        <div className={`px-3 py-2 ${!isOpen && 'flex justify-center'}`}>
+                            <button onClick={() => setMode(mode === 'daily' ? 'learning' : 'daily')} className={`flex items-center gap-3 p-2 rounded-xl transition-all w-full ${mode === 'learning' ? 'bg-blue-100 text-blue-700 shadow-sm hover:bg-blue-200' : 'bg-orange-100 text-orange-700 hover:bg-orange-200'}`}>
+                                {mode === 'daily' ? <Icons.Sun className="w-5 h-5" /> : <Icons.Moon className="w-5 h-5" />}
+                                {isOpen && <span className="text-sm font-medium">{mode === 'daily' ? 'Daily Mode' : 'Learning Mode'}</span>}
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="p-4 border-t border-gray-200/30 flex justify-center">
+                        <button onClick={toggle} className="p-2 hover:bg-gray-200/50 rounded-lg transition-colors"><Icons.Sidebar className="w-5 h-5 text-gray-500" /></button>
+                    </div>
+                </div>
+            );
+        };
+
+        const SidebarItem = ({ icon: IconComp, label, isOpen, active, onClick, extraClass = '', activeClass = 'bg-white shadow-sm text-blue-600', iconActive = 'text-blue-600' }) => (
+            <button onClick={onClick} className={`flex items-center gap-3 px-4 py-3 mx-2 rounded-xl transition-all ${active ? `${activeClass} shadow-sm` : 'text-gray-600 hover:bg-white/50'} ${!isOpen && 'justify-center px-0 mx-2'} ${extraClass}`} title={!isOpen ? label : ''}>
+                <IconComp className={`w-5 h-5 ${active ? iconActive : 'text-gray-500'} ${extraClass && !active && 'text-current'}`} />
+                {isOpen && <span className="text-sm font-medium">{label}</span>}
+            </button>
+        );
+
+        // 2. Settings Menu Modal (Updated with Theme Colors)
+        const SettingsMenu = ({ onClose, currentEngine, setEngine, user, onLogin, onLogout, themeSettings, handleThemeChange, resetTheme }) => (
+            <div className="absolute top-12 right-4 w-80 max-h-[600px] overflow-y-auto bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200 p-4 z-50 animate-fade-in origin-top-right">
+                <div className="flex justify-between items-center mb-4">
+                    <h3 className="font-semibold text-gray-800">Settings</h3>
+                    <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full"><Icons.X className="w-4 h-4" /></button>
+                </div>
+                <div className="space-y-4">
+                    <div>
+                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 block">Account</label>
+                        <div className="flex items-center gap-3 p-2 bg-white rounded-xl border border-gray-100 shadow-sm">
+                            {user ? (
+                                <>
+                                    <img src={user.avatar} className="w-8 h-8 rounded-full border border-gray-200 object-cover" alt="Avatar" />
+                                    <div className="flex-1 min-w-0">
+                                        <div className="text-sm font-medium truncate">{user.name}</div>
+                                        <div className="text-xs text-green-500 flex items-center gap-1">
+                                            <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span> Logged In
+                                        </div>
+                                    </div>
+                                    <button onClick={onLogout} className="p-2 bg-red-50 text-red-500 rounded-lg hover:bg-red-100 transition-colors" title="Logout">
+                                        <Icons.LogOut className="w-4 h-4" />
+                                    </button>
+                                </>
+                            ) : (
+                                <>
+                                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-400 to-purple-500"></div>
+                                    <div className="flex-1">
+                                        <div className="text-sm font-medium">Guest User</div>
+                                        <div className="text-xs text-gray-400">Not logged in</div>
+                                    </div>
+                                    <button onClick={onLogin} className="text-xs bg-gray-900 text-white px-3 py-1 rounded-full hover:bg-gray-700 transition-colors">Login</button>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                    <div>
+                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 block">Search Engine</label>
+                        <select value={currentEngine} onChange={(e) => setEngine(e.target.value)} className="w-full p-2 bg-gray-100 rounded-lg text-sm border-none focus:ring-2 focus:ring-blue-500">
+                            <option value="google">Google</option><option value="bing">Bing</option><option value="duckduckgo">DuckDuckGo</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 block">Theme Colors</label>
+                        <div className="space-y-3">
+                            <div>
+                                <div className="text-xs text-gray-600 mb-1 font-medium">Daily Mode</div>
+                                <div className="flex items-center gap-3">
+                                    <input 
+                                        type="color" 
+                                        value={themeSettings.daily} 
+                                        onChange={(e) => handleThemeChange('daily', e.target.value)}
+                                        className="w-10 h-10 rounded-lg cursor-pointer border border-gray-200"
+                                    />
+                                    <span className="text-xs text-gray-500">{themeSettings.daily}</span>
+                                </div>
+                            </div>
+                            <div>
+                                <div className="text-xs text-gray-600 mb-1 font-medium">Learning Mode</div>
+                                <div className="flex items-center gap-3">
+                                    <input 
+                                        type="color" 
+                                        value={themeSettings.learning} 
+                                        onChange={(e) => handleThemeChange('learning', e.target.value)}
+                                        className="w-10 h-10 rounded-lg cursor-pointer border border-gray-200"
+                                    />
+                                    <span className="text-xs text-gray-500">{themeSettings.learning}</span>
+                                </div>
+                            </div>
+                            <button 
+                                onClick={resetTheme}
+                                className="w-full mt-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-200 transition-colors"
+                            >
+                                Reset to Default
+                            </button>
+                        </div>
+                    </div>
+                    <div><label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 block">Data</label><button className="w-full text-left text-sm p-2 hover:bg-red-50 text-red-600 rounded-lg transition">Clear Browsing Data</button></div>
+                </div>
+            </div>
+        );
+
+        // 3. Home View (New Tab Page)
+        const HomeView = ({ onNavigate, onOpenModule }) => {
+            const [inputValue, setInputValue] = useState('');
+            const shortcuts = [
+                { id: 1, title: 'Google', url: 'https://google.com', icon: 'G' },
+                { id: 2, title: 'Canvas', url: 'https://canvas.instructure.com', icon: 'C' },
+                { id: 3, title: 'YouTube', url: 'https://youtube.com', icon: 'Y' },
+                { id: 4, title: 'Gmail', url: 'https://gmail.com', icon: 'M' },
+            ];
+
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                if (inputValue.trim()) {
+                    onNavigate(inputValue.trim());
+                }
+            };
+
+            return (
+                <div className="flex flex-col items-center justify-center h-full w-full bg-white/50 animate-fade-in relative">
+                    {/* Center Search */}
+                    <div className="w-full max-w-2xl px-4 z-10 mt-8">
+                        <div className="text-center mb-8">
+                            <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-700 to-gray-900 tracking-tight">Anechoic</h1>
+                        </div>
+                        <form onSubmit={handleSubmit} className="relative group">
+                            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                                <Icons.Search className="w-5 h-5 text-gray-400" />
+                            </div>
+                            <input type="text" value={inputValue} onChange={(e) => setInputValue(e.target.value)} placeholder="Search or enter website..." className="w-full py-4 pl-12 pr-4 text-lg bg-white/80 backdrop-blur-xl border border-gray-200 rounded-2xl shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-100 transition-all placeholder-gray-400" autoFocus />
+                        </form>
+                    </div>
+
+                    {/* Bottom Speed Dial */}
+                    <div className="mt-6 grid grid-cols-4 gap-6">
+                        {shortcuts.map(site => (
+                            <button key={site.id} onClick={() => onNavigate(site.url)} className="w-24 h-24 glass-panel rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-white/80 transition-all hover:-translate-y-1">
+                                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-600 text-xl">{site.icon}</div>
+                                <span className="text-xs text-gray-500 font-medium">{site.title}</span>
+                            </button>
+                        ))}
+                        <button className="w-24 h-24 border-2 border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center gap-2 hover:border-gray-400 hover:bg-gray-50/50 transition-all text-gray-400">
+                            <Icons.Plus className="w-8 h-8" /><span className="text-xs font-medium">Add</span>
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        // 4. Main App Layout
+        // 4. Main App Layout
+        const App = () => {
+            // State
+            const [tabs, setTabs] = useState([{ id: 'init-1', title: 'New Tab', url: '', isLoading: false, history: [''], historyIndex: 0, canGoBack: false, canGoForward: false }]);
+            const [activeTabId, setActiveTabId] = useState('init-1');
+            const [sidebarOpen, setSidebarOpen] = useState(true);
+            const [mode, setMode] = useState('daily');
+            const [showSettings, setShowSettings] = useState(false);
+            const [searchEngine, setSearchEngine] = useState('google');
+            const [addressBarValue, setAddressBarValue] = useState('');
+            const [activeModule, setActiveModule] = useState(null); // 'ai-assistant' | 'chatroom' | 'notes' | 'history' | 'bookmarks' | 'pomodoro' | 'todo' | 'schedule' | 'weather' | null
+            const [isBookmarked, setIsBookmarked] = useState(false);
+            const webviewRefs = useRef({});
+            const [webview, setWebview] = useState(null); // Webview state
+
+            // === [新增] User State & Login Logic ===
+            const [user, setUser] = useState(null);
+
+            // === Theme Customization State ===
+            const [themeSettings, setThemeSettings] = useState({ daily: '#c2410c', learning: '#1d4ed8' });
+            const [isCustomTheme, setIsCustomTheme] = useState(false);
+
+            const handleThemeChange = (themeMode, color) => {
+                setThemeSettings(prev => ({ ...prev, [themeMode]: color }));
+                setIsCustomTheme(true);
+            };
+
+            const resetTheme = () => {
+                setThemeSettings({ daily: '#c2410c', learning: '#1d4ed8' });
+                setIsCustomTheme(false);
+                showToast('Theme reset to default', 'success');
+            };
+
+            const handleLogout = () => {
+                // 1. 清除 React 狀態
+                setUser(null);
+                // 2. 清除 LocalStorage 紀錄
+                localStorage.removeItem('anechoic_user');
+                // 3. (選擇性) 通知後端登出，這一步非必要，因為主要狀態在前端
+                try { fetch('http://127.0.0.1:5000/auth/logout', { method: 'POST' }).catch(() => { }); } catch (e) { }
+            };
+
+            const handleLogin = () => {
+                if (window.electronAPI && window.electronAPI.startGoogleLogin) {
+                    window.electronAPI.startGoogleLogin();
+                } else {
+                    alert("Please run in Electron app to login.");
+                }
+            };
+
+            // === [新增結束] ===
+            // Verify anechoicAPI on mount
+            useEffect(() => {
+                // 1. 檢查 anechoicAPI (保留原有檢查)
+                if (window.anechoicAPI) {
+                    console.log('✅ anechoicAPI is available');
+                } else {
+                    console.warn('⚠️ anechoicAPI is missing');
+                }
+
+                // 2. 讀取 LocalStorage 的舊登入紀錄
+                const saved = localStorage.getItem('anechoic_user');
+                if (saved) {
+                    try { setUser(JSON.parse(saved)); } catch (e) { }
+                }
+
+                // 3. 監聽 Electron 登入成功事件 (Debug Log 版本)
+                console.log('Checking electronAPI:', window.electronAPI);
+
+                if (window.electronAPI && window.electronAPI.onLoginSuccess) {
+                    console.log('👂 Listening for login success...');
+
+                    window.electronAPI.onLoginSuccess((userData) => {
+                        console.log('🎉 FRONTEND RECEIVED USER DATA:', userData);
+                        setUser(userData);
+                        localStorage.setItem('anechoic_user', JSON.stringify(userData));
+                        setShowSettings(true); // 登入成功後自動彈出設定選單
+                    });
+                } else {
+                    console.error('❌ electronAPI.onLoginSuccess is missing!');
+                }
+            }, []);
+
+            // 计算当前激活的 Tab
+            const activeTab = tabs.find(t => t.id === activeTabId) || tabs[0];
+            const canGoBack = activeTab.canGoBack || false;
+            const canGoForward = activeTab.canGoForward || false;
+
+            // === 1. 书签逻辑 (必须放在 useEffect 之前) ===
+            
+            // 检查当前 URL 是否已收藏
+            const checkBookmarkStatus = (currentUrl) => {
+                if (!currentUrl) return false;
+                try {
+                    const saved = localStorage.getItem('my_bookmarks');
+                    const bookmarks = saved ? JSON.parse(saved) : [];
+                    return bookmarks.some(b => b.url === currentUrl);
+                } catch (e) {
+                    console.error("Failed to read bookmarks", e);
+                    return false;
+                }
+            };
+
+            // 切换收藏状态
+            const toggleBookmark = () => {
+                if (!activeTab.url) {
+                    showToast('Cannot bookmark a blank page', 'warning');
+                    return;
+                }
+                try {
+                    const saved = localStorage.getItem('my_bookmarks');
+                    let bookmarks = saved ? JSON.parse(saved) : [];
+                    const currentUrl = activeTab.url;
+
+                    const isExisting = bookmarks.some(b => b.url === currentUrl);
+
+                    if (isExisting) {
+                        bookmarks = bookmarks.filter(b => b.url !== currentUrl);
+                        setIsBookmarked(false);
+                        showToast('Removed from favorites', 'info');
+                    } else {
+                        bookmarks.push({
+                            title: activeTab.title || 'No Title',
+                            url: currentUrl,
+                            timestamp: Date.now()
+                        });
+                        setIsBookmarked(true);
+                        showToast('Added to favorites!', 'success');
+                    }
+                    localStorage.setItem('my_bookmarks', JSON.stringify(bookmarks));
+                } catch (e) {
+                    showToast('Operation failed: ' + e.message, 'error');
+                }
+            };
+
+            // === 2. Effects (监听器) ===
+
+            // 监听 URL 变化，更新书签按钮状态
+            useEffect(() => {
+                const status = checkBookmarkStatus(activeTab.url);
+                setIsBookmarked(status);
+            }, [activeTab.url, activeTabId]);
+
+            // Verify anechoicAPI
+            useEffect(() => {
+                if (window.anechoicAPI) {
+                    console.log('✅ anechoicAPI available');
+                }
+            }, []);
+
+            // 侧边栏宽度通信
+            const handleSidebarToggle = async (newOpenState) => {
+                setSidebarOpen(newOpenState);
+                const newWidth = newOpenState ? 256 : 64;
+                if (window.electronAPI?.setSidebarWidth) {
+                    await window.electronAPI.setSidebarWidth(newWidth);
+                }
+            };
+
+            // 地址栏同步
+            useEffect(() => {
+                setAddressBarValue(activeTab.url);
+            }, [activeTabId, activeTab.url]);
+
+            // Webview Ref 更新
+            useEffect(() => {
+                const currentWebviewEl = webviewRefs.current[activeTabId];
+                if (currentWebviewEl) {
+                    setWebview(currentWebviewEl);
+                }
+            }, [activeTabId, tabs]);
+
+            // Webview 事件监听
+            useEffect(() => {
+                if (!webview) return;
+
+                const updateNavigationState = () => {
+                    try {
+                        updateTab(activeTabId, {
+                            canGoBack: webview.canGoBack(),
+                            canGoForward: webview.canGoForward(),
+                            url: webview.getURL() || activeTab.url,
+                            isLoading: false
+                        });
+                        setAddressBarValue(webview.getURL());
+                    } catch (error) {
+                        console.error(error);
+                    }
+                };
+
+                const handleDomReady = () => updateNavigationState();
+                const handleDidNavigate = (e) => updateNavigationState();
+                const handleDidNavigateInPage = (e) => updateNavigationState();
+
+                webview.addEventListener('dom-ready', handleDomReady);
+                webview.addEventListener('did-navigate', handleDidNavigate);
+                webview.addEventListener('did-navigate-in-page', handleDidNavigateInPage);
+
+                return () => {
+                    webview.removeEventListener('dom-ready', handleDomReady);
+                    webview.removeEventListener('did-navigate', handleDidNavigate);
+                    webview.removeEventListener('did-navigate-in-page', handleDidNavigateInPage);
+                };
+            }, [webview, activeTabId]); // 依赖项
+
+            // === 3. 辅助函数 ===
+
+            const addTab = () => {
+                const newId = `tab-${Date.now()}`;
+                const newTab = { id: newId, title: 'New Tab', url: '', isLoading: false, history: [''], historyIndex: 0, canGoBack: false, canGoForward: false };
+                setTabs([...tabs, newTab]);
+                setActiveTabId(newId);
+            };
+
+            const closeTab = (e, tabId) => {
+                e.stopPropagation();
+                if (tabs.length === 1) return;
+                const newTabs = tabs.filter(t => t.id !== tabId);
+                setTabs(newTabs);
+                if (activeTabId === tabId) setActiveTabId(newTabs[newTabs.length - 1].id);
+            };
+
+            const updateTab = (id, updates) => {
+                setTabs(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+            };
+
+            const navigate = async (url) => {
+                let targetUrl = url;
+                if (!url || url.trim().length === 0) {
+                    updateTab(activeTabId, { url: '', title: 'New Tab', isLoading: false });
+                    setAddressBarValue('');
+                    return;
+                }
+                if (!url.startsWith('http')) {
+                    const searchQuery = encodeURIComponent(url);
+                    targetUrl = searchEngine === 'bing' ? `https://www.bing.com/search?q=${searchQuery}` :
+                                searchEngine === 'duckduckgo' ? `https://duckduckgo.com/?q=${searchQuery}` :
+                                `https://www.google.com/search?q=${searchQuery}`;
+                }
+                updateTab(activeTabId, { url: targetUrl, title: targetUrl, isLoading: true });
+                setAddressBarValue(targetUrl);
+            };
+
+            const goBack = () => webview?.canGoBack() && webview.goBack();
+            const goForward = () => webview?.canGoForward() && webview.goForward();
+            const reload = () => webview?.reload();
+            const goHome = () => navigate('');
+            const handleAddressBarSubmit = (e) => { e.preventDefault(); navigate(addressBarValue); };
+
+            // === 4. Render (渲染) ===
+            const currentThemeColor = themeSettings[mode];
+            const mainContainerClass = isCustomTheme ? '' : `${mode === 'learning' ? 'bg-gradient-to-br from-blue-200 via-slate-200 to-indigo-200' : 'bg-gradient-to-br from-orange-200 via-amber-100 to-rose-200'}`;
+            const mainContainerStyle = isCustomTheme ? {
+                backgroundImage: `linear-gradient(135deg, ${hexToRgba(currentThemeColor, 0.2)} 0%, ${hexToRgba(currentThemeColor, 0.05)} 50%, ${hexToRgba(currentThemeColor, 0.15)} 100%)`
+            } : {};
+
+            return (
+                <div
+                    className={`flex h-screen w-screen overflow-hidden transition-colors duration-500 ${mainContainerClass}`}
+                    style={mainContainerStyle}
+                >
+                    {/* Left Sidebar */}
+                    <div className={`transition-all duration-500 ease-in-out ${sidebarOpen ? 'w-64' : 'w-16'}`}>
+                        <Sidebar
+                            isOpen={sidebarOpen}
+                            toggle={() => handleSidebarToggle(!sidebarOpen)}
+                            mode={mode}
+                            setMode={setMode}
+                            onOpenModule={(module) => {
+                                if (module === 'chatroom' && window.electronAPI) {
+                                    window.electronAPI.openChatroom();
+                                } else {
+                                    setActiveModule(module);
+                                }
+                            }}
+                            isCustomTheme={isCustomTheme}
+                            themeColor={currentThemeColor}
+                        />
+                    </div>
+
+                    {/* Main Content Area */}
+                    <div className="flex-1 flex flex-col min-w-0 relative overflow-hidden">
+                        {/* Tabs Bar */}
+                        <div
+                            className={`h-10 flex items-center px-4 select-none draggable transition-colors duration-500 ${isCustomTheme ? '' : mode === 'learning' ? 'bg-slate-200/50' : 'bg-orange-100/50'}`}
+                            style={isCustomTheme ? { backgroundColor: hexToRgba(currentThemeColor, 0.1) } : {}}
+                        >
+                            <div className="flex-1 flex gap-2 overflow-x-auto no-scrollbar items-end h-full pt-1">
+                                {tabs.map(tab => (
+                                    <div key={tab.id} onClick={() => setActiveTabId(tab.id)} className={`group relative flex items-center gap-2 px-3 py-1.5 rounded-t-lg min-w-[120px] max-w-[200px] text-xs font-medium cursor-pointer transition-all ${activeTabId === tab.id ? 'bg-white shadow-sm text-gray-800' : 'bg-transparent text-gray-500 hover:bg-white/40'}`}>
+                                        <span className="truncate flex-1">{tab.title}</span>
+                                        <button onClick={(e) => closeTab(e, tab.id)} className="opacity-0 group-hover:opacity-100 hover:bg-gray-200 rounded p-0.5"><Icons.X className="w-3 h-3" /></button>
+                                    </div>
+                                ))}
+                                <button onClick={addTab} className="p-1.5 hover:bg-gray-200/50 rounded-md text-gray-500"><Icons.Plus className="w-4 h-4" /></button>
+                            </div>
+                        </div>
+
+                        {/* Navigation Bar */}
+                        <div className="h-14 px-4 flex items-center gap-3 bg-white/70 backdrop-blur-md border-b border-gray-200/50 z-20">
+                            <button onClick={goBack} disabled={!canGoBack} className="p-2 hover:bg-gray-200/50 rounded-lg text-gray-600 disabled:opacity-30 transition-opacity"><Icons.ChevronLeft className="w-5 h-5" /></button>
+                            <button onClick={goForward} disabled={!canGoForward} className="p-2 hover:bg-gray-200/50 rounded-lg text-gray-600 disabled:opacity-30 transition-opacity"><Icons.ChevronRight className="w-5 h-5" /></button>
+                            <button onClick={goHome} className="p-2 hover:bg-gray-200/50 rounded-lg text-gray-600"><Icons.Home className="w-4 h-4" /></button>
+                            <button onClick={reload} className="p-2 hover:bg-gray-200/50 rounded-lg text-gray-600"><Icons.RotateCw className="w-4 h-4" /></button>
+                            
+                            {/* 书签按钮 (已更新) */}
+                            <button 
+                                onClick={toggleBookmark} 
+                                title={isBookmarked ? "取消收藏" : "添加到收藏夹"}
+                                className={`p-2 rounded-lg transition-all duration-200 ${
+                                    isBookmarked 
+                                        ? 'bg-green-100 text-green-600 shadow-sm' 
+                                        : 'text-gray-600 hover:bg-gray-100'
+                                }`}
+                            >
+                                <Icons.Bookmark className={`w-5 h-5 ${isBookmarked ? 'fill-current' : ''}`} />
+                            </button>
+
+                            <form onSubmit={handleAddressBarSubmit} className="flex-1">
+                                <div className="relative group">
+                                    <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
+                                        {activeTab.url.startsWith('https') ? <Icons.Globe className="w-4 h-4 text-green-600" /> : <Icons.Search className="w-4 h-4 text-gray-400" />}
+                                    </div>
+                                    <input type="text" value={addressBarValue} onChange={(e) => setAddressBarValue(e.target.value)} placeholder="Search or enter website..." className="w-full py-2 pl-10 pr-4 bg-gray-100/50 hover:bg-gray-100 focus:bg-white border border-transparent focus:border-blue-300 rounded-lg text-sm transition-all focus:ring-2 focus:ring-blue-100 focus:outline-none" />
+                                </div>
+                            </form>
+
+                            <div className="relative">
+                                <button onClick={() => setShowSettings(!showSettings)} className={`p-2 rounded-lg transition-colors ${showSettings ? 'bg-gray-200 text-blue-600' : 'hover:bg-gray-200/50 text-gray-600'}`}>
+                                    <Icons.Settings className="w-5 h-5" />
+                                </button>
+                                {showSettings && <SettingsMenu
+                                    onClose={() => setShowSettings(false)}
+                                    currentEngine={searchEngine}
+                                    setEngine={setSearchEngine}
+                                    user={user}
+                                    onLogin={handleLogin}
+                                    onLogout={handleLogout}
+                                    themeSettings={themeSettings}
+                                    handleThemeChange={handleThemeChange}
+                                    resetTheme={resetTheme}
+                                />}
+                            </div>
+                        </div>
+
+                        {/* Browser Viewport */}
+                        <div className="flex-1 relative bg-white overflow-hidden">
+                            {tabs.map(tab => (
+                                <div key={tab.id} className={`w-full h-full ${activeTabId === tab.id ? 'block' : 'hidden'}`}>
+                                    {!tab.url ? (
+                                        <HomeView onNavigate={(url) => navigate(url)} onOpenModule={(module) => setActiveModule(module)} />
+                                    ) : (
+                                        <webview ref={(el) => { if (el) webviewRefs.current[tab.id] = el; }} src={tab.url} className="w-full h-full" />
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* Modules Overlay */}
+                        <AIAssistantModule isOpen={activeModule === 'ai-assistant'} onClose={() => setActiveModule(null)} />
+                        <ChatRoomModule isOpen={activeModule === 'chatroom'} onClose={() => setActiveModule(null)} />
+                        <SmartNotesModule isOpen={activeModule === 'notes'} onClose={() => setActiveModule(null)} />
+                        <HistoryModule isOpen={activeModule === 'history'} onClose={() => setActiveModule(null)} tabs={tabs} onNavigate={(url) => { navigate(url); setActiveModule(null); }} />
+                        <BookmarksModule isOpen={activeModule === 'bookmarks'} onClose={() => setActiveModule(null)} onNavigate={(url) => { navigate(url); setActiveModule(null); }} />
+                        <PomodoroModule isOpen={activeModule === 'pomodoro'} onClose={() => setActiveModule(null)} />
+                        <TodoListModule isOpen={activeModule === 'todo'} onClose={() => setActiveModule(null)} />
+                        <ScheduleModule isOpen={activeModule === 'schedule'} onClose={() => setActiveModule(null)} />
+                        <WeatherModule isOpen={activeModule === 'weather'} onClose={() => setActiveModule(null)} />
+                    </div>
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
