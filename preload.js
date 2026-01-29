@@ -3,7 +3,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('electronAPI', {
   // 打開 Chatroom 視窗
   openChatroom: async () => ipcRenderer.invoke('chatroom:open-window'),
-  
+
   // 設定 Sidebar 寬度
   setSidebarWidth: (width) => ipcRenderer.invoke('sidebar:set-width', width),
 
@@ -17,8 +17,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // === [新增] Google Login ===
   startGoogleLogin: () => ipcRenderer.send('auth:start-google-login'),
-  
-  onLoginSuccess: (callback) => ipcRenderer.on('auth:login-success', (event, user) => callback(user))
+
+  onLoginSuccess: (callback) => ipcRenderer.on('auth:login-success', (event, user) => callback(user)),
+
+  // Generic Invoke for dynamic features
+  invoke: (channel, data) => ipcRenderer.invoke(channel, data)
 });
 
 // ============================================================================

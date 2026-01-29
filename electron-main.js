@@ -80,23 +80,23 @@ function addToHistory(title, url) {
   }
 
   const history = readDataFile('history.json');
-  
+
   // Remove duplicate URL if it exists
   const filteredHistory = history.filter(item => item.url !== url);
-  
+
   // Add new entry at the beginning
   const newEntry = {
     title: title || 'Unknown',
     url: url,
     timestamp: new Date().toISOString()
   };
-  
+
   const updatedHistory = [newEntry, ...filteredHistory];
-  
+
   // Keep only the latest 100 items
   const maxItems = 100;
   const limitedHistory = updatedHistory.slice(0, maxItems);
-  
+
   writeDataFile('history.json', limitedHistory);
   console.log(`History updated: ${url}`);
 }
@@ -132,9 +132,9 @@ function createWindow() {
     mainWindow.webContents.openDevTools();
   }
 
-    mainWindow.on('closed', function () {
-      mainWindow = null;
-    });
+  mainWindow.on('closed', function () {
+    mainWindow = null;
+  });
 }
 
 // IPC: open Chatroom in a separate BrowserWindow (creates window if needed)
@@ -194,7 +194,7 @@ ipcMain.on('auth:start-google-login', () => {
 
   const loginUrl = `${FLASK_URL}/auth/google`;
   authWindow.loadURL(loginUrl);
-  
+
   authWindow.once('ready-to-show', () => authWindow.show());
 
   // 監聽轉址，攔截 /auth/success
@@ -211,7 +211,7 @@ ipcMain.on('auth:start-google-login', () => {
           name: urlObj.searchParams.get('name'),
           avatar: urlObj.searchParams.get('avatar')
         };
-        
+
         console.log('👤 User data extracted:', user); // [DEBUG]
 
         // 通知主視窗更新 UI
@@ -219,7 +219,7 @@ ipcMain.on('auth:start-google-login', () => {
           console.log('📡 Sending to mainWindow...'); // [DEBUG]
           mainWindow.webContents.send('auth:login-success', user);
         } else {
-            console.error('❌ MainWindow is missing or destroyed!');
+          console.error('❌ MainWindow is missing or destroyed!');
         }
 
         authWindow.destroy();
@@ -252,6 +252,28 @@ ipcMain.handle('history:get', async () => {
   }
 });
 
+ipcMain.handle('history:delete', async (event, url) => {
+  try {
+    const history = readDataFile('history.json');
+    const updatedHistory = history.filter(item => item.url !== url);
+    writeDataFile('history.json', updatedHistory);
+    return { ok: true, data: updatedHistory };
+  } catch (error) {
+    console.error('history:delete error', error);
+    return { ok: false, error: error.message };
+  }
+});
+
+ipcMain.handle('history:clear', async () => {
+  try {
+    writeDataFile('history.json', []);
+    return { ok: true, data: [] };
+  } catch (error) {
+    console.error('history:clear error', error);
+    return { ok: false, error: error.message };
+  }
+});
+
 // ============================================================================
 // IPC: Bookmarks Handlers
 // ============================================================================
@@ -263,7 +285,7 @@ ipcMain.handle('bookmarks:add', async (event, bookmarkData) => {
     }
 
     const bookmarks = readDataFile('bookmarks.json');
-    
+
     // Check if bookmark already exists
     const exists = bookmarks.some(item => item.url === bookmarkData.url);
     if (exists) {
@@ -370,3 +392,81 @@ app.on('before-quit', () => {
 function startFlaskServer() {
   console.log('Flask server capability removed.');
 }
+
+// ============================================================================
+// IPC: Smart Notes Handlers
+// ============================================================================
+
+ipcMain.handle('notes:get', async () => {
+  try {
+    const notes = readDataFile('notes.json');
+    return { ok: true, data: notes };
+  } catch (error) {
+    console.error('notes:get error', error);
+    return { ok: false, error: error.message };
+  }
+});
+
+ipcMain.handle('notes:add', async (event, noteData) => {
+  try {
+    if (!noteData || !noteData.content) {
+      return { ok: false, error: 'Content is required' };
+    }
+
+    const notes = readDataFile('notes.json');
+
+    // DUPLICATE CHECK: Ignore if identical to the latest note
+    if (notes.length > 0) {
+      const latest = notes[0];
+      if (latest.content === noteData.content && latest.sourceUrl === noteData.sourceUrl) {
+        return { ok: true, data: notes, added: false };
+      }
+    }
+
+    // Create new note
+    const newNote = {
+      id: Date.now().toString(),
+      content: noteData.content,
+      sourceUrl: noteData.sourceUrl || '',
+      timestamp: new Date().toISOString()
+    };
+
+    // Add to top
+    const updatedNotes = [newNote, ...notes];
+    writeDataFile('notes.json', updatedNotes);
+
+    return { ok: true, data: updatedNotes, added: true };
+  } catch (error) {
+    console.error('notes:add error', error);
+    return { ok: false, error: error.message };
+  }
+});
+
+ipcMain.handle('notes:delete', async (event, noteId) => {
+  try {
+    if (!noteId) {
+      return { ok: false, error: 'Note ID is required' };
+    }
+
+    const notes = readDataFile('notes.json');
+    const updatedNotes = notes.filter(n => n.id !== noteId);
+
+    writeDataFile('notes.json', updatedNotes);
+
+    return { ok: true, data: updatedNotes };
+  } catch (error) {
+    console.error('notes:delete error', error);
+    return { ok: false, error: error.message };
+  }
+});
+
+ipcMain.handle('notes:clear', async () => {
+  try {
+    writeDataFile('notes.json', []);
+    return { ok: true, data: [] };
+  } catch (error) {
+    console.error('notes:clear error', error);
+    return { ok: false, error: error.message };
+  }
+});
+
