@@ -9,7 +9,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // 接收事件
   on: (channel, callback) => {
-    const validChannels = ['chatroom:message-received', 'auth:login-success'];
+    const validChannels = ['chatroom:message-received', 'auth:login-success', 'tabs:create'];
     if (validChannels.includes(channel)) {
       ipcRenderer.on(channel, (event, ...args) => callback(...args));
     }
