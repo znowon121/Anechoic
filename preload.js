@@ -15,6 +15,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
     }
   },
 
+
+  // [新增] 本地 AI 呼叫介面
+  chatWithLocalAI: (prompt) => ipcRenderer.invoke('ai:chat', prompt),
+
+  // Generic Invoke for dynamic features
+  invoke: (channel, data) => ipcRenderer.invoke(channel, data),
+
   // === [新增] Google Login ===
   startGoogleLogin: () => ipcRenderer.send('auth:start-google-login'),
 

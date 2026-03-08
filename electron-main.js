@@ -363,6 +363,26 @@ app.whenReady().then(() => {
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
+  initLocalAI(); // 啟動時載入模型
+
+  app.on('activate', function () {
+    if (BrowserWindow.getAllWindows().length === 0) createWindow();
+  });
+});
+
+ipcMain.handle('ai:chat', async (event, prompt) => {
+  // 檢查 aiSession 是否已經成功建立
+  if (!aiSession) {
+    return "系統提示：AI 模型正在載入中或發生錯誤，請稍後再試。";
+  }
+  
+  try {
+    // 傳送提示詞給本地模型並等待回應
+    const response = await aiSession.prompt(prompt);
+    return response;
+  } catch (error) {
+    return "AI 生成時發生錯誤：" + error.message;
+  }
 });
 
 // 所有視窗關閉時退出應用程式（macOS 除外）
@@ -392,6 +412,8 @@ app.on('before-quit', () => {
 function startFlaskServer() {
   console.log('Flask server capability removed.');
 }
+
+
 
 // ============================================================================
 // IPC: Smart Notes Handlers
@@ -470,3 +492,30 @@ ipcMain.handle('notes:clear', async () => {
   }
 });
 
+
+// 將變數初始化為 null，防止 Cannot access before initialization 錯誤
+let llama = null;
+let aiModel = null;
+let aiContext = null;
+let aiSession = null;
+
+// 初始化本地 AI 的函數
+async function initLocalAI() {
+  try {
+    // 【關鍵修改】：使用動態 import() 載入套件
+    const { getLlama, LlamaChatSession } = await import("node-llama-cpp");
+
+    llama = await getLlama();
+    aiModel = await llama.loadModel({
+      // 請確認 models 資料夾內有這個檔案，且檔名正確
+      modelPath: path.join(__dirname, "models", "Meta-Llama-3.1-8B-Instruct-Q8_0.gguf") 
+    });
+    aiContext = await aiModel.createContext();
+    aiSession = new LlamaChatSession({
+      contextSequence: aiContext.getSequence()
+    });
+    console.log("✅ 本地 AI 模型載入完成！");
+  } catch (error) {
+    console.error("❌ 載入本地 AI 模型失敗:", error);
+  }
+}

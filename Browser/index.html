@@ -62,6 +62,181 @@
 
     <!-- External JavaScript -->
     <script type="text/babel">
+        const translations = {
+            'en': {
+                'Settings': 'Settings', 'Account': 'Account', 'Language': 'Language', 'Theme Colors': 'Theme Colors', 'Search Engine': 'Search Engine',
+                'History': 'History', 'Bookmarks': 'Bookmarks', 'Pomodoro': 'Pomodoro', 'Todo List': 'Todo List', 'Schedule': 'Schedule', 'Weather': 'Weather',
+                'AI Assistant': 'AI Assistant', 'Chat Room': 'Chat Room', 'Smart Notes': 'Smart Notes', 'Daily Mode': 'Daily Mode', 'Learning Mode': 'Learning Mode',
+                'New Tab': 'New Tab', 'Downloads': 'Downloads', 'Search or enter website...': 'Search or enter website...', 'Add': 'Add', 'Menu': 'Menu',
+                'Login': 'Login', 'Logout': 'Logout', 'Guest User': 'Guest User', 'Not logged in': 'Not logged in', 'Clear Browsing Data': 'Clear Browsing Data',
+                'Data': 'Data', 'Reset to Default': 'Reset to Default', 'Ask Gemini...': 'Ask Gemini...', 'Auto-captured from web': 'Auto-captured from web',
+                'Sure?': 'Sure?', 'Yes': 'Yes', 'No': 'No', 'Clear All': 'Clear All', 'No notes yet': 'No notes yet', 'Search history...': 'Search history...',
+                'Loading history...': 'Loading history...', 'No history found': 'No history found', 'Search bookmarks...': 'Search bookmarks...',
+                'Loading bookmarks...': 'Loading bookmarks...', 'No bookmarks found': 'No bookmarks found', 'Pomodoro Timer': 'Pomodoro Timer',
+                'Completed cycles:': 'Completed cycles:', 'Work': 'Work', 'Work Time': 'Work Time', 'Short Break': 'Short Break', 'Long Break': 'Long Break',
+                'Start': 'Start', 'Pause': 'Pause', 'Reset': 'Reset', 'Add a new task...': 'Add a new task...', 'Loading todos...': 'Loading todos...',
+                'No tasks yet. Add one above!': 'No tasks yet. Add one above!', 'Student Schedule': 'Student Schedule', 'Time (e.g., 9:00 AM)': 'Time (e.g., 9:00 AM)',
+                'Subject': 'Subject', 'Room (optional)': 'Room (optional)', 'Loading schedule...': 'Loading schedule...',
+                'No classes scheduled. Add one above!': 'No classes scheduled. Add one above!', 'Enter city name...': 'Enter city name...',
+                'Fetching weather...': 'Fetching weather...', 'Humidity': 'Humidity', 'Wind': 'Wind',
+                'Enter a city name to get weather information': 'Enter a city name to get weather information',
+                'Monday': 'Monday', 'Tuesday': 'Tuesday', 'Wednesday': 'Wednesday', 'Thursday': 'Thursday', 'Friday': 'Friday', 'Saturday': 'Saturday', 'Sunday': 'Sunday',
+                'Google': 'Google', 'Bing': 'Bing', 'DuckDuckGo': 'DuckDuckGo'
+            },
+
+            'zh-TW': {
+                'Settings': '設定', 'Account': '帳號', 'Language': '語言', 'Theme Colors': '主題顏色', 'Search Engine': '搜尋引擎',
+                'History': '歷史紀錄', 'Bookmarks': '書籤', 'Pomodoro': '番茄鐘', 'Todo List': '待辦事項', 'Schedule': '課表', 'Weather': '天氣',
+                'AI Assistant': 'AI 助手', 'Chat Room': '聊天室', 'Smart Notes': '智能筆記', 'Daily Mode': '日常模式', 'Learning Mode': '學習模式',
+                'New Tab': '新分頁', 'Downloads': '下載項目', 'Search or enter website...': '搜尋或輸入網址...', 'Add': '新增', 'Menu': '選單',
+                'Login': '登入', 'Logout': '登出', 'Guest User': '訪客', 'Not logged in': '尚未登入', 'Clear Browsing Data': '清除瀏覽資料',
+                'Data': '資料', 'Reset to Default': '恢復預設值', 'Ask Gemini...': '問問 Gemini...', 'Auto-captured from web': '從網頁自動擷取',
+                'Sure?': '確定嗎？', 'Yes': '是', 'No': '否', 'Clear All': '全部清除', 'No notes yet': '尚無筆記', 'Search history...': '搜尋歷史紀錄...',
+                'Loading history...': '載入歷史中...', 'No history found': '找不到歷史紀錄', 'Search bookmarks...': '搜尋書籤...',
+                'Loading bookmarks...': '載入書籤中...', 'No bookmarks found': '找不到書籤', 'Pomodoro Timer': '番茄鐘計時器',
+                'Completed cycles:': '完成循環數：', 'Work': '專注', 'Work Time': '專注時間', 'Short Break': '短休息', 'Long Break': '長休息',
+                'Start': '開始', 'Pause': '暫停', 'Reset': '重設', 'Add a new task...': '新增任務...', 'Loading todos...': '載入待辦事項中...',
+                'No tasks yet. Add one above!': '尚無任務。在上方新增吧！', 'Student Schedule': '學生課表', 'Time (e.g., 9:00 AM)': '時間 (例如 9:00 AM)',
+                'Subject': '科目', 'Room (optional)': '教室 (選填)', 'Loading schedule...': '載入課表中...',
+                'No classes scheduled. Add one above!': '沒有排定的課程。在上方新增吧！', 'Enter city name...': '輸入城市名稱...',
+                'Fetching weather...': '取得天氣中...', 'Humidity': '濕度', 'Wind': '風速',
+                'Enter a city name to get weather information': '輸入城市名稱以取得天氣資訊',
+                'Monday': '星期一', 'Tuesday': '星期二', 'Wednesday': '星期三', 'Thursday': '星期四', 'Friday': '星期五', 'Saturday': '星期六', 'Sunday': '星期日',
+                'Google': 'Google', 'Bing': 'Bing', 'DuckDuckGo': 'DuckDuckGo'
+            },
+
+            'zh-CN': {
+                'Settings': '设置', 'Account': '账号', 'Language': '语言', 'Theme Colors': '主题颜色', 'Search Engine': '搜索引擎',
+                'History': '历史记录', 'Bookmarks': '书签', 'Pomodoro': '番茄钟', 'Todo List': '待办事项', 'Schedule': '日程表', 'Weather': '天气',
+                'AI Assistant': 'AI 助手', 'Chat Room': '聊天室', 'Smart Notes': '智能笔记', 'Daily Mode': '日常模式', 'Learning Mode': '学习模式',
+                'New Tab': '新标签页', 'Downloads': '下载内容', 'Search or enter website...': '搜索或输入网址...', 'Add': '添加', 'Menu': '菜单',
+                'Login': '登录', 'Logout': '登出', 'Guest User': '访客', 'Not logged in': '未登录', 'Clear Browsing Data': '清除浏览数据',
+                'Data': '数据', 'Reset to Default': '恢复默认值', 'Ask Gemini...': '问问 Gemini...', 'Auto-captured from web': '从网页自动提取',
+                'Sure?': '确定吗？', 'Yes': '是', 'No': '否', 'Clear All': '全部清除', 'No notes yet': '暂无笔记', 'Search history...': '搜索历史记录...',
+                'Loading history...': '加载历史中...', 'No history found': '找不到历史记录', 'Search bookmarks...': '搜索书签...',
+                'Loading bookmarks...': '加载书签中...', 'No bookmarks found': '找不到书签', 'Pomodoro Timer': '番茄钟计时器',
+                'Completed cycles:': '完成循环数：', 'Work': '专注', 'Work Time': '专注时间', 'Short Break': '短休息', 'Long Break': '长休息',
+                'Start': '开始', 'Pause': '暂停', 'Reset': '重置', 'Add a new task...': '添加新任务...', 'Loading todos...': '加载待办事项中...',
+                'No tasks yet. Add one above!': '暂无任务。在上方添加吧！', 'Student Schedule': '学生日程表', 'Time (e.g., 9:00 AM)': '时间 (例如 9:00 AM)',
+                'Subject': '科目', 'Room (optional)': '教室 (选填)', 'Loading schedule...': '加载日程中...',
+                'No classes scheduled. Add one above!': '没有排定的课程。在上方添加吧！', 'Enter city name...': '输入城市名称...',
+                'Fetching weather...': '获取天气中...', 'Humidity': '湿度', 'Wind': '风速',
+                'Enter a city name to get weather information': '输入城市名称以获取天气信息',
+                'Monday': '星期一', 'Tuesday': '星期二', 'Wednesday': '星期三', 'Thursday': '星期四', 'Friday': '星期五', 'Saturday': '星期六', 'Sunday': '星期日',
+                'Google': 'Google', 'Bing': '必应', 'DuckDuckGo': 'DuckDuckGo'
+            },
+
+            'ja': {
+                'Settings': '設定', 'Account': 'アカウント', 'Language': '言語', 'Theme Colors': 'テーマカラー', 'Search Engine': '検索エンジン',
+                'History': '履歴', 'Bookmarks': 'ブックマーク', 'Pomodoro': 'ポモドーロ', 'Todo List': 'ToDoリスト', 'Schedule': 'スケジュール', 'Weather': '天気',
+                'AI Assistant': 'AIアシスタント', 'Chat Room': 'チャットルーム', 'Smart Notes': 'スマートノート', 'Daily Mode': '日常モード', 'Learning Mode': '学習モード',
+                'New Tab': '新しいタブ', 'Downloads': 'ダウンロード', 'Search or enter website...': '検索またはURLを入力...', 'Add': '追加', 'Menu': 'メニュー',
+                'Login': 'ログイン', 'Logout': 'ログアウト', 'Guest User': 'ゲストユーザー', 'Not logged in': '未ログイン', 'Clear Browsing Data': '閲覧データを消去',
+                'Data': 'データ', 'Reset to Default': 'デフォルトに戻す', 'Ask Gemini...': 'Geminiに質問...', 'Auto-captured from web': 'Webから自動取得',
+                'Sure?': '本当に？', 'Yes': 'はい', 'No': 'いいえ', 'Clear All': 'すべてクリア', 'No notes yet': 'ノートはまだありません', 'Search history...': '履歴を検索...',
+                'Loading history...': '履歴を読み込み中...', 'No history found': '履歴が見つかりません', 'Search bookmarks...': 'ブックマークを検索...',
+                'Loading bookmarks...': 'ブックマークを読み込み中...', 'No bookmarks found': 'ブックマークが見つかりません', 'Pomodoro Timer': 'ポモドーロタイマー',
+                'Completed cycles:': '完了したサイクル:', 'Work': '作業', 'Work Time': '作業時間', 'Short Break': '短い休憩', 'Long Break': '長い休憩',
+                'Start': '開始', 'Pause': '一時停止', 'Reset': 'リセット', 'Add a new task...': '新しいタスクを追加...', 'Loading todos...': 'ToDoを読み込み中...',
+                'No tasks yet. Add one above!': 'タスクはまだありません。上から追加してください！', 'Student Schedule': '学生スケジュール', 'Time (e.g., 9:00 AM)': '時間 (例: 9:00 AM)',
+                'Subject': '科目', 'Room (optional)': '教室 (任意)', 'Loading schedule...': 'スケジュールを読み込み中...',
+                'No classes scheduled. Add one above!': '予定された授業はありません。上から追加してください！', 'Enter city name...': '都市名を入力...',
+                'Fetching weather...': '天気を取得中...', 'Humidity': '湿度', 'Wind': '風速',
+                'Enter a city name to get weather information': '都市名を入力して天気情報を取得します',
+                'Monday': '月曜日', 'Tuesday': '火曜日', 'Wednesday': '水曜日', 'Thursday': '木曜日', 'Friday': '金曜日', 'Saturday': '土曜日', 'Sunday': '日曜日',
+                'Google': 'Google', 'Bing': 'Bing', 'DuckDuckGo': 'DuckDuckGo'
+            },
+
+            'ko': {
+                'Settings': '설정', 'Account': '계정', 'Language': '언어', 'Theme Colors': '테마 색상', 'Search Engine': '검색 엔진',
+                'History': '기록', 'Bookmarks': '북마크', 'Pomodoro': '뽀모도로', 'Todo List': '할 일 목록', 'Schedule': '일정', 'Weather': '날씨',
+                'AI Assistant': 'AI 비서', 'Chat Room': '채팅방', 'Smart Notes': '스마트 노트', 'Daily Mode': '일상 모드', 'Learning Mode': '학습 모드',
+                'New Tab': '새 탭', 'Downloads': '다운로드', 'Search or enter website...': '검색 또는 웹사이트 입력...', 'Add': '추가', 'Menu': '메뉴',
+                'Login': '로그인', 'Logout': '로그아웃', 'Guest User': '게스트', 'Not logged in': '로그인되지 않음', 'Clear Browsing Data': '인터넷 사용 기록 삭제',
+                'Data': '데이터', 'Reset to Default': '기본값으로 재설정', 'Ask Gemini...': 'Gemini에게 질문하기...', 'Auto-captured from web': '웹에서 자동 캡처됨',
+                'Sure?': '확실합니까?', 'Yes': '예', 'No': '아니요', 'Clear All': '모두 지우기', 'No notes yet': '아직 노트가 없습니다', 'Search history...': '기록 검색...',
+                'Loading history...': '기록 불러오는 중...', 'No history found': '기록을 찾을 수 없습니다', 'Search bookmarks...': '북마크 검색...',
+                'Loading bookmarks...': '북마크 불러오는 중...', 'No bookmarks found': '북마크를 찾을 수 없습니다', 'Pomodoro Timer': '뽀모도로 타이머',
+                'Completed cycles:': '완료된 사이클:', 'Work': '작업', 'Work Time': '작업 시간', 'Short Break': '짧은 휴식', 'Long Break': '긴 휴식',
+                'Start': '시작', 'Pause': '일시 정지', 'Reset': '초기화', 'Add a new task...': '새 작업 추가...', 'Loading todos...': '할 일 불러오는 중...',
+                'No tasks yet. Add one above!': '아직 작업이 없습니다. 위에서 추가하세요!', 'Student Schedule': '학생 일정', 'Time (e.g., 9:00 AM)': '시간 (예: 오전 9:00)',
+                'Subject': '과목', 'Room (optional)': '강의실 (선택 사항)', 'Loading schedule...': '일정 불러오는 중...',
+                'No classes scheduled. Add one above!': '예정된 수업이 없습니다. 위에서 추가하세요!', 'Enter city name...': '도시 이름 입력...',
+                'Fetching weather...': '날씨 정보 가져오는 중...', 'Humidity': '습도', 'Wind': '풍속',
+                'Enter a city name to get weather information': '날씨 정보를 보려면 도시 이름을 입력하세요',
+                'Monday': '월요일', 'Tuesday': '화요일', 'Wednesday': '수요일', 'Thursday': '목요일', 'Friday': '금요일', 'Saturday': '토요일', 'Sunday': '일요일',
+                'Google': 'Google', 'Bing': 'Bing', 'DuckDuckGo': 'DuckDuckGo'
+            },
+
+            'es': {
+                'Settings': 'Ajustes', 'Account': 'Cuenta', 'Language': 'Idioma', 'Theme Colors': 'Colores del tema', 'Search Engine': 'Buscador',
+                'History': 'Historial', 'Bookmarks': 'Marcadores', 'Pomodoro': 'Pomodoro', 'Todo List': 'Tareas', 'Schedule': 'Horario', 'Weather': 'Clima',
+                'AI Assistant': 'Asistente IA', 'Chat Room': 'Chat', 'Smart Notes': 'Notas Inteligentes', 'Daily Mode': 'Modo Diario', 'Learning Mode': 'Modo Estudio',
+                'New Tab': 'Nueva Pestaña', 'Downloads': 'Descargas', 'Search or enter website...': 'Buscar o ingresar sitio web...', 'Add': 'Añadir', 'Menu': 'Menú',
+                'Login': 'Iniciar sesión', 'Logout': 'Cerrar sesión', 'Guest User': 'Invitado', 'Not logged in': 'No conectado', 'Clear Browsing Data': 'Borrar datos',
+                'Data': 'Datos', 'Reset to Default': 'Restablecer', 'Ask Gemini...': 'Preguntar a Gemini...', 'Auto-captured from web': 'Capturado automáticamente',
+                'Sure?': '¿Seguro?', 'Yes': 'Sí', 'No': 'No', 'Clear All': 'Borrar todo', 'No notes yet': 'Aún no hay notas', 'Search history...': 'Buscar historial...',
+                'Loading history...': 'Cargando historial...', 'No history found': 'No se encontró historial', 'Search bookmarks...': 'Buscar marcadores...',
+                'Loading bookmarks...': 'Cargando marcadores...', 'No bookmarks found': 'No se encontraron marcadores', 'Pomodoro Timer': 'Temporizador Pomodoro',
+                'Completed cycles:': 'Ciclos completados:', 'Work': 'Trabajo', 'Work Time': 'Tiempo de trabajo', 'Short Break': 'Descanso corto', 'Long Break': 'Descanso largo',
+                'Start': 'Iniciar', 'Pause': 'Pausa', 'Reset': 'Reiniciar', 'Add a new task...': 'Añadir nueva tarea...', 'Loading todos...': 'Cargando tareas...',
+                'No tasks yet. Add one above!': 'No hay tareas. ¡Añade una arriba!', 'Student Schedule': 'Horario de estudiante', 'Time (e.g., 9:00 AM)': 'Hora (ej. 9:00 AM)',
+                'Subject': 'Asignatura', 'Room (optional)': 'Aula (opcional)', 'Loading schedule...': 'Cargando horario...',
+                'No classes scheduled. Add one above!': 'No hay clases. ¡Añade una arriba!', 'Enter city name...': 'Introducir ciudad...',
+                'Fetching weather...': 'Obteniendo clima...', 'Humidity': 'Humedad', 'Wind': 'Viento',
+                'Enter a city name to get weather information': 'Ingresa una ciudad para ver el clima',
+                'Monday': 'Lunes', 'Tuesday': 'Martes', 'Wednesday': 'Miércoles', 'Thursday': 'Jueves', 'Friday': 'Viernes', 'Saturday': 'Sábado', 'Sunday': 'Domingo',
+                'Google': 'Google', 'Bing': 'Bing', 'DuckDuckGo': 'DuckDuckGo'
+            },
+
+            'fr': {
+                'Settings': 'Paramètres', 'Account': 'Compte', 'Language': 'Langue', 'Theme Colors': 'Couleurs', 'Search Engine': 'Moteur de recherche',
+                'History': 'Historique', 'Bookmarks': 'Favoris', 'Pomodoro': 'Pomodoro', 'Todo List': 'Tâches', 'Schedule': 'Emploi du temps', 'Weather': 'Météo',
+                'AI Assistant': 'Assistant IA', 'Chat Room': 'Chat', 'Smart Notes': 'Notes Intelligentes', 'Daily Mode': 'Mode Quotidien', 'Learning Mode': 'Mode Apprentissage',
+                'New Tab': 'Nouvel onglet', 'Downloads': 'Téléchargements', 'Search or enter website...': 'Rechercher ou entrer une URL...', 'Add': 'Ajouter', 'Menu': 'Menu',
+                'Login': 'Connexion', 'Logout': 'Déconnexion', 'Guest User': 'Invité', 'Not logged in': 'Non connecté', 'Clear Browsing Data': 'Effacer les données',
+                'Data': 'Données', 'Reset to Default': 'Réinitialiser', 'Ask Gemini...': 'Demander à Gemini...', 'Auto-captured from web': 'Capturé du web',
+                'Sure?': 'Vraiment ?', 'Yes': 'Oui', 'No': 'Non', 'Clear All': 'Tout effacer', 'No notes yet': 'Pas encore de notes', 'Search history...': 'Chercher l\'historique...',
+                'Loading history...': 'Chargement...', 'No history found': 'Aucun historique', 'Search bookmarks...': 'Chercher favoris...',
+                'Loading bookmarks...': 'Chargement...', 'No bookmarks found': 'Aucun favori', 'Pomodoro Timer': 'Minuteur Pomodoro',
+                'Completed cycles:': 'Cycles terminés :', 'Work': 'Travail', 'Work Time': 'Temps de travail', 'Short Break': 'Courte pause', 'Long Break': 'Longue pause',
+                'Start': 'Démarrer', 'Pause': 'Pause', 'Reset': 'Réinitialiser', 'Add a new task...': 'Nouvelle tâche...', 'Loading todos...': 'Chargement...',
+                'No tasks yet. Add one above!': 'Aucune tâche. Ajoutez-en une !', 'Student Schedule': 'Emploi du temps', 'Time (e.g., 9:00 AM)': 'Heure (ex. 9h00)',
+                'Subject': 'Matière', 'Room (optional)': 'Salle (optionnel)', 'Loading schedule...': 'Chargement...',
+                'No classes scheduled. Add one above!': 'Aucune classe. Ajoutez-en une !', 'Enter city name...': 'Entrer une ville...',
+                'Fetching weather...': 'Récupération de la météo...', 'Humidity': 'Humidité', 'Wind': 'Vent',
+                'Enter a city name to get weather information': 'Entrez une ville pour la météo',
+                'Monday': 'Lundi', 'Tuesday': 'Mardi', 'Wednesday': 'Mercredi', 'Thursday': 'Jeudi', 'Friday': 'Vendredi', 'Saturday': 'Samedi', 'Sunday': 'Dimanche',
+                'Google': 'Google', 'Bing': 'Bing', 'DuckDuckGo': 'DuckDuckGo'
+            },
+
+            'de': {
+                'Settings': 'Einstellungen', 'Account': 'Konto', 'Language': 'Sprache', 'Theme Colors': 'Themenfarben', 'Search Engine': 'Suchmaschine',
+                'History': 'Verlauf', 'Bookmarks': 'Lesezeichen', 'Pomodoro': 'Pomodoro', 'Todo List': 'Aufgaben', 'Schedule': 'Stundenplan', 'Weather': 'Wetter',
+                'AI Assistant': 'KI-Assistent', 'Chat Room': 'Chatraum', 'Smart Notes': 'Smarte Notizen', 'Daily Mode': 'Alltagsmodus', 'Learning Mode': 'Lernmodus',
+                'New Tab': 'Neuer Tab', 'Downloads': 'Downloads', 'Search or enter website...': 'Suchen oder Website eingeben...', 'Add': 'Hinzufügen', 'Menu': 'Menü',
+                'Login': 'Anmelden', 'Logout': 'Abmelden', 'Guest User': 'Gast', 'Not logged in': 'Nicht angemeldet', 'Clear Browsing Data': 'Browserdaten löschen',
+                'Data': 'Daten', 'Reset to Default': 'Zurücksetzen', 'Ask Gemini...': 'Gemini fragen...', 'Auto-captured from web': 'Aus dem Web erfasst',
+                'Sure?': 'Sicher?', 'Yes': 'Ja', 'No': 'Nein', 'Clear All': 'Alles löschen', 'No notes yet': 'Noch keine Notizen', 'Search history...': 'Verlauf durchsuchen...',
+                'Loading history...': 'Lade Verlauf...', 'No history found': 'Kein Verlauf gefunden', 'Search bookmarks...': 'Lesezeichen durchsuchen...',
+                'Loading bookmarks...': 'Lade Lesezeichen...', 'No bookmarks found': 'Keine Lesezeichen', 'Pomodoro Timer': 'Pomodoro-Timer',
+                'Completed cycles:': 'Abgeschlossene Zyklen:', 'Work': 'Arbeit', 'Work Time': 'Arbeitszeit', 'Short Break': 'Kurze Pause', 'Long Break': 'Lange Pause',
+                'Start': 'Start', 'Pause': 'Pause', 'Reset': 'Zurücksetzen', 'Add a new task...': 'Neue Aufgabe...', 'Loading todos...': 'Lade Aufgaben...',
+                'No tasks yet. Add one above!': 'Keine Aufgaben. Füge eine hinzu!', 'Student Schedule': 'Stundenplan', 'Time (e.g., 9:00 AM)': 'Zeit (z.B. 9:00)',
+                'Subject': 'Fach', 'Room (optional)': 'Raum (optional)', 'Loading schedule...': 'Lade Stundenplan...',
+                'No classes scheduled. Add one above!': 'Keine Kurse. Füge einen hinzu!', 'Enter city name...': 'Stadt eingeben...',
+                'Fetching weather...': 'Wetter wird abgerufen...', 'Humidity': 'Luftfeuchtigkeit', 'Wind': 'Wind',
+                'Enter a city name to get weather information': 'Gib eine Stadt ein für das Wetter',
+                'Monday': 'Montag', 'Tuesday': 'Dienstag', 'Wednesday': 'Mittwoch', 'Thursday': 'Donnerstag', 'Friday': 'Freitag', 'Saturday': 'Samstag', 'Sunday': 'Sonntag',
+                'Google': 'Google', 'Bing': 'Bing', 'DuckDuckGo': 'DuckDuckGo'
+            }
+        };
+
+        // 2. 建立一個簡單的翻譯輔助函數
+        const t = (key, lang) => {
+            return translations[lang] && translations[lang][key] ? translations[lang][key] : (translations['en'][key] || key);
+        };
+
         const { useState, useEffect, useRef } = React;
 
         // === Helper Function: Convert Hex to RGBA ===
@@ -192,7 +367,7 @@
 
         // --- New AI Components ---
         // AI Assistant Module
-        const AIAssistantModule = ({ isOpen, onClose }) => {
+        const AIAssistantModule = ({ isOpen, onClose, language }) => {
             const [messages, setMessages] = useState([{ id: 1, role: 'ai', text: 'Hello! I am your Anechoic study assistant. How can I help you focus today?' }]);
             const [input, setInput] = useState('');
             const [loading, setLoading] = useState(false);
@@ -204,12 +379,20 @@
             const handleSend = async (e) => {
                 e.preventDefault();
                 if (!input.trim() || loading) return;
+
                 const userMsg = { id: Date.now(), role: 'user', text: input };
                 setMessages(prev => [...prev, userMsg]);
                 setInput('');
                 setLoading(true);
-                const systemPrompt = "You are a helpful, encouraging study assistant built into the Anechoic browser. Keep responses concise and focused on productivity and learning.";
-                const aiResponseText = await callGeminiAPI(input, systemPrompt);
+
+                // 改用 IPC 呼叫內建在瀏覽器後端的本地 AI
+                let aiResponseText = "無法連線到本地 AI";
+                if (window.electronAPI && window.electronAPI.chatWithLocalAI) {
+                    // 你可以將原本的 systemPrompt 與 input 合併傳送給模型
+                    const promptToSend = `You are a helpful study assistant. User says: ${input}`;
+                    aiResponseText = await window.electronAPI.chatWithLocalAI(promptToSend);
+                }
+
                 const aiMsg = { id: Date.now() + 1, role: 'ai', text: aiResponseText };
                 setMessages(prev => [...prev, aiMsg]);
                 setLoading(false);
@@ -242,7 +425,7 @@
                         </div>
                         <form onSubmit={handleSend} className="p-3 bg-white border-t border-gray-200/50">
                             <div className="relative flex items-center gap-2">
-                                <input type="text" value={input} onChange={e => setInput(e.target.value)} placeholder="Ask Gemini..." className="flex-1 bg-gray-100/50 hover:bg-gray-100 focus:bg-white border border-transparent focus:border-purple-300 rounded-xl px-4 py-2.5 text-sm transition-all focus:ring-2 focus:ring-purple-100 focus:outline-none" />
+                                <input type="text" value={input} onChange={e => setInput(e.target.value)} placeholder={t('Ask AI', language)} className="flex-1 bg-gray-100/50 hover:bg-gray-100 focus:bg-white border border-transparent focus:border-purple-300 rounded-xl px-4 py-2.5 text-sm transition-all focus:ring-2 focus:ring-purple-100 focus:outline-none" />
                                 <button type="submit" disabled={loading || !input.trim()} className="p-2.5 bg-purple-500 text-white rounded-xl hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-md shadow-purple-500/20"><Icons.Send className="w-4 h-4" /></button>
                             </div>
                         </form>
@@ -252,7 +435,7 @@
         };
 
         // Chat Room Module (connects to original Flask chatroom)
-        const ChatRoomModule = ({ isOpen, onClose }) => {
+        const ChatRoomModule = ({ isOpen, onClose, language }) => {
             if (!isOpen) return null;
 
             return (
@@ -279,7 +462,7 @@
 
 
         // AI Smart Notes Module (Auto-Capture Rewrite)
-        const SmartNotesModule = ({ isOpen, onClose, onNavigate }) => {
+        const SmartNotesModule = ({ isOpen, onClose, onNavigate, language }) => {
             const [notes, setNotes] = useState([]);
             const [isConfirmingClear, setIsConfirmingClear] = useState(false);
 
@@ -346,13 +529,13 @@
                                                 onClick={handleClear}
                                                 className="text-xs bg-red-500 text-white px-2.5 py-1 rounded-md hover:bg-red-600 transition shadow-sm"
                                             >
-                                                Yes
+                                                {t('Yes', language)}
                                             </button>
                                             <button
                                                 onClick={() => setIsConfirmingClear(false)}
                                                 className="text-xs bg-gray-200 text-gray-700 px-2.5 py-1 rounded-md hover:bg-gray-300 transition"
                                             >
-                                                No
+                                                {t('No', language)}
                                             </button>
                                         </div>
                                     ) : (
@@ -360,7 +543,7 @@
                                             onClick={() => setIsConfirmingClear(true)}
                                             className="text-xs bg-red-50 text-red-600 px-3 py-1.5 rounded-lg hover:bg-red-100 transition-colors font-medium border border-red-100"
                                         >
-                                            Clear All
+                                            {t('Clear All', language)}
                                         </button>
                                     )
                                 )}
@@ -375,7 +558,7 @@
                             {notes.length === 0 ? (
                                 <div className="flex flex-col items-center justify-center h-full text-center text-gray-400 p-8">
                                     <Icons.FileText className="w-12 h-12 mb-3 opacity-20" />
-                                    <p className="text-sm font-medium">No notes yet</p>
+                                    <p className="text-sm font-medium">{t('No notes yet', language)}</p>
                                     <p className="text-xs mt-1 max-w-[200px]">Copy text on any webpage to automatically save a note here.</p>
                                 </div>
                             ) : (
@@ -425,7 +608,7 @@
         };
 
         // History Module
-        const HistoryModule = ({ isOpen, onClose, tabs, onNavigate }) => {
+        const HistoryModule = ({ isOpen, onClose, tabs, onNavigate, language }) => {
             const [searchTerm, setSearchTerm] = useState('');
             const [historyData, setHistoryData] = useState([]);
             const [loading, setLoading] = useState(false);
@@ -488,7 +671,7 @@
                         <div className="h-14 border-b border-gray-200/50 flex items-center justify-between px-4 bg-white/50">
                             <div className="flex items-center gap-2">
                                 <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600"><Icons.History className="w-5 h-5" /></div>
-                                <span className="font-semibold text-gray-700">History</span>
+                                <span className="font-semibold text-gray-700">{t('History', language)}</span>
                             </div>
                             <div className="flex items-center gap-2">
                                 {historyData.length > 0 && (
@@ -567,7 +750,7 @@
         };
 
         // Bookmarks Module
-        const BookmarksModule = ({ isOpen, onClose, onNavigate }) => {
+        const BookmarksModule = ({ isOpen, onClose, onNavigate, language }) => {
             const [bookmarks, setBookmarks] = useState([]);
             const [searchTerm, setSearchTerm] = useState('');
             const [loading, setLoading] = useState(false);
@@ -677,7 +860,7 @@
         };
 
         // Pomodoro Module
-        const PomodoroModule = ({ isOpen, onClose }) => {
+        const PomodoroModule = ({ isOpen, onClose, language }) => {
             const [timeLeft, setTimeLeft] = useState(25 * 60); // 25 minutes in seconds
             const [isActive, setIsActive] = useState(false);
             const [mode, setMode] = useState('work'); // 'work', 'shortBreak', 'longBreak'
@@ -758,7 +941,7 @@
                         <div className="h-14 border-b border-gray-200/50 flex items-center justify-between px-4 bg-white/50">
                             <div className="flex items-center gap-2">
                                 <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600"><Icons.Clock className="w-5 h-5" /></div>
-                                <span className="font-semibold text-gray-700">Pomodoro Timer</span>
+                                <span className="font-semibold text-gray-700">{t('Pomodoro Timer', language)}</span>
                             </div>
                             <button onClick={onClose} className="p-2 hover:bg-gray-200/50 rounded-full transition-colors"><Icons.X className="w-5 h-5 text-gray-500" /></button>
                         </div>
@@ -767,41 +950,41 @@
                                 <div className={`w-48 h-48 rounded-full ${modes[mode].color} flex items-center justify-center mb-4 shadow-lg`}>
                                     <span className="text-4xl font-bold text-white">{formatTime(timeLeft)}</span>
                                 </div>
-                                <h3 className="text-xl font-semibold text-gray-700 mb-2">{modes[mode].label}</h3>
-                                <p className="text-sm text-gray-500">Completed cycles: {cycles}</p>
+                                <h3 className="text-xl font-semibold text-gray-700 mb-2">{t(modes[mode].label, language)}</h3>
+                                <p className="text-sm text-gray-500">{t('Completed cycles:', language)}{cycles}</p>
                             </div>
                             <div className="flex gap-3 mb-6">
                                 <button
                                     onClick={() => switchMode('work')}
                                     className={`px-4 py-2 rounded-lg text-sm font-medium ${mode === 'work' ? 'bg-red-500 text-white' : 'bg-gray-200 text-gray-700'}`}
                                 >
-                                    Work
+                                    {t('Work', language)}
                                 </button>
                                 <button
                                     onClick={() => switchMode('shortBreak')}
                                     className={`px-4 py-2 rounded-lg text-sm font-medium ${mode === 'shortBreak' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-700'}`}
                                 >
-                                    Short Break
+                                    {t('Short Break', language)}
                                 </button>
                                 <button
                                     onClick={() => switchMode('longBreak')}
                                     className={`px-4 py-2 rounded-lg text-sm font-medium ${mode === 'longBreak' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}`}
                                 >
-                                    Long Break
+                                    {t('Long Break', language)}
                                 </button>
                             </div>
                             <div className="flex gap-3">
                                 {!isActive ? (
                                     <button onClick={startTimer} className="px-6 py-3 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 transition-colors">
-                                        Start
+                                        {t('Start', language)}
                                     </button>
                                 ) : (
                                     <button onClick={pauseTimer} className="px-6 py-3 bg-yellow-500 text-white rounded-lg font-medium hover:bg-yellow-600 transition-colors">
-                                        Pause
+                                        {t('Pause', language)}
                                     </button>
                                 )}
                                 <button onClick={resetTimer} className="px-6 py-3 bg-gray-500 text-white rounded-lg font-medium hover:bg-gray-600 transition-colors">
-                                    Reset
+                                    {t('Reset', language)}
                                 </button>
                             </div>
                         </div>
@@ -811,7 +994,7 @@
         };
 
         // Todo List Module
-        const TodoListModule = ({ isOpen, onClose }) => {
+        const TodoListModule = ({ isOpen, onClose, language }) => {
             const [todos, setTodos] = useState([]);
             const [input, setInput] = useState('');
             const [loading, setLoading] = useState(false);
@@ -867,7 +1050,7 @@
                         <div className="h-14 border-b border-gray-200/50 flex items-center justify-between px-4 bg-white/50">
                             <div className="flex items-center gap-2">
                                 <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center text-pink-600"><Icons.CheckSquare className="w-5 h-5" /></div>
-                                <span className="font-semibold text-gray-700">Todo List</span>
+                                <span className="font-semibold text-gray-700">{t('Todo List', language)}</span>
                             </div>
                             <button onClick={onClose} className="p-2 hover:bg-gray-200/50 rounded-full transition-colors"><Icons.X className="w-5 h-5 text-gray-500" /></button>
                         </div>
@@ -877,7 +1060,7 @@
                                     type="text"
                                     value={input}
                                     onChange={(e) => setInput(e.target.value)}
-                                    placeholder="Add a new task..."
+                                    placeholder={t('Add a new task...', language)}
                                     className="flex-1 bg-gray-100/50 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
                                 />
                                 <button type="submit" disabled={!input.trim()} className="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"><Icons.Plus className="w-4 h-4" /></button>
@@ -885,9 +1068,9 @@
                         </div>
                         <div className="flex-1 overflow-y-auto p-4 space-y-2">
                             {loading ? (
-                                <div className="text-center text-gray-500 py-8">Loading todos...</div>
+                                <div className="text-center text-gray-500 py-8">{t('Loading todos...', language)}</div>
                             ) : todos.length === 0 ? (
-                                <div className="text-center text-gray-500 py-8">No tasks yet. Add one above!</div>
+                                <div className="text-center text-gray-500 py-8">{t('No tasks yet. Add one above!', language)}</div>
                             ) : (
                                 todos.map((todo) => (
                                     <div key={todo.id} className="flex items-center gap-3 p-3 bg-gray-50/50 rounded-lg hover:bg-gray-100/50 transition-colors group">
@@ -920,7 +1103,7 @@
         };
 
         // Schedule Module
-        const ScheduleModule = ({ isOpen, onClose }) => {
+        const ScheduleModule = ({ isOpen, onClose, language }) => {
             const [schedule, setSchedule] = useState([]);
             const [input, setInput] = useState({ day: 'Monday', time: '', subject: '', room: '' });
             const [loading, setLoading] = useState(false);
@@ -977,7 +1160,7 @@
                         <div className="h-14 border-b border-gray-200/50 flex items-center justify-between px-4 bg-white/50">
                             <div className="flex items-center gap-2">
                                 <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600"><Icons.Calendar className="w-5 h-5" /></div>
-                                <span className="font-semibold text-gray-700">Student Schedule</span>
+                                <span className="font-semibold text-gray-700">{t('Student Schedule', language)}</span>
                             </div>
                             <button onClick={onClose} className="p-2 hover:bg-gray-200/50 rounded-full transition-colors"><Icons.X className="w-5 h-5 text-gray-500" /></button>
                         </div>
@@ -988,20 +1171,20 @@
                                     onChange={(e) => setInput({ ...input, day: e.target.value })}
                                     className="bg-gray-100/50 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                 >
-                                    {days.map(day => <option key={day} value={day}>{day}</option>)}
+                                    {days.map(day => <option key={day} value={day}>{t(day, language)}</option>)}
                                 </select>
                                 <input
                                     type="text"
                                     value={input.time}
                                     onChange={(e) => setInput({ ...input, time: e.target.value })}
-                                    placeholder="Time (e.g., 9:00 AM)"
+                                    placeholder={t('Time (e.g., 9:00 AM)', language)}
                                     className="bg-gray-100/50 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                 />
                                 <input
                                     type="text"
                                     value={input.subject}
                                     onChange={(e) => setInput({ ...input, subject: e.target.value })}
-                                    placeholder="Subject"
+                                    placeholder={t('Subject', language)}
                                     className="bg-gray-100/50 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                 />
                                 <div className="flex gap-2">
@@ -1009,7 +1192,7 @@
                                         type="text"
                                         value={input.room}
                                         onChange={(e) => setInput({ ...input, room: e.target.value })}
-                                        placeholder="Room (optional)"
+                                        placeholder={t('Room (optional)', language)}
                                         className="flex-1 bg-gray-100/50 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
                                     />
                                     <button type="submit" disabled={!input.time.trim() || !input.subject.trim()} className="px-3 py-2 bg-indigo-500 text-white rounded-lg hover:bg-indigo-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"><Icons.Plus className="w-4 h-4" /></button>
@@ -1018,14 +1201,14 @@
                         </div>
                         <div className="flex-1 overflow-y-auto p-4 space-y-4">
                             {loading ? (
-                                <div className="text-center text-gray-500 py-8">Loading schedule...</div>
+                                <div className="text-center text-gray-500 py-8">{t('Loading schedule...', language)}</div>
                             ) : Object.keys(groupedSchedule).length === 0 ? (
-                                <div className="text-center text-gray-500 py-8">No classes scheduled. Add one above!</div>
+                                <div className="text-center text-gray-500 py-8">{t('No classes scheduled. Add one above!', language)}</div>
                             ) : (
                                 days.map(day => (
                                     groupedSchedule[day] && (
                                         <div key={day} className="space-y-2">
-                                            <h3 className="font-semibold text-gray-700 text-sm uppercase tracking-wider">{day}</h3>
+                                            <h3 className="font-semibold text-gray-700 text-sm uppercase tracking-wider">{t(day, language)}</h3>
                                             {groupedSchedule[day].map((cls) => (
                                                 <div key={cls.id} className="flex items-center justify-between p-3 bg-gray-50/50 rounded-lg hover:bg-gray-100/50 transition-colors group">
                                                     <div className="flex-1">
@@ -1052,7 +1235,7 @@
         };
 
         // Weather Module
-        const WeatherModule = ({ isOpen, onClose }) => {
+        const WeatherModule = ({ isOpen, onClose, language }) => {
             const [city, setCity] = useState('');
             const [weather, setWeather] = useState(null);
             const [loading, setLoading] = useState(false);
@@ -1088,7 +1271,7 @@
                         <div className="h-14 border-b border-gray-200/50 flex items-center justify-between px-4 bg-white/50">
                             <div className="flex items-center gap-2">
                                 <div className="w-8 h-8 rounded-full bg-cyan-100 flex items-center justify-center text-cyan-600"><Icons.Cloud className="w-5 h-5" /></div>
-                                <span className="font-semibold text-gray-700">Weather</span>
+                                <span className="font-semibold text-gray-700">{t('Weather', language)}</span>
                             </div>
                             <button onClick={onClose} className="p-2 hover:bg-gray-200/50 rounded-full transition-colors"><Icons.X className="w-5 h-5 text-gray-500" /></button>
                         </div>
@@ -1100,7 +1283,7 @@
                                         type="text"
                                         value={city}
                                         onChange={(e) => setCity(e.target.value)}
-                                        placeholder="Enter city name..."
+                                        placeholder={t('Enter city name...', language)}
                                         className="w-full pl-10 pr-4 py-2 bg-gray-100/50 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
                                     />
                                 </div>
@@ -1111,7 +1294,7 @@
                             {loading ? (
                                 <div className="text-center">
                                     <div className="w-16 h-16 border-4 border-cyan-200 border-t-cyan-500 rounded-full animate-spin mx-auto mb-4"></div>
-                                    <p className="text-gray-500">Fetching weather...</p>
+                                    <p className="text-gray-500">{t('Fetching weather...', language)}</p>
                                 </div>
                             ) : weather ? (
                                 <div className="text-center">
@@ -1121,14 +1304,14 @@
                                     <div className="text-6xl font-bold text-gray-800 mb-2">{weather.temperature}°C</div>
                                     <div className="text-xl text-gray-600 mb-4">{weather.condition}</div>
                                     <div className="text-sm text-gray-500 space-y-1">
-                                        <div>Humidity: {weather.humidity}%</div>
-                                        <div>Wind: {weather.windSpeed} km/h</div>
+                                        <div>{t('Humidity', language)}: {weather.humidity}%</div>
+                                        <div>{t('Wind Speed', language)}: {weather.windSpeed} km/h</div>
                                     </div>
                                 </div>
                             ) : (
                                 <div className="text-center text-gray-500">
                                     <Icons.Cloud className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                                    <p>Enter a city name to get weather information</p>
+                                    <p>{t('Enter a city name to get weather information', language)}</p>
                                 </div>
                             )}
                         </div>
@@ -1139,7 +1322,7 @@
 
         // VPN Module
         // 1. Sidebar Component
-        const Sidebar = ({ isOpen, toggle, mode, setMode, onOpenModule, isCustomTheme, themeColor }) => {
+        const Sidebar = ({ isOpen, toggle, mode, setMode, onOpenModule, isCustomTheme, themeColor, language }) => {
             const [activeItem, setActiveItem] = useState('history');
 
             // Define active color based on mode
@@ -1165,26 +1348,26 @@
                     </div>
 
                     <div className="flex-1 py-4 flex flex-col gap-2 overflow-y-auto">
-                        <SidebarItem icon={Icons.History} label="History" isOpen={isOpen} active={activeItem === 'history'} onClick={() => { setActiveItem('history'); onOpenModule('history'); }} activeClass={activeColorClass} iconActive={iconColorClass} />
-                        <SidebarItem icon={Icons.Bookmark} label="Bookmarks" isOpen={isOpen} active={activeItem === 'bookmarks'} onClick={() => { setActiveItem('bookmarks'); onOpenModule('bookmarks'); }} activeClass={activeColorClass} iconActive={iconColorClass} />
-                        <SidebarItem icon={Icons.Clock} label="Pomodoro" isOpen={isOpen} active={activeItem === 'pomodoro'} onClick={() => { setActiveItem('pomodoro'); onOpenModule('pomodoro'); }} activeClass={activeColorClass} iconActive={iconColorClass} />
-                        <SidebarItem icon={Icons.CheckSquare} label="Todo List" isOpen={isOpen} active={activeItem === 'todo'} onClick={() => { setActiveItem('todo'); onOpenModule('todo'); }} extraClass="text-pink-600 hover:bg-pink-50" activeClass="text-pink-700 bg-pink-100" iconActive="text-pink-700" />
-                        <SidebarItem icon={Icons.Calendar} label="Schedule" isOpen={isOpen} active={activeItem === 'schedule'} onClick={() => { setActiveItem('schedule'); onOpenModule('schedule'); }} extraClass="text-indigo-600 hover:bg-indigo-50" activeClass="text-indigo-700 bg-indigo-100" iconActive="text-indigo-700" />
-                        <SidebarItem icon={Icons.Cloud} label="Weather" isOpen={isOpen} active={activeItem === 'weather'} onClick={() => { setActiveItem('weather'); onOpenModule('weather'); }} extraClass="text-cyan-600 hover:bg-cyan-50" activeClass="text-cyan-700 bg-cyan-100" iconActive="text-cyan-700" />
+                        <SidebarItem icon={Icons.History} label={t('History', language)} isOpen={isOpen} active={activeItem === 'history'} onClick={() => { setActiveItem('history'); onOpenModule('history'); }} activeClass={activeColorClass} iconActive={iconColorClass} />
+                        <SidebarItem icon={Icons.Bookmark} label={t('Bookmarks', language)} isOpen={isOpen} active={activeItem === 'bookmarks'} onClick={() => { setActiveItem('bookmarks'); onOpenModule('bookmarks'); }} activeClass={activeColorClass} iconActive={iconColorClass} />
+                        <SidebarItem icon={Icons.Clock} label={t('Pomodoro', language)} isOpen={isOpen} active={activeItem === 'pomodoro'} onClick={() => { setActiveItem('pomodoro'); onOpenModule('pomodoro'); }} activeClass={activeColorClass} iconActive={iconColorClass} />
+                        <SidebarItem icon={Icons.CheckSquare} label={t('Todo List', language)} isOpen={isOpen} active={activeItem === 'todo'} onClick={() => { setActiveItem('todo'); onOpenModule('todo'); }} extraClass="text-pink-600 hover:bg-pink-50" activeClass="text-pink-700 bg-pink-100" iconActive="text-pink-700" />
+                        <SidebarItem icon={Icons.Calendar} label={t('Schedule', language)} isOpen={isOpen} active={activeItem === 'schedule'} onClick={() => { setActiveItem('schedule'); onOpenModule('schedule'); }} extraClass="text-indigo-600 hover:bg-indigo-50" activeClass="text-indigo-700 bg-indigo-100" iconActive="text-indigo-700" />
+                        <SidebarItem icon={Icons.Cloud} label={t('Weather', language)} isOpen={isOpen} active={activeItem === 'weather'} onClick={() => { setActiveItem('weather'); onOpenModule('weather'); }} extraClass="text-cyan-600 hover:bg-cyan-50" activeClass="text-cyan-700 bg-cyan-100" iconActive="text-cyan-700" />
 
                         <div className="my-2 border-t border-gray-200/50 mx-4"></div>
 
-                        {/* Productivity Tools in Sidebar */}
-                        <SidebarItem icon={Icons.Bot} label="AI Assistant" isOpen={isOpen} active={activeItem === 'ai-assistant'} onClick={() => { setActiveItem('ai-assistant'); onOpenModule('ai-assistant'); }} extraClass="text-purple-600 hover:bg-purple-50" activeClass="text-purple-700 bg-purple-100" iconActive="text-purple-700" />
-                        <SidebarItem icon={Icons.Users} label="Chat Room" isOpen={isOpen} active={activeItem === 'chatroom'} onClick={() => { setActiveItem('chatroom'); onOpenModule('chatroom'); }} extraClass="text-green-600 hover:bg-green-50" activeClass="text-green-700 bg-green-100" iconActive="text-green-700" />
-                        <SidebarItem icon={Icons.Sparkles} label="Smart Notes" isOpen={isOpen} active={activeItem === 'notes'} onClick={() => { setActiveItem('notes'); onOpenModule('notes'); }} extraClass="text-amber-600 hover:bg-amber-50" activeClass="text-amber-700 bg-amber-100" iconActive="text-amber-700" />
+                        <SidebarItem icon={Icons.Bot} label={t('AI Assistant', language)} isOpen={isOpen} active={activeItem === 'ai-assistant'} onClick={() => { setActiveItem('ai-assistant'); onOpenModule('ai-assistant'); }} extraClass="text-purple-600 hover:bg-purple-50" activeClass="text-purple-700 bg-purple-100" iconActive="text-purple-700" />
+                        <SidebarItem icon={Icons.Users} label={t('Chat Room', language)} isOpen={isOpen} active={activeItem === 'chatroom'} onClick={() => { setActiveItem('chatroom'); onOpenModule('chatroom'); }} extraClass="text-green-600 hover:bg-green-50" activeClass="text-green-700 bg-green-100" iconActive="text-green-700" />
+                        <SidebarItem icon={Icons.Sparkles} label={t('Smart Notes', language)} isOpen={isOpen} active={activeItem === 'notes'} onClick={() => { setActiveItem('notes'); onOpenModule('notes'); }} extraClass="text-amber-600 hover:bg-amber-50" activeClass="text-amber-700 bg-amber-100" iconActive="text-amber-700" />
 
                         <div className="my-2 border-t border-gray-200/50 mx-4"></div>
 
                         <div className={`px-3 py-2 ${!isOpen && 'flex justify-center'}`}>
-                            <button onClick={() => setMode(mode === 'daily' ? 'learning' : 'daily')} className={`flex items-center gap-3 p-2 rounded-xl transition-all w-full ${mode === 'learning' ? 'bg-blue-100 text-blue-700 shadow-sm hover:bg-blue-200' : 'bg-orange-100 text-orange-700 hover:bg-orange-200'}`}>
+                            <button onClick={() => setMode(mode === 'daily' ? 'learning' : 'daily')} className={`...`}>
                                 {mode === 'daily' ? <Icons.Sun className="w-5 h-5" /> : <Icons.Moon className="w-5 h-5" />}
-                                {isOpen && <span className="text-sm font-medium">{mode === 'daily' ? 'Daily Mode' : 'Learning Mode'}</span>}
+                                {/* 替換按鈕文字 */}
+                                {isOpen && <span className="text-sm font-medium">{mode === 'daily' ? t('Daily Mode', language) : t('Learning Mode', language)}</span>}
                             </button>
                         </div>
                     </div>
@@ -1204,7 +1387,7 @@
         );
 
         // 2. Browser Menu (Hierarchical: Main View + Settings View)
-        const BrowserMenu = ({ onClose, currentEngine, setEngine, user, onLogin, onLogout, themeSettings, handleThemeChange, resetTheme, onOpenModule, addTab }) => {
+        const BrowserMenu = ({ onClose, currentEngine, setEngine, user, onLogin, onLogout, themeSettings, handleThemeChange, resetTheme, onOpenModule, addTab, language, setLanguage }) => {
             const [view, setView] = useState('main');
 
             // MenuItem Component for Main View
@@ -1232,7 +1415,7 @@
                             >
                                 <Icons.ChevronLeft className="w-5 h-5 text-gray-600" />
                             </button>
-                            <h3 className="flex-1 font-semibold text-gray-800">Settings</h3>
+                            <h3 className="flex-1 font-semibold text-gray-800">{t('Settings', language)}</h3>
                             <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
                                 <Icons.X className="w-4 h-4 text-gray-600" />
                             </button>
@@ -1241,7 +1424,7 @@
                         {/* Settings Content */}
                         <div className="space-y-4">
                             <div>
-                                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 block">Account</label>
+                                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 block">{t('Account', language)}</label>
                                 <div className="flex items-center gap-3 p-2 bg-white rounded-xl border border-gray-100 shadow-sm">
                                     {user ? (
                                         <>
@@ -1269,9 +1452,28 @@
                                 </div>
                             </div>
                             <div>
+                                <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 block">
+                                    {t('Language', language)}
+                                </label>
+                                <select
+                                    value={language}
+                                    onChange={(e) => setLanguage(e.target.value)}
+                                    className="w-full p-2 bg-gray-100 rounded-lg text-sm border-none focus:ring-2 focus:ring-blue-500"
+                                >
+                                    <option value="en">English</option>
+                                    <option value="zh-TW">繁體中文</option>
+                                    <option value="zh-CN">简体中文</option>
+                                    <option value="ja">日本語</option>
+                                    <option value="ko">한국어</option>
+                                    <option value="es">Español</option>
+                                    <option value="fr">Français</option>
+                                    <option value="de">Deutsch</option>
+                                </select>
+                            </div>
+                            <div>
                                 <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 block">Search Engine</label>
                                 <select value={currentEngine} onChange={(e) => setEngine(e.target.value)} className="w-full p-2 bg-gray-100 rounded-lg text-sm border-none focus:ring-2 focus:ring-blue-500">
-                                    <option value="google">Google</option><option value="bing">Bing</option><option value="duckduckgo">DuckDuckGo</option>
+                                    <option value="google">{t('Google', language)}</option><option value="bing">{t('Bing', language)}</option><option value="duckduckgo">{t('DuckDuckGo', language)}</option>
                                 </select>
                             </div>
                             <div>
@@ -1305,11 +1507,11 @@
                                         onClick={resetTheme}
                                         className="w-full mt-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg text-xs font-medium hover:bg-gray-200 transition-colors"
                                     >
-                                        Reset to Default
+                                        {t('Reset to Default', language)}
                                     </button>
                                 </div>
                             </div>
-                            <div><label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 block">Data</label><button className="w-full text-left text-sm p-2 hover:bg-red-50 text-red-600 rounded-lg transition">Clear Browsing Data</button></div>
+                            <div><label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 block">{t('Data', language)}</label><button className="w-full text-left text-sm p-2 hover:bg-red-50 text-red-600 rounded-lg transition">{t('Clear Browsing Data', language)}</button></div>
                         </div>
                     </div>
                 );
@@ -1320,7 +1522,7 @@
                 <div className="absolute top-12 right-4 w-72 bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200 py-2 z-50 animate-fade-in origin-top-right">
                     {/* Header */}
                     <div className="flex justify-between items-center px-4 py-2 mb-2">
-                        <h3 className="font-semibold text-gray-800">Menu</h3>
+                        <h3 className="font-semibold text-gray-800">{t('Menu', language)}</h3>
                         <button onClick={onClose} className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors">
                             <Icons.X className="w-4 h-4 text-gray-600" />
                         </button>
@@ -1328,17 +1530,17 @@
 
                     {/* Menu Items */}
                     <div className="px-2 space-y-1">
-                        <MenuItem icon={Icons.Plus} label="New Tab" onClick={() => { addTab(); onClose(); }} />
-                        <MenuItem icon={Icons.History} label="History" onClick={() => { onOpenModule('history'); onClose(); }} />
-                        <MenuItem icon={Icons.Bookmark} label="Bookmarks" onClick={() => { onOpenModule('bookmarks'); onClose(); }} />
-                        <MenuItem icon={Icons.Sparkles} label="Smart Notes" onClick={() => { onOpenModule('notes'); onClose(); }} />
-                        <MenuItem icon={Icons.FileText} label="Downloads" onClick={() => { showToast('Downloads coming soon!', 'info'); }} />
+                        <MenuItem icon={Icons.Plus} label={t('New Tab', language)} onClick={() => { addTab(); onClose(); }} />
+                        <MenuItem icon={Icons.History} label={t('History', language)} onClick={() => { onOpenModule('history'); onClose(); }} />
+                        <MenuItem icon={Icons.Bookmark} label={t('Bookmarks', language)} onClick={() => { onOpenModule('bookmarks'); onClose(); }} />
+                        <MenuItem icon={Icons.Sparkles} label={t('Smart Notes', language)} onClick={() => { onOpenModule('notes'); onClose(); }} />
+                        <MenuItem icon={Icons.FileText} label={t('Downloads', language)} onClick={() => { showToast('Downloads coming soon!', 'info'); }} />
 
                         {/* Divider */}
                         <div className="my-2 border-t border-gray-200"></div>
 
                         {/* Settings with submenu indicator */}
-                        <MenuItem icon={Icons.Settings} label="Settings" onClick={() => setView('settings')} hasSubmenu={true} />
+                        <MenuItem icon={Icons.Settings} label={t('Settings', language)} onClick={() => setView('settings')} hasSubmenu={true} />
                     </div>
                 </div>
             );
@@ -1348,7 +1550,7 @@
         const SettingsMenu = BrowserMenu;
 
         // 3. Home View (New Tab Page)
-        const HomeView = ({ onNavigate, onOpenModule }) => {
+        const HomeView = ({ onNavigate, onOpenModule, language }) => {
             const [inputValue, setInputValue] = useState('');
             const shortcuts = [
                 { id: 1, title: 'Google', url: 'https://google.com', icon: 'G' },
@@ -1375,7 +1577,7 @@
                             <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
                                 <Icons.Search className="w-5 h-5 text-gray-400" />
                             </div>
-                            <input type="text" value={inputValue} onChange={(e) => setInputValue(e.target.value)} placeholder="Search or enter website..." className="w-full py-4 pl-12 pr-4 text-lg bg-white/80 backdrop-blur-xl border border-gray-200 rounded-2xl shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-100 transition-all placeholder-gray-400" autoFocus />
+                            <input type="text" value={inputValue} onChange={(e) => setInputValue(e.target.value)} placeholder={t('Search or enter website...', language)} className="w-full py-4 pl-12 pr-4 text-lg bg-white/80 backdrop-blur-xl border border-gray-200 rounded-2xl shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-100 transition-all placeholder-gray-400" autoFocus />
                         </form>
                     </div>
 
@@ -1388,7 +1590,7 @@
                             </button>
                         ))}
                         <button className="w-24 h-24 border-2 border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center gap-2 hover:border-gray-400 hover:bg-gray-50/50 transition-all text-gray-400">
-                            <Icons.Plus className="w-8 h-8" /><span className="text-xs font-medium">Add</span>
+                            <Icons.Plus className="w-8 h-8" /><span className="text-xs font-medium">{t('Add', language)}</span>
                         </button>
                     </div>
                 </div>
@@ -1444,6 +1646,14 @@
                 } else {
                     alert("Please run in Electron app to login.");
                 }
+            };
+            const [language, setLanguage] = useState(() => {
+                return localStorage.getItem('anechoic_lang') || 'en';
+            });
+
+            const handleLanguageChange = (newLang) => {
+                setLanguage(newLang);
+                localStorage.setItem('anechoic_lang', newLang);
             };
 
             // === [新增結束] ===
@@ -1721,6 +1931,7 @@
                             }}
                             isCustomTheme={isCustomTheme}
                             themeColor={currentThemeColor}
+                            language={language}
                         />
                     </div>
 
@@ -1766,7 +1977,7 @@
                                     <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
                                         {activeTab.url.startsWith('https') ? <Icons.Globe className="w-4 h-4 text-green-600" /> : <Icons.Search className="w-4 h-4 text-gray-400" />}
                                     </div>
-                                    <input type="text" value={addressBarValue} onChange={(e) => setAddressBarValue(e.target.value)} placeholder="Search or enter website..." className="w-full py-2 pl-10 pr-4 bg-gray-100/50 hover:bg-gray-100 focus:bg-white border border-transparent focus:border-blue-300 rounded-lg text-sm transition-all focus:ring-2 focus:ring-blue-100 focus:outline-none" />
+                                    <input type="text" value={addressBarValue} onChange={(e) => setAddressBarValue(e.target.value)} placeholder={t('Search or enter website...', language)} className="w-full py-2 pl-10 pr-4 bg-gray-100/50 hover:bg-gray-100 focus:bg-white border border-transparent focus:border-blue-300 rounded-lg text-sm transition-all focus:ring-2 focus:ring-blue-100 focus:outline-none" />
                                 </div>
                             </form>
 
@@ -1786,6 +1997,8 @@
                                     resetTheme={resetTheme}
                                     onOpenModule={setActiveModule}
                                     addTab={addTab}
+                                    language={language}
+                                    setLanguage={handleLanguageChange}
                                 />}
                             </div>
                         </div>
@@ -1795,7 +2008,7 @@
                             {tabs.map(tab => (
                                 <div key={tab.id} className={`w-full h-full ${activeTabId === tab.id ? 'block' : 'hidden'}`}>
                                     {!tab.url ? (
-                                        <HomeView onNavigate={(url) => navigate(url)} onOpenModule={(module) => setActiveModule(module)} />
+                                        <HomeView onNavigate={(url) => navigate(url)} onOpenModule={(module) => setActiveModule(module)} language={language} />
                                     ) : (
                                         <webview ref={(el) => { if (el) { webviewRefs.current[tab.id] = el; handleWebviewMount(el); } }} src={tab.url} className="w-full h-full" />
                                     )}
@@ -1804,15 +2017,15 @@
                         </div>
 
                         {/* Modules Overlay */}
-                        <AIAssistantModule isOpen={activeModule === 'ai-assistant'} onClose={() => setActiveModule(null)} />
-                        <ChatRoomModule isOpen={activeModule === 'chatroom'} onClose={() => setActiveModule(null)} />
-                        <SmartNotesModule isOpen={activeModule === 'notes'} onClose={() => setActiveModule(null)} onNavigate={(url) => { navigate(url); setActiveModule(null); }} />
-                        <HistoryModule isOpen={activeModule === 'history'} onClose={() => setActiveModule(null)} tabs={tabs} onNavigate={(url) => { navigate(url); setActiveModule(null); }} />
-                        <BookmarksModule isOpen={activeModule === 'bookmarks'} onClose={() => setActiveModule(null)} onNavigate={(url) => { navigate(url); setActiveModule(null); }} />
-                        <PomodoroModule isOpen={activeModule === 'pomodoro'} onClose={() => setActiveModule(null)} />
-                        <TodoListModule isOpen={activeModule === 'todo'} onClose={() => setActiveModule(null)} />
-                        <ScheduleModule isOpen={activeModule === 'schedule'} onClose={() => setActiveModule(null)} />
-                        <WeatherModule isOpen={activeModule === 'weather'} onClose={() => setActiveModule(null)} />
+                        <AIAssistantModule isOpen={activeModule === 'ai-assistant'} onClose={() => setActiveModule(null)} language={language} />
+                        <ChatRoomModule isOpen={activeModule === 'chatroom'} onClose={() => setActiveModule(null)} language={language} />
+                        <SmartNotesModule isOpen={activeModule === 'notes'} onClose={() => setActiveModule(null)} onNavigate={(url) => { navigate(url); setActiveModule(null); }} language={language} />
+                        <HistoryModule isOpen={activeModule === 'history'} onClose={() => setActiveModule(null)} tabs={tabs} onNavigate={(url) => { navigate(url); setActiveModule(null); }} language={language} />
+                        <BookmarksModule isOpen={activeModule === 'bookmarks'} onClose={() => setActiveModule(null)} onNavigate={(url) => { navigate(url); setActiveModule(null); }} language={language} />
+                        <PomodoroModule isOpen={activeModule === 'pomodoro'} onClose={() => setActiveModule(null)} language={language} />
+                        <TodoListModule isOpen={activeModule === 'todo'} onClose={() => setActiveModule(null)} language={language} />
+                        <ScheduleModule isOpen={activeModule === 'schedule'} onClose={() => setActiveModule(null)} language={language} />
+                        <WeatherModule isOpen={activeModule === 'weather'} onClose={() => setActiveModule(null)} language={language} />
                     </div>
                 </div>
             );
