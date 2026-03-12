@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, globalShortcut } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
@@ -15,6 +15,7 @@ let mainWindow;
 let chatWindow = null; // separate BrowserWindow for chatroom
 let authWindow = null; // [新增]
 let currentUser = 'guest'; // [新增] 追蹤當前使用者，預設為訪客
+let isMuteModeActive = false;// 追蹤是否在靜音模式
 
 // [新增] 接收前端傳來的使用者名稱，切換資料夾身分
 ipcMain.handle('auth:set-user', (event, username) => {
@@ -145,6 +146,34 @@ function createWindow() {
   mainWindow.on('closed', function () {
     mainWindow = null;
   });
+
+  // 1. 攔截 Alt + F4 或點擊關閉
+  mainWindow.on('close', (event) => {
+    if (isMuteModeActive) {
+      event.preventDefault();
+      console.log('[Mute Mode] 已攔截關閉視窗');
+    }
+  });
+
+  // 2. 攔截 Win + D 導致的最小化
+  mainWindow.on('minimize', (event) => {
+    if (isMuteModeActive) {
+      event.preventDefault(); // 嘗試阻止最小化
+      if (mainWindow) {
+        mainWindow.restore(); // 如果還是被最小化了，強制恢復
+        mainWindow.focus();   // 強制獲取焦點
+      }
+      console.log('[Mute Mode] 已攔截最小化 (Win + D)');
+    }
+  });
+
+  // 3. 失去焦點時強制拉回 (防禦 Alt+Tab 或點擊其他副螢幕)
+  mainWindow.on('blur', () => {
+    if (isMuteModeActive && mainWindow) {
+      mainWindow.focus();
+    }
+  });
+
 }
 
 // IPC: open Chatroom in a separate BrowserWindow (creates window if needed)
@@ -385,7 +414,7 @@ ipcMain.handle('ai:chat', async (event, prompt) => {
   if (!aiSession) {
     return "系統提示：AI 模型正在載入中或發生錯誤，請稍後再試。";
   }
-  
+
   try {
     // 傳送提示詞給本地模型並等待回應
     const response = await aiSession.prompt(prompt);
@@ -423,6 +452,52 @@ function startFlaskServer() {
   console.log('Flask server capability removed.');
 }
 
+// ============================================================================
+// IPC: 靜音模式 (Mute / Kiosk Mode)
+// ============================================================================
+ipcMain.handle('system:enter-mute', () => {
+  if (mainWindow) {
+    isMuteModeActive = true;
+    mainWindow.setKiosk(true);
+    mainWindow.setAlwaysOnTop(true, 'screen-saver');
+
+    // 新增：隱藏工作列圖示，減少被干擾的機會
+    mainWindow.setSkipTaskbar(true);
+
+    // 將 Super+D (Win+D) 和 Super+Tab (Win+Tab) 加入攔截名單
+    const blockKeys = [
+      'CommandOrControl+Q',
+      'CommandOrControl+W',
+      'Alt+Tab',
+      'Escape',
+      'Super+D',   // 攔截 Win + D (顯示桌面)
+      'Super+Tab'  // 攔截 Win + Tab (工作檢視)
+    ];
+
+    blockKeys.forEach(key => {
+      globalShortcut.register(key, () => {
+        console.log(`[Mute Mode] 已攔截快速鍵: ${key}`);
+      });
+    });
+    return { ok: true };
+  }
+  return { ok: false };
+});
+
+ipcMain.handle('system:exit-mute', () => {
+  if (mainWindow) {
+    isMuteModeActive = false;
+    mainWindow.setKiosk(false); 
+    mainWindow.setAlwaysOnTop(false);
+    
+    // 恢復顯示工作列圖示
+    mainWindow.setSkipTaskbar(false); 
+    
+    globalShortcut.unregisterAll(); 
+    return { ok: true };
+  }
+  return { ok: false };
+});
 
 
 // ============================================================================
@@ -509,23 +584,51 @@ let aiModel = null;
 let aiContext = null;
 let aiSession = null;
 
+ipcMain.handle('ai:get-local-models', () => {
+  const modelsDir = path.join(__dirname, 'models');
+  if (!fs.existsSync(modelsDir)) {
+    fs.mkdirSync(modelsDir, { recursive: true });
+    return [];
+  }
+
+  // 只讀取 .gguf 結尾的檔案
+  const files = fs.readdirSync(modelsDir);
+  return files.filter(file => file.endsWith('.gguf'));
+});
+
+ipcMain.handle('ai:load-model', async (event, filename) => {
+  return await initLocalAI(filename);
+});
+
 // 初始化本地 AI 的函數
-async function initLocalAI() {
+async function initLocalAI(modelFilename = "Meta-Llama-3.1-8B-Instruct-Q8_0.gguf") {
   try {
-    // 【關鍵修改】：使用動態 import() 載入套件
     const { getLlama, LlamaChatSession } = await import("node-llama-cpp");
 
-    llama = await getLlama();
-    aiModel = await llama.loadModel({
-      // 請確認 models 資料夾內有這個檔案，且檔名正確
-      modelPath: path.join(__dirname, "models", "Meta-Llama-3.1-8B-Instruct-Q8_0.gguf") 
-    });
+    // Llama 實例只需初始化一次
+    if (!llama) {
+      llama = await getLlama();
+    }
+
+    const modelPath = path.join(__dirname, "models", modelFilename);
+    
+    if (!fs.existsSync(modelPath)) {
+      throw new Error(`找不到模型檔案：${modelFilename}`);
+    }
+
+    console.log(`⏳ 正在載入本地 AI 模型: ${modelFilename}...`);
+    
+    // 載入新模型並建立 Session
+    aiModel = await llama.loadModel({ modelPath: modelPath });
     aiContext = await aiModel.createContext();
     aiSession = new LlamaChatSession({
       contextSequence: aiContext.getSequence()
     });
-    console.log("✅ 本地 AI 模型載入完成！");
+    
+    console.log(`✅ 本地 AI 模型 (${modelFilename}) 載入完成！`);
+    return { ok: true };
   } catch (error) {
     console.error("❌ 載入本地 AI 模型失敗:", error);
+    return { ok: false, error: error.message };
   }
 }

@@ -55,12 +55,12 @@ async function callGeminiAPI(prompt, systemInstruction = "") {
 
     try {
         const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${effectiveKey}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${effectiveKey}`,
             {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    contents: [{ parts: [{ text: prompt }] }],
+                    contents: [{ role: "user", parts: [{ text: prompt }] }],
                     systemInstruction: { parts: [{ text: systemInstruction }] }
                 })
             }
@@ -88,6 +88,7 @@ const Icon = ({ path, className, onClick }) => (
 );
 
 const Icons = {
+    Lock: (props) => <Icon {...props} path={<><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></>} />,
     Plus: (props) => <Icon {...props} path={<><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></>} />,
     X: (props) => <Icon {...props} path={<><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></>} />,
     Search: (props) => <Icon {...props} path={<><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></>} />,
@@ -120,33 +121,72 @@ const Icons = {
 // --- New AI Components ---
 // AI Assistant Module
 const AIAssistantModule = ({ isOpen, onClose }) => {
-    const [messages, setMessages] = useState([{ id: 1, role: 'ai', text: 'Hello! I am your Anechoic study assistant. How can I help you focus today?' }]);
+    // 分離兩組對話紀錄
+    const [localMessages, setLocalMessages] = useState([{ id: 1, role: 'ai', text: '你好！我是運行在您設備上的本地 AI。' }]);
+    const [apiMessages, setApiMessages] = useState([{ id: 2, role: 'ai', text: '你好！我是雲端 AI。請確保您已設定 API 金鑰。' }]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
-    const messagesEndRef = useRef(null);
 
+    // 控制模式與設定
+    const [aiMode, setAiMode] = useState('local');
+    const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_api_key') || '');
+    const [showSettings, setShowSettings] = useState(false);
+    const [isSaved, setIsSaved] = useState(false);
+
+    const messagesEndRef = useRef(null);
     const scrollToBottom = () => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    useEffect(() => scrollToBottom(), [messages]);
+
+    const currentMessages = aiMode === 'local' ? localMessages : apiMessages;
+    const setCurrentMessages = aiMode === 'local' ? setLocalMessages : setApiMessages;
+
+    useEffect(() => scrollToBottom(), [currentMessages]);
+
+    const handleConfirmKey = () => {
+        if (!apiKey.trim()) {
+            alert("請輸入有效的 API Key");
+            return;
+        }
+        localStorage.setItem('gemini_api_key', apiKey);
+        setIsSaved(true);
+        setTimeout(() => {
+            setShowSettings(false);
+            setIsSaved(false);
+        }, 1000);
+    };
 
     const handleSend = async (e) => {
         e.preventDefault();
         if (!input.trim() || loading) return;
 
+        // API 模式防呆檢查
+        if (aiMode === 'gemini' && !apiKey.trim()) {
+            alert("請先點擊右上角 ⚙️ 圖示輸入 Gemini API 金鑰！");
+            setShowSettings(true);
+            return;
+        }
+
         const userMsg = { id: Date.now(), role: 'user', text: input };
-        setMessages(prev => [...prev, userMsg]);
+        setCurrentMessages(prev => [...prev, userMsg]);
         setInput('');
         setLoading(true);
 
-        // 改用 IPC 呼叫內建在瀏覽器後端的本地 AI
-        let aiResponseText = "無法連線到本地 AI";
-        if (window.electronAPI && window.electronAPI.chatWithLocalAI) {
-            // 你可以將原本的 systemPrompt 與 input 合併傳送給模型
-            const promptToSend = `You are a helpful study assistant. User says: ${input}`;
-            aiResponseText = await window.electronAPI.chatWithLocalAI(promptToSend);
+        let aiResponseText = "無法連線到 AI";
+
+        try {
+            if (aiMode === 'local') {
+                if (window.electronAPI && window.electronAPI.chatWithLocalAI) {
+                    const promptToSend = `You are a helpful study assistant. User says: ${input}`;
+                    aiResponseText = await window.electronAPI.chatWithLocalAI(promptToSend);
+                }
+            } else if (aiMode === 'gemini') {
+                aiResponseText = await callGeminiAPI(input, "You are a helpful study assistant.");
+            }
+        } catch (error) {
+            aiResponseText = `錯誤：${error.message}`;
         }
 
         const aiMsg = { id: Date.now() + 1, role: 'ai', text: aiResponseText };
-        setMessages(prev => [...prev, aiMsg]);
+        setCurrentMessages(prev => [...prev, aiMsg]);
         setLoading(false);
     };
 
@@ -155,15 +195,58 @@ const AIAssistantModule = ({ isOpen, onClose }) => {
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm animate-fade-in">
             <div className="w-[450px] h-[600px] bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl flex flex-col border border-white/50 overflow-hidden animate-slide-up">
+
+                {/* 標題列與切換選單 */}
                 <div className="h-14 border-b border-gray-200/50 flex items-center justify-between px-4 bg-white/50">
                     <div className="flex items-center gap-2">
                         <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center text-purple-600"><Icons.Bot className="w-5 h-5" /></div>
                         <span className="font-semibold text-gray-700">AI Assistant</span>
+                        <select
+                            value={aiMode}
+                            onChange={(e) => setAiMode(e.target.value)}
+                            className="ml-2 text-sm bg-gray-100 border border-gray-300 rounded px-2 py-1 outline-none text-gray-600 focus:ring-1 focus:ring-purple-400"
+                        >
+                            <option value="local">本地模型</option>
+                            <option value="gemini">Gemini API</option>
+                        </select>
                     </div>
-                    <button onClick={onClose} className="p-2 hover:bg-gray-200/50 rounded-full transition-colors"><Icons.X className="w-5 h-5 text-gray-500" /></button>
+                    <div className="flex gap-2">
+                        {aiMode === 'gemini' && (
+                            <button onClick={() => setShowSettings(!showSettings)} className="p-2 hover:bg-gray-200/50 rounded-full transition-colors">
+                                <Icons.Settings className="w-5 h-5 text-gray-500" />
+                            </button>
+                        )}
+                        <button onClick={onClose} className="p-2 hover:bg-gray-200/50 rounded-full transition-colors">
+                            <Icons.X className="w-5 h-5 text-gray-500" />
+                        </button>
+                    </div>
                 </div>
+
+                {/* 金鑰設定區塊 */}
+                {showSettings && aiMode === 'gemini' && (
+                    <div className="p-3 bg-gray-50 border-b border-gray-200 text-sm flex flex-col gap-2">
+                        <label className="font-semibold text-gray-700">Gemini API Key設定：</label>
+                        <div className="flex gap-2">
+                            <input
+                                type="password"
+                                value={apiKey}
+                                onChange={(e) => { setApiKey(e.target.value); setIsSaved(false); }}
+                                placeholder="請貼上您的 API Key..."
+                                className="flex-1 p-2 border border-gray-300 rounded outline-none focus:border-purple-500"
+                            />
+                            <button
+                                onClick={handleConfirmKey}
+                                className={`px-4 py-2 rounded font-medium transition-colors whitespace-nowrap ${isSaved ? 'bg-green-500 text-white' : 'bg-gray-800 text-white hover:bg-gray-700'}`}
+                            >
+                                {isSaved ? '已儲存 ✓' : '確認'}
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* 聊天內容區塊 */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/30">
-                    {messages.map(msg => (
+                    {currentMessages.map(msg => (
                         <div key={msg.id} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                             <div className={`max-w-[80%] rounded-2xl px-4 py-2 text-sm shadow-sm ${msg.role === 'user' ? 'bg-purple-500 text-white rounded-br-none' : 'bg-white text-gray-700 border border-gray-100 rounded-bl-none'}`}>
                                 <div dangerouslySetInnerHTML={{ __html: marked.parse(msg.text) }} />
@@ -177,7 +260,7 @@ const AIAssistantModule = ({ isOpen, onClose }) => {
                 </div>
                 <form onSubmit={handleSend} className="p-3 bg-white border-t border-gray-200/50">
                     <div className="relative flex items-center gap-2">
-                        <input type="text" value={input} onChange={e => setInput(e.target.value)} placeholder="Ask Gemini..." className="flex-1 bg-gray-100/50 hover:bg-gray-100 focus:bg-white border border-transparent focus:border-purple-300 rounded-xl px-4 py-2.5 text-sm transition-all focus:ring-2 focus:ring-purple-100 focus:outline-none" />
+                        <input type="text" value={input} onChange={e => setInput(e.target.value)} placeholder={aiMode === 'local' ? "Ask Local AI..." : "Ask Gemini API..."} className="flex-1 bg-gray-100/50 hover:bg-gray-100 focus:bg-white border border-transparent focus:border-purple-300 rounded-xl px-4 py-2.5 text-sm transition-all focus:ring-2 focus:ring-purple-100 focus:outline-none" />
                         <button type="submit" disabled={loading || !input.trim()} className="p-2.5 bg-purple-500 text-white rounded-xl hover:bg-purple-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-md shadow-purple-500/20"><Icons.Send className="w-4 h-4" /></button>
                     </div>
                 </form>
@@ -1109,8 +1192,121 @@ const HomeView = ({ onNavigate, onOpenModule }) => {
     );
 };
 
-// 4. Main App Layout
-// 4. Main App Layout
+// 4. silent mode
+const MuteModeModule = ({ isOpen, onClose, language }) => {
+    // 狀態管理：'warning' (警告) -> 'timer' (設定時間) -> 'active' (鎖定中)
+    const [step, setStep] = useState('warning');
+    const [duration, setDuration] = useState(25);
+    const [timeLeft, setTimeLeft] = useState(0);
+    const intervalRef = useRef(null);
+
+    // 每次開啟時重置狀態
+    useEffect(() => {
+        if (isOpen) {
+            setStep('warning');
+            setDuration(25);
+        } else if (step === 'active') {
+            handleExit();
+        }
+    }, [isOpen]);
+
+    const handleStartTimer = async () => {
+        setStep('active');
+        setTimeLeft(duration * 60);
+
+        // 呼叫 Electron 鎖定電腦
+        if (window.electronAPI && window.electronAPI.enterMuteMode) {
+            await window.electronAPI.enterMuteMode();
+        }
+
+        // 開始倒數
+        intervalRef.current = setInterval(() => {
+            setTimeLeft(prev => {
+                if (prev <= 1) {
+                    handleExit();
+                    return 0;
+                }
+                return prev - 1;
+            });
+        }, 1000);
+    };
+
+    const handleExit = async () => {
+        clearInterval(intervalRef.current);
+        setStep('warning');
+        onClose();
+
+        // 解除鎖定
+        if (window.electronAPI && window.electronAPI.exitMuteMode) {
+            await window.electronAPI.exitMuteMode();
+        }
+        showToast('靜音模式已結束', 'info');
+    };
+
+    const formatTime = (seconds) => {
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    };
+
+    if (!isOpen) return null;
+
+    return (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md animate-fade-in">
+            <div className="w-[400px] bg-white rounded-2xl shadow-2xl flex flex-col overflow-hidden p-6 text-center">
+                {step === 'warning' && (
+                    <>
+                        <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <Icons.Lock className="w-8 h-8" />
+                        </div>
+                        <h2 className="text-xl font-bold text-gray-800 mb-2">警告</h2>
+                        <p className="text-gray-600 mb-6">此模式將鎖定您的計算機，您確定嗎？</p>
+                        <div className="flex gap-3">
+                            <button onClick={onClose} className="flex-1 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">取消</button>
+                            <button onClick={() => setStep('timer')} className="flex-1 py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors">確定</button>
+                        </div>
+                    </>
+                )}
+
+                {step === 'timer' && (
+                    <>
+                        <h2 className="text-xl font-bold text-gray-800 mb-4">設定靜音時長</h2>
+                        <div className="mb-6 flex items-center justify-center gap-4">
+                            <input
+                                type="number"
+                                min="1"
+                                max="120"
+                                value={duration}
+                                onChange={(e) => setDuration(Number(e.target.value))}
+                                className="w-24 text-center text-3xl py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 outline-none"
+                            />
+                            <span className="text-gray-600 font-medium text-lg">分鐘</span>
+                        </div>
+                        <div className="flex gap-3">
+                            <button onClick={onClose} className="flex-1 py-2.5 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">取消</button>
+                            <button onClick={handleStartTimer} className="flex-1 py-2.5 bg-red-600 text-white rounded-lg font-medium hover:bg-red-700 transition-colors">開始鎖定</button>
+                        </div>
+                    </>
+                )}
+
+                {step === 'active' && (
+                    <div className="py-8">
+                        <h2 className="text-2xl font-bold text-gray-800 mb-2">靜音模式進行中</h2>
+                        <p className="text-gray-500 mb-8">請專注於您的學習</p>
+                        <div className="text-7xl font-mono text-red-600 font-bold mb-8 tracking-wider">
+                            {formatTime(timeLeft)}
+                        </div>
+                        {/* 緊急退出按鈕，避免開發測試時卡死 */}
+                        <button onClick={handleExit} className="text-sm text-gray-400 hover:text-red-500 underline transition-colors">緊急退出</button>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+};
+
+
+// 5. Main App Layout
 const App = () => {
     // State
     const [tabs, setTabs] = useState([{ id: 'init-1', title: 'New Tab', url: '', isLoading: false, history: [''], historyIndex: 0, canGoBack: false, canGoForward: false }]);
@@ -1156,32 +1352,32 @@ const App = () => {
 
     const handleLogin = () => {
         // 不再直接登入，而是打開自訂的假登入視窗
-                setShowLoginModal(true);
-            };
+        setShowLoginModal(true);
+    };
 
-            const submitFakeLogin = (e) => {
-                e.preventDefault(); // 防止表單重整頁面
-                if (!loginForm.username.trim()) return;
+    const submitFakeLogin = (e) => {
+        e.preventDefault(); // 防止表單重整頁面
+        if (!loginForm.username.trim()) return;
 
-                // 建立包含使用者輸入名稱的假資料
-                const fakeUser = {
-                    id: "fake_" + Date.now(),
-                    name: loginForm.username, // 使用者輸入的帳號名稱
-                    // 利用 DiceBear API 根據輸入的帳號自動產生一個專屬頭像
-                    avatar: `https://api.dicebear.com/7.x/adventurer/svg?seed=${loginForm.username}`
-                };
+        // 建立包含使用者輸入名稱的假資料
+        const fakeUser = {
+            id: "fake_" + Date.now(),
+            name: loginForm.username, // 使用者輸入的帳號名稱
+            // 利用 DiceBear API 根據輸入的帳號自動產生一個專屬頭像
+            avatar: `https://api.dicebear.com/7.x/adventurer/svg?seed=${loginForm.username}`
+        };
 
-                setUser(fakeUser);
-                localStorage.setItem('anechoic_user', JSON.stringify(fakeUser));
-                
-                // 關閉視窗並清空表單
-                setShowLoginModal(false);
-                setLoginForm({ username: '', password: '' }); 
+        setUser(fakeUser);
+        localStorage.setItem('anechoic_user', JSON.stringify(fakeUser));
 
-                if (typeof showToast === 'function') {
-                    showToast(`歡迎回來，${loginForm.username}！`, 'success');
-                }
-            };
+        // 關閉視窗並清空表單
+        setShowLoginModal(false);
+        setLoginForm({ username: '', password: '' });
+
+        if (typeof showToast === 'function') {
+            showToast(`歡迎回來，${loginForm.username}！`, 'success');
+        }
+    };
 
     // === [新增結束] ===
     // Verify anechoicAPI on mount

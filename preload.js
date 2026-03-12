@@ -16,7 +16,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     }
   },
 
+  // 獲取本地模型列表
+  getLocalModels: () => ipcRenderer.invoke('ai:get-local-models'),
 
+  // 請求載入特定的本地模型
+  loadLocalModel: (filename) => ipcRenderer.invoke('ai:load-model', filename),
+  
   // [新增] 本地 AI 呼叫介面
   chatWithLocalAI: (prompt) => ipcRenderer.invoke('ai:chat', prompt),
 
@@ -30,8 +35,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   setCurrentUser: (username) => ipcRenderer.invoke('auth:set-user', username),
   // Generic Invoke for dynamic features
-  invoke: (channel, data) => ipcRenderer.invoke(channel, data)
+  invoke: (channel, data) => ipcRenderer.invoke(channel, data),
+
+  // 靜音模式 (鎖定電腦)
+  enterMuteMode: () => ipcRenderer.invoke('system:enter-mute'),
+  exitMuteMode: () => ipcRenderer.invoke('system:exit-mute'),
 });
+
 
 // ============================================================================
 // Expose History & Bookmarks API securely via contextBridge
