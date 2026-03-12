@@ -347,9 +347,23 @@ app.on('web-contents-created', (event, contents) => {
     contents.on('did-navigate', (event, url) => {
       addToHistory(contents.getTitle(), url);
     });
+// ===========================================================================
 // Right click menu
 contents.on('context-menu', (event, params) => {
     const menuItems = [];
+
+    const getValidURL = (text) => {
+        try {
+            return new URL(text).href;
+        } catch {
+            try {
+                return new URL('https://' + text).href;
+            } catch {
+                return null;
+            }
+        }
+    };
+    
     if (params.selectionText && params.selectionText.trim()) {
         menuItems.push({
             label: 'Copy',
@@ -358,6 +372,18 @@ contents.on('context-menu', (event, params) => {
                 contents.copy();
             }
         });
+    }
+
+    
+    if (params.mediaType === 'image') {
+      menuItems.push({
+        label: 'Copy image link',
+        click: () => {
+          if (params.srcURL) {
+            clipboard.writeText(params.srcURL);
+          }
+        }
+      });
     }
     
     if (params.isEditable) {
