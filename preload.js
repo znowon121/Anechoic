@@ -1,6 +1,7 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
+  
   // 打開 Chatroom 視窗
   openChatroom: async () => ipcRenderer.invoke('chatroom:open-window'),
 
@@ -27,6 +28,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   onLoginSuccess: (callback) => ipcRenderer.on('auth:login-success', (event, user) => callback(user)),
 
+  setCurrentUser: (username) => ipcRenderer.invoke('auth:set-user', username),
   // Generic Invoke for dynamic features
   invoke: (channel, data) => ipcRenderer.invoke(channel, data)
 });

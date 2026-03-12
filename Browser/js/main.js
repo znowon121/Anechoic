@@ -1127,6 +1127,8 @@ const App = () => {
 
     // === [新增] User State & Login Logic ===
     const [user, setUser] = useState(null);
+    const [showLoginModal, setShowLoginModal] = useState(false);
+    const [loginForm, setLoginForm] = useState({ username: '', password: '' });
 
     // === Theme Customization State ===
     const [themeSettings, setThemeSettings] = useState({ daily: '#c2410c', learning: '#1d4ed8' });
@@ -1153,12 +1155,33 @@ const App = () => {
     };
 
     const handleLogin = () => {
-        if (window.electronAPI && window.electronAPI.startGoogleLogin) {
-            window.electronAPI.startGoogleLogin();
-        } else {
-            alert("Please run in Electron app to login.");
-        }
-    };
+        // 不再直接登入，而是打開自訂的假登入視窗
+                setShowLoginModal(true);
+            };
+
+            const submitFakeLogin = (e) => {
+                e.preventDefault(); // 防止表單重整頁面
+                if (!loginForm.username.trim()) return;
+
+                // 建立包含使用者輸入名稱的假資料
+                const fakeUser = {
+                    id: "fake_" + Date.now(),
+                    name: loginForm.username, // 使用者輸入的帳號名稱
+                    // 利用 DiceBear API 根據輸入的帳號自動產生一個專屬頭像
+                    avatar: `https://api.dicebear.com/7.x/adventurer/svg?seed=${loginForm.username}`
+                };
+
+                setUser(fakeUser);
+                localStorage.setItem('anechoic_user', JSON.stringify(fakeUser));
+                
+                // 關閉視窗並清空表單
+                setShowLoginModal(false);
+                setLoginForm({ username: '', password: '' }); 
+
+                if (typeof showToast === 'function') {
+                    showToast(`歡迎回來，${loginForm.username}！`, 'success');
+                }
+            };
 
     // === [新增結束] ===
     // Verify anechoicAPI on mount

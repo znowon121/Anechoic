@@ -14,6 +14,14 @@ let mainWindow;
 // let flaskProcess = null; // child process for Flask (Removed)
 let chatWindow = null; // separate BrowserWindow for chatroom
 let authWindow = null; // [新增]
+let currentUser = 'guest'; // [新增] 追蹤當前使用者，預設為訪客
+
+// [新增] 接收前端傳來的使用者名稱，切換資料夾身分
+ipcMain.handle('auth:set-user', (event, username) => {
+  currentUser = username || 'guest';
+  console.log(`👤 Current user set to: ${currentUser}`);
+  return { ok: true, user: currentUser };
+});
 
 // ============================================================================
 // History & Bookmarks Storage Helper
@@ -24,7 +32,9 @@ let authWindow = null; // [新增]
  */
 function getDataFilePath(filename) {
   const userDataPath = app.getPath('userData');
-  return path.join(userDataPath, filename);
+  // [修改] 根據當前使用者動態產生檔名，例如 "Jacky_history.json" 或 "guest_history.json"
+  const userFilename = `${currentUser}_${filename}`;
+  return path.join(userDataPath, userFilename);
 }
 
 /**
