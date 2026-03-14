@@ -175,6 +175,14 @@ function createWindow() {
     }
   });
 
+
+  mainWindow.on('hide', (event) => {
+    if (isMuteModeActive && mainWindow) {
+      event.preventDefault();
+      mainWindow.show();
+    }
+  });
+
 }
 
 // IPC: open Chatroom in a separate BrowserWindow (creates window if needed)
@@ -386,93 +394,93 @@ app.on('web-contents-created', (event, contents) => {
     contents.on('did-navigate', (event, url) => {
       addToHistory(contents.getTitle(), url);
     });
-// ===========================================================================
-// Right click menu
-contents.on('context-menu', (event, params) => {
-    const menuItems = [];
+    // ===========================================================================
+    // Right click menu
+    contents.on('context-menu', (event, params) => {
+      const menuItems = [];
 
-    const getValidURL = (text) => {
+      const getValidURL = (text) => {
         try {
-            return new URL(text).href;
+          return new URL(text).href;
         } catch {
-            try {
-                return new URL('https://' + text).href;
-            } catch {
-                return null;
-            }
-        }
-    };
-    
-    if (params.selectionText && params.selectionText.trim()) {
-        menuItems.push({
-            label: 'Copy',
-            accelerator: 'CmdOrCtrl+C',
-            click: () => {
-                contents.copy();
-            }
-        });
-    }
-
-    
-    if (params.mediaType === 'image') {
-      menuItems.push({
-        label: 'Copy image link',
-        click: () => {
-          if (params.srcURL) {
-            clipboard.writeText(params.srcURL);
+          try {
+            return new URL('https://' + text).href;
+          } catch {
+            return null;
           }
         }
-      });
-    }
-    
-    if (params.isEditable) {
-      menuItems.push({
-        label: 'Cut',
-        accelerator: 'CmdOrCtrl+X',
-        click: () => {
-          contents.cut();
-        }
-      });
-      menuItems.push({
-        label: 'Paste',
-        accelerator: 'CmdOrCtrl+V',
-        click: () => {
-          contents.paste();
-        }
-      });
-    }
-    
-    if (menuItems.length === 0) {
-      menuItems.push({
-        label: 'Back',
-        accelerator: 'CmdOrCtrl+[',
-        enabled: contents.canGoBack(),
-        click: () => {
-          contents.goBack();
-        }
-      });
-      menuItems.push({
-        label: 'Forward',
-        accelerator: 'CmdOrCtrl+]',
-        enabled: contents.canGoForward(),
-        click: () => {
-          contents.goForward();
-        }
-      });
-      menuItems.push({
-        label: 'Reload',
-        accelerator: 'CmdOrCtrl+R',
-        click: () => {
-          contents.reload();
-        }
-      });
-    }
-    
-    if (menuItems.length > 0) {
-      const menu = Menu.buildFromTemplate(menuItems);
-      menu.popup();
-    }
-  });
+      };
+
+      if (params.selectionText && params.selectionText.trim()) {
+        menuItems.push({
+          label: 'Copy',
+          accelerator: 'CmdOrCtrl+C',
+          click: () => {
+            contents.copy();
+          }
+        });
+      }
+
+
+      if (params.mediaType === 'image') {
+        menuItems.push({
+          label: 'Copy image link',
+          click: () => {
+            if (params.srcURL) {
+              clipboard.writeText(params.srcURL);
+            }
+          }
+        });
+      }
+
+      if (params.isEditable) {
+        menuItems.push({
+          label: 'Cut',
+          accelerator: 'CmdOrCtrl+X',
+          click: () => {
+            contents.cut();
+          }
+        });
+        menuItems.push({
+          label: 'Paste',
+          accelerator: 'CmdOrCtrl+V',
+          click: () => {
+            contents.paste();
+          }
+        });
+      }
+
+      if (menuItems.length === 0) {
+        menuItems.push({
+          label: 'Back',
+          accelerator: 'CmdOrCtrl+[',
+          enabled: contents.canGoBack(),
+          click: () => {
+            contents.goBack();
+          }
+        });
+        menuItems.push({
+          label: 'Forward',
+          accelerator: 'CmdOrCtrl+]',
+          enabled: contents.canGoForward(),
+          click: () => {
+            contents.goForward();
+          }
+        });
+        menuItems.push({
+          label: 'Reload',
+          accelerator: 'CmdOrCtrl+R',
+          click: () => {
+            contents.reload();
+          }
+        });
+      }
+
+      if (menuItems.length > 0) {
+        const menu = Menu.buildFromTemplate(menuItems);
+        menu.popup();
+      }
+    });
 
     // Update history again when title is finalized (for better UX)
     contents.on('page-title-updated', (event, title) => {
@@ -556,6 +564,7 @@ ipcMain.handle('system:enter-mute', () => {
     const blockKeys = [
       'CommandOrControl+Q',
       'CommandOrControl+W',
+      'Alt+F4',
       'Alt+Tab',
       'Escape',
       'Super+D',   // 攔截 Win + D (顯示桌面)
@@ -575,13 +584,13 @@ ipcMain.handle('system:enter-mute', () => {
 ipcMain.handle('system:exit-mute', () => {
   if (mainWindow) {
     isMuteModeActive = false;
-    mainWindow.setKiosk(false); 
+    mainWindow.setKiosk(false);
     mainWindow.setAlwaysOnTop(false);
-    
+
     // 恢復顯示工作列圖示
-    mainWindow.setSkipTaskbar(false); 
-    
-    globalShortcut.unregisterAll(); 
+    mainWindow.setSkipTaskbar(false);
+
+    globalShortcut.unregisterAll();
     return { ok: true };
   }
   return { ok: false };
@@ -699,20 +708,20 @@ async function initLocalAI(modelFilename = "Meta-Llama-3.1-8B-Instruct-Q8_0.gguf
     }
 
     const modelPath = path.join(__dirname, "models", modelFilename);
-    
+
     if (!fs.existsSync(modelPath)) {
       throw new Error(`找不到模型檔案：${modelFilename}`);
     }
 
     console.log(`⏳ 正在載入本地 AI 模型: ${modelFilename}...`);
-    
+
     // 載入新模型並建立 Session
     aiModel = await llama.loadModel({ modelPath: modelPath });
     aiContext = await aiModel.createContext();
     aiSession = new LlamaChatSession({
       contextSequence: aiContext.getSequence()
     });
-    
+
     console.log(`✅ 本地 AI 模型 (${modelFilename}) 載入完成！`);
     return { ok: true };
   } catch (error) {
