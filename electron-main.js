@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, globalShortcut } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const { Menu, clipboard } = require('electron');
 const { spawn } = require('child_process');
 
 // 載入 .env（若存在），方便未來整合 Flask 等服務
@@ -385,6 +386,93 @@ app.on('web-contents-created', (event, contents) => {
     contents.on('did-navigate', (event, url) => {
       addToHistory(contents.getTitle(), url);
     });
+// ===========================================================================
+// Right click menu
+contents.on('context-menu', (event, params) => {
+    const menuItems = [];
+
+    const getValidURL = (text) => {
+        try {
+            return new URL(text).href;
+        } catch {
+            try {
+                return new URL('https://' + text).href;
+            } catch {
+                return null;
+            }
+        }
+    };
+    
+    if (params.selectionText && params.selectionText.trim()) {
+        menuItems.push({
+            label: 'Copy',
+            accelerator: 'CmdOrCtrl+C',
+            click: () => {
+                contents.copy();
+            }
+        });
+    }
+
+    
+    if (params.mediaType === 'image') {
+      menuItems.push({
+        label: 'Copy image link',
+        click: () => {
+          if (params.srcURL) {
+            clipboard.writeText(params.srcURL);
+          }
+        }
+      });
+    }
+    
+    if (params.isEditable) {
+      menuItems.push({
+        label: 'Cut',
+        accelerator: 'CmdOrCtrl+X',
+        click: () => {
+          contents.cut();
+        }
+      });
+      menuItems.push({
+        label: 'Paste',
+        accelerator: 'CmdOrCtrl+V',
+        click: () => {
+          contents.paste();
+        }
+      });
+    }
+    
+    if (menuItems.length === 0) {
+      menuItems.push({
+        label: 'Back',
+        accelerator: 'CmdOrCtrl+[',
+        enabled: contents.canGoBack(),
+        click: () => {
+          contents.goBack();
+        }
+      });
+      menuItems.push({
+        label: 'Forward',
+        accelerator: 'CmdOrCtrl+]',
+        enabled: contents.canGoForward(),
+        click: () => {
+          contents.goForward();
+        }
+      });
+      menuItems.push({
+        label: 'Reload',
+        accelerator: 'CmdOrCtrl+R',
+        click: () => {
+          contents.reload();
+        }
+      });
+    }
+    
+    if (menuItems.length > 0) {
+      const menu = Menu.buildFromTemplate(menuItems);
+      menu.popup();
+    }
+  });
 
     // Update history again when title is finalized (for better UX)
     contents.on('page-title-updated', (event, title) => {

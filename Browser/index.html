@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-HK">
 
 <head>
@@ -2149,92 +2149,226 @@
             );
         };
 
-        // Weather Module
+        // Weather Module (with autocomplete dropdown)
         const WeatherModule = ({ isOpen, onClose, language }) => {
-            const [city, setCity] = useState('');
-            const [weather, setWeather] = useState(null);
-            const [loading, setLoading] = useState(false);
+        const [city, setCity] = useState('');
+        const [weather, setWeather] = useState(null);
+        const [loading, setLoading] = useState(false);
+        const [suggestions, setSuggestions] = useState([]);
+        const [showSuggestions, setShowSuggestions] = useState(false);
+        const [fetchTimer, setFetchTimer] = useState(null);
 
-            const getRandomWeather = () => {
-                const conditions = ['Sunny', 'Cloudy', 'Rainy', 'Partly Cloudy'];
-                const temp = Math.floor(Math.random() * 16) + 20; // 20-35°C
-                return {
-                    condition: conditions[Math.floor(Math.random() * conditions.length)],
-                    temperature: temp,
-                    humidity: Math.floor(Math.random() * 40) + 40, // 40-80%
-                    windSpeed: Math.floor(Math.random() * 20) + 5 // 5-25 km/h
-                };
+        const getWeatherDescription = (code) => {
+            const codes = {
+            0: 'Clear sky',
+            1: 'Mainly clear',
+            2: 'Partly cloudy',
+            3: 'Overcast',
+            45: 'Fog',
+            48: 'Rime fog',
+            51: 'Light drizzle',
+            53: 'Moderate drizzle',
+            55: 'Dense drizzle',
+            61: 'Slight rain',
+            63: 'Moderate rain',
+            65: 'Heavy rain',
+            71: 'Slight snow',
+            73: 'Moderate snow',
+            75: 'Heavy snow',
+            77: 'Snow grains',
+            80: 'Slight rain showers',
+            81: 'Moderate rain showers',
+            82: 'Violent rain showers',
+            85: 'Slight snow showers',
+            86: 'Heavy snow showers',
+            95: 'Thunderstorm',
+            96: 'Thunderstorm with hail',
+            99: 'Thunderstorm with heavy hail'
             };
-
-            const searchWeather = (e) => {
-                e.preventDefault();
-                if (!city.trim()) return;
-                setLoading(true);
-                // Simulate API call delay
-                setTimeout(() => {
-                    setWeather(getRandomWeather());
-                    setLoading(false);
-                    showToast(`Weather for ${city}`, 'success');
-                }, 1000);
-            };
-
-            if (!isOpen) return null;
-
-            return (
-                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm animate-fade-in">
-                    <div className="w-[450px] h-[550px] bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl flex flex-col border border-white/50 overflow-hidden animate-slide-up">
-                        <div className="h-14 border-b border-gray-200/50 flex items-center justify-between px-4 bg-white/50">
-                            <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-full bg-cyan-100 flex items-center justify-center text-cyan-600"><Icons.Cloud className="w-5 h-5" /></div>
-                                <span className="font-semibold text-gray-700">{t('Weather', language)}</span>
-                            </div>
-                            <button onClick={onClose} className="p-2 hover:bg-gray-200/50 rounded-full transition-colors"><Icons.X className="w-5 h-5 text-gray-500" /></button>
-                        </div>
-                        <div className="p-4 border-b border-gray-200/50">
-                            <form onSubmit={searchWeather} className="flex gap-2">
-                                <div className="relative flex-1">
-                                    <Icons.MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                    <input
-                                        type="text"
-                                        value={city}
-                                        onChange={(e) => setCity(e.target.value)}
-                                        placeholder={t('Enter city name...', language)}
-                                        className="w-full pl-10 pr-4 py-2 bg-gray-100/50 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                                    />
-                                </div>
-                                <button type="submit" disabled={loading || !city.trim()} className="px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"><Icons.Search className="w-4 h-4" /></button>
-                            </form>
-                        </div>
-                        <div className="flex-1 flex flex-col items-center justify-center p-6">
-                            {loading ? (
-                                <div className="text-center">
-                                    <div className="w-16 h-16 border-4 border-cyan-200 border-t-cyan-500 rounded-full animate-spin mx-auto mb-4"></div>
-                                    <p className="text-gray-500">{t('Fetching weather...', language)}</p>
-                                </div>
-                            ) : weather ? (
-                                <div className="text-center">
-                                    <div className="w-32 h-32 bg-cyan-100 rounded-full flex items-center justify-center mb-6 mx-auto">
-                                        <Icons.Cloud className="w-16 h-16 text-cyan-600" />
-                                    </div>
-                                    <div className="text-6xl font-bold text-gray-800 mb-2">{weather.temperature}°C</div>
-                                    <div className="text-xl text-gray-600 mb-4">{weather.condition}</div>
-                                    <div className="text-sm text-gray-500 space-y-1">
-                                        <div>{t('Humidity', language)}: {weather.humidity}%</div>
-                                        <div>{t('Wind Speed', language)}: {weather.windSpeed} km/h</div>
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="text-center text-gray-500">
-                                    <Icons.Cloud className="w-16 h-16 mx-auto mb-4 text-gray-300" />
-                                    <p>{t('Enter a city name to get weather information', language)}</p>
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            );
+            return codes[code] || 'Unknown';
         };
 
+        const fetchCitySuggestions = async (query) => {
+            if (!query.trim()) {
+                setSuggestions([]);
+                return;
+            }
+            try {
+                const response = await fetch(
+                `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=10&language=en&format=json`
+                );
+                const data = await response.json();
+                if (data.results) {
+                const uniqueMap = new Map();
+                data.results.forEach(item => {
+                    const key = `${item.name}|${item.admin1 || ''}|${item.country}`;
+                    if (!uniqueMap.has(key)) {
+                    uniqueMap.set(key, item);
+                    }
+                });
+                const uniqueResults = Array.from(uniqueMap.values());
+                setSuggestions(uniqueResults.map(item => ({
+                    name: item.name,
+                    country: item.country,
+                    admin1: item.admin1,
+                    latitude: item.latitude,
+                    longitude: item.longitude
+                })));
+                } else {
+                setSuggestions([]);
+                }
+            } catch (error) {
+                console.error('Failed to fetch suggestions:', error);
+                setSuggestions([]);
+            }
+        };
+
+        const handleInputChange = (e) => {
+            const value = e.target.value;
+            setCity(value);
+            setShowSuggestions(true);
+
+            if (fetchTimer) clearTimeout(fetchTimer);
+            const timer = setTimeout(() => {
+            fetchCitySuggestions(value);
+            }, 500);
+            setFetchTimer(timer);
+        };
+
+        const selectSuggestion = (suggestion) => {
+            setCity(suggestion.name);
+            setShowSuggestions(false);
+            if (fetchTimer) clearTimeout(fetchTimer);
+            searchWeatherWithCoords(suggestion.latitude, suggestion.longitude, suggestion.name);
+        };
+
+        const searchWeatherWithCoords = async (lat, lon, name) => {
+            setLoading(true);
+            try {
+            const weatherResponse = await fetch(
+                `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&hourly=relative_humidity_2m,windspeed_10m`
+            );
+            const weatherData = await weatherResponse.json();
+
+            setWeather({
+                condition: getWeatherDescription(weatherData.current_weather.weathercode),
+                temperature: Math.round(weatherData.current_weather.temperature),
+                humidity: weatherData.hourly.relative_humidity_2m[0] || 50,
+                windSpeed: Math.round(weatherData.current_weather.windspeed)
+            });
+            setCity(name);
+            showToast(`Weather for ${name}`, 'success');
+            } catch (error) {
+            console.error('Weather fetch error:', error);
+            showToast('Failed to fetch weather', 'error');
+            } finally {
+            setLoading(false);
+            }
+        };
+
+        const searchWeather = async (e) => {
+            e.preventDefault();
+            if (!city.trim()) return;
+
+            setLoading(true);
+            try {
+            const geoResponse = await fetch(
+                `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1`
+            );
+            const geoData = await geoResponse.json();
+
+            if (!geoData.results || geoData.results.length === 0) {
+                showToast('City not found', 'error');
+                setLoading(false);
+                return;
+            }
+
+            const { latitude, longitude, name } = geoData.results[0];
+            await searchWeatherWithCoords(latitude, longitude, name);
+            } catch (error) {
+            console.error('Weather fetch error:', error);
+            showToast('Failed to fetch weather', 'error');
+            setLoading(false);
+            }
+        };
+
+        const handleBlur = () => {
+            setTimeout(() => setShowSuggestions(false), 200);
+        };
+
+        if (!isOpen) return null;
+
+        return (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm animate-fade-in">
+            <div className="w-[450px] h-[550px] bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl flex flex-col border border-white/50 overflow-hidden animate-slide-up">
+                <div className="h-14 border-b border-gray-200/50 flex items-center justify-between px-4 bg-white/50">
+                <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-cyan-100 flex items-center justify-center text-cyan-600"><Icons.Cloud className="w-5 h-5" /></div>
+                    <span className="font-semibold text-gray-700">{t('Weather', language)}</span>
+                </div>
+                <button onClick={onClose} className="p-2 hover:bg-gray-200/50 rounded-full transition-colors"><Icons.X className="w-5 h-5 text-gray-500" /></button>
+                </div>
+                <div className="p-4 border-b border-gray-200/50 relative">
+                <form onSubmit={searchWeather} className="flex gap-2">
+                    <div className="relative flex-1">
+                    <Icons.MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                        type="text"
+                        value={city}
+                        onChange={handleInputChange}
+                        onFocus={() => setShowSuggestions(true)}
+                        onBlur={handleBlur}
+                        placeholder={t('Enter city name...', language)}
+                        className="w-full pl-10 pr-4 py-2 bg-gray-100/50 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    />
+                    </div>
+                    <button type="submit" disabled={loading || !city.trim()} className="px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"><Icons.Search className="w-4 h-4" /></button>
+                </form>
+                {showSuggestions && suggestions.length > 0 && (
+                    <ul className="absolute left-4 right-4 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto z-10">
+                    {suggestions.map((s, idx) => (
+                        <li
+                        key={idx}
+                        onClick={() => selectSuggestion(s)}
+                        className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm flex items-center gap-2"
+                        >
+                        <Icons.MapPin className="w-3 h-3 text-gray-400" />
+                        <span className="font-medium">{s.name}</span>
+                        <span className="text-xs text-gray-500">{s.admin1 ? `${s.admin1}, ` : ''}{s.country}</span>
+                        </li>
+                    ))}
+                    </ul>
+                )}
+                </div>
+                <div className="flex-1 flex flex-col items-center justify-center p-6">
+                {loading ? (
+                    <div className="text-center">
+                    <div className="w-16 h-16 border-4 border-cyan-200 border-t-cyan-500 rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-gray-500">{t('Fetching weather...', language)}</p>
+                    </div>
+                ) : weather ? (
+                    <div className="text-center">
+                    <div className="w-32 h-32 bg-cyan-100 rounded-full flex items-center justify-center mb-6 mx-auto">
+                        <Icons.Cloud className="w-16 h-16 text-cyan-600" />
+                    </div>
+                    <div className="text-6xl font-bold text-gray-800 mb-2">{weather.temperature}°C</div>
+                    <div className="text-xl text-gray-600 mb-4">{weather.condition}</div>
+                    <div className="text-sm text-gray-500 space-y-1">
+                        <div>{t('Humidity', language)}: {weather.humidity}%</div>
+                        <div>{t('Wind Speed', language)}: {weather.windSpeed} km/h</div>
+                    </div>
+                    </div>
+                ) : (
+                    <div className="text-center text-gray-500">
+                    <Icons.Cloud className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+                    <p>{t('Enter a city name to get weather information', language)}</p>
+                    </div>
+                )}
+                </div>
+            </div>
+            </div>
+        );
+        };
         // VPN Module
         // 1. Sidebar Component
         const Sidebar = ({ isOpen, toggle, mode, setMode, onOpenModule, isCustomTheme, themeColor, language }) => {
@@ -2318,7 +2452,7 @@
         );
 
         // 2. Browser Menu (Hierarchical: Main View + Settings View)
-        const BrowserMenu = ({ onClose, currentEngine, setEngine, user, onLogin, onLogout, themeSettings, handleThemeChange, resetTheme, onOpenModule, addTab, language, setLanguage }) => {
+        const BrowserMenu = ({ onClose, currentEngine, setEngine, user, onLogin, onLogout, themeSettings, handleThemeChange, resetTheme, onClearAllUserData, onOpenModule, addTab, language, setLanguage }) => {
             const [view, setView] = useState('main');
 
             // MenuItem Component for Main View
@@ -2442,7 +2576,11 @@
                                     </button>
                                 </div>
                             </div>
-                            <div><label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 block">{t('Data', language)}</label><button className="w-full text-left text-sm p-2 hover:bg-red-50 text-red-600 rounded-lg transition">{t('Clear Browsing Data', language)}</button></div>
+                            <div><label className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2 block">Data</label>
+                                <button className="w-full text-left text-sm p-2 hover:bg-red-50 text-red-600 rounded-lg transition" onClick={onClearAllUserData}>
+                                    Clear all user data
+                                </button>
+                            </div>
                         </div>
                     </div>
                 );
@@ -2481,52 +2619,140 @@
         const SettingsMenu = BrowserMenu;
 
         // 3. Home View (New Tab Page)
-        const HomeView = ({ onNavigate, onOpenModule, language }) => {
+        const HomeView = ({ onNavigate, onOpenModule, shortcuts, onAddShortcut, onRemoveShortcut, language }) => {
             const [inputValue, setInputValue] = useState('');
-            const shortcuts = [
-                { id: 1, title: 'Google', url: 'https://google.com', icon: 'G' },
-                { id: 2, title: 'Canvas', url: 'https://canvas.instructure.com', icon: 'C' },
-                { id: 3, title: 'YouTube', url: 'https://youtube.com', icon: 'Y' },
-                { id: 4, title: 'Gmail', url: 'https://gmail.com', icon: 'M' },
-            ];
+            const [showAddModal, setShowAddModal] = useState(false);
+            const [newTitle, setNewTitle] = useState('');
+            const [newUrl, setNewUrl] = useState('');
 
             const handleSubmit = (e) => {
                 e.preventDefault();
                 if (inputValue.trim()) {
-                    onNavigate(inputValue.trim());
+                onNavigate(inputValue.trim());
+                }
+            };
+
+            const handleAddShortcut = () => {
+                if (newTitle.trim() && newUrl.trim()) {
+                let url = newUrl.trim();
+                if (!url.startsWith('http://') && !url.startsWith('https://')) {
+                    url = 'https://' + url;
+                }
+                onAddShortcut(newTitle.trim(), url);
+                setNewTitle('');
+                setNewUrl('');
+                setShowAddModal(false);
                 }
             };
 
             return (
                 <div className="flex flex-col items-center justify-center h-full w-full bg-white/50 animate-fade-in relative">
-                    {/* Center Search */}
-                    <div className="w-full max-w-2xl px-4 z-10 mt-8">
-                        <div className="text-center mb-8">
-                            <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-700 to-gray-900 tracking-tight">Anechoic</h1>
+                {showAddModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm animate-fade-in">
+                    <div className="w-96 bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl border border-white/50 overflow-hidden animate-slide-up">
+                        <div className="h-14 border-b border-gray-200/50 flex items-center justify-between px-4 bg-white/50">
+                        <span className="font-semibold text-gray-700">Add shortcut</span>
+                        <button onClick={() => setShowAddModal(false)} className="p-2 hover:bg-gray-200/50 rounded-full transition-colors">
+                            <Icons.X className="w-5 h-5 text-gray-500" />
+                        </button>
                         </div>
-                        <form onSubmit={handleSubmit} className="relative group">
-                            <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                                <Icons.Search className="w-5 h-5 text-gray-400" />
-                            </div>
-                            <input type="text" value={inputValue} onChange={(e) => setInputValue(e.target.value)} placeholder={t('Search or enter website...', language)} className="w-full py-4 pl-12 pr-4 text-lg bg-white/80 backdrop-blur-xl border border-gray-200 rounded-2xl shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-100 transition-all placeholder-gray-400" autoFocus />
-                        </form>
+                        <div className="p-4 space-y-4">
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                            <input
+                            type="text"
+                            value={newTitle}
+                            onChange={(e) => setNewTitle(e.target.value)}
+                            className="w-full px-3 py-2 bg-gray-100/50 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="例如 Google"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">URL</label>
+                            <input
+                            type="text"
+                            value={newUrl}
+                            onChange={(e) => setNewUrl(e.target.value)}
+                            className="w-full px-3 py-2 bg-gray-100/50 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="https://google.com"
+                            />
+                        </div>
+                        </div>
+                        <div className="h-14 border-t border-gray-200/50 flex items-center justify-end gap-2 px-4 bg-white/50">
+                        <button
+                            onClick={() => setShowAddModal(false)}
+                            className="px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                        >
+                            Cancel
+                        </button>
+                        <button
+                            onClick={handleAddShortcut}
+                            disabled={!newTitle.trim() || !newUrl.trim()}
+                            className="px-4 py-2 text-sm font-medium bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                        >
+                            Complete
+                        </button>
+                        </div>
                     </div>
+                    </div>
+                )}
 
-                    {/* Bottom Speed Dial */}
-                    <div className="mt-6 grid grid-cols-4 gap-6">
-                        {shortcuts.map(site => (
-                            <button key={site.id} onClick={() => onNavigate(site.url)} className="w-24 h-24 glass-panel rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-white/80 transition-all hover:-translate-y-1">
-                                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-600 text-xl">{site.icon}</div>
-                                <span className="text-xs text-gray-500 font-medium">{site.title}</span>
-                            </button>
-                        ))}
-                        <button className="w-24 h-24 border-2 border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center gap-2 hover:border-gray-400 hover:bg-gray-50/50 transition-all text-gray-400">
-                            <Icons.Plus className="w-8 h-8" /><span className="text-xs font-medium">{t('Add', language)}</span>
+                <div className="w-full max-w-2xl px-4 z-10 mt-8">
+                    <div className="text-center mb-8">
+                    <h1 className="text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-700 to-gray-900 tracking-tight">Anechoic</h1>
+                    </div>
+                    <form onSubmit={handleSubmit} className="relative group">
+                    <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
+                        <Icons.Search className="w-5 h-5 text-gray-400" />
+                    </div>
+                    <input
+                        type="text"
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
+                        placeholder={t('Search or enter website...', language)}
+                        className="w-full py-4 pl-12 pr-4 text-lg bg-white/80 backdrop-blur-xl border border-gray-200 rounded-2xl shadow-lg focus:outline-none focus:ring-4 focus:ring-blue-100 transition-all placeholder-gray-400"
+                        autoFocus
+                    />
+                    </form>
+                </div>
+
+                <div className="mt-6 grid grid-cols-4 gap-6">
+                    {shortcuts.map(shortcut => (
+                    <div key={shortcut.id} className="relative group">
+                        <button
+                        onClick={() => onNavigate(shortcut.url)}
+                        className="w-24 h-24 glass-panel rounded-2xl flex flex-col items-center justify-center gap-2 hover:bg-white/80 transition-all hover:-translate-y-1"
+                        >
+                        <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center font-bold text-gray-600 text-xl">
+                            {shortcut.icon}
+                        </div>
+                        <span className="text-xs text-gray-500 font-medium">{shortcut.title}</span>
+                        </button>
+                        <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onRemoveShortcut(shortcut.id);
+                        }}
+                        className="absolute -top-2 -right-2 w-6 h-6 bg-white rounded-full shadow-md flex items-center justify-center opacity-0 group-hover:opacity-100 hover:bg-red-100 transition-opacity"
+                        title="删除"
+                        >
+                        <Icons.X className="w-4 h-4 text-gray-600" />
                         </button>
                     </div>
+                    ))}
+                    {shortcuts.length < 8 && (
+                    <button
+                        onClick={() => setShowAddModal(true)}
+                        className="w-24 h-24 border-2 border-dashed border-gray-300 rounded-2xl flex flex-col items-center justify-center gap-2 hover:border-gray-400 hover:bg-gray-50/50 transition-all text-gray-400"
+                    >
+                        <Icons.Plus className="w-8 h-8" />
+                        <span className="text-xs font-medium">{t('Add', language)}</span>
+                    </button>
+                    )}
+                </div>
                 </div>
             );
-        };
+            };
 
         // silent mode module
 
@@ -2682,6 +2908,7 @@
             const [isBookmarked, setIsBookmarked] = useState(false);
             const webviewRefs = useRef({});
             const [webview, setWebview] = useState(null); // Webview state
+            const [shortcuts, setShortcuts] = useState([]);
 
             // === [新增] User State & Login Logic ===
             const [user, setUser] = useState(null);
@@ -2795,6 +3022,79 @@
                 localStorage.setItem('anechoic_lang', newLang);
             };
 
+            const handleClearAllUserData = async () => {
+                //清user data
+                if (!window.confirm('Are you sure you want to clear all user data? This will delete your history, bookmarks, and reset theme colors.')) {
+                    return;
+                }
+                try {
+                    if (window.electronAPI && window.electronAPI.invoke) {
+                    await window.electronAPI.invoke('history:clear');
+                    }
+                    localStorage.removeItem('my_bookmarks');
+                    resetTheme();
+                    localStorage.removeItem('anechoic_shortcuts');
+                    const defaultShortcuts = [
+                        { id: 1, title: 'Google', url: 'https://google.com', icon: 'G' },
+                        { id: 2, title: 'Canvas', url: 'https://canvas.instructure.com', icon: 'C' },
+                        { id: 3, title: 'YouTube', url: 'https://youtube.com', icon: 'Y' },
+                        { id: 4, title: 'Gmail', url: 'https://gmail.com', icon: 'G' }
+                    ];
+                    setShortcuts(defaultShortcuts);
+                    setIsBookmarked(false);
+                    showToast('All user data cleared', 'success');
+                } catch (error) {
+                    console.error('Clear data error:', error);
+                    showToast('Failed to clear some data', 'error');
+                }
+                };
+                
+                //快捷方式
+                useEffect(() => {
+                    const saved = localStorage.getItem('anechoic_shortcuts');
+                    if (saved) {
+                        try {
+                        setShortcuts(JSON.parse(saved));
+                        } catch (e) {}
+                    } else {
+                        const defaultShortcuts = [
+                            { id: 1, title: 'Google', url: 'https://google.com', icon: 'G' },
+                            { id: 2, title: 'Canvas', url: 'https://canvas.instructure.com', icon: 'C' },
+                            { id: 3, title: 'YouTube', url: 'https://youtube.com', icon: 'Y' },
+                            { id: 4, title: 'Gmail', url: 'https://gmail.com', icon: 'G' }
+                        ];
+                        setShortcuts(defaultShortcuts);
+                        localStorage.setItem('anechoic_shortcuts', JSON.stringify(defaultShortcuts));
+                    }
+                }, []);
+
+                //Open new tab for right click menu
+                const openInNewTab = (url) => {
+                    const newId = `tab-${Date.now()}`;
+                    const newTab = { id: newId, title: url, url: url, isLoading: true, history: [url], historyIndex: 0, canGoBack: false, canGoForward: false };
+                    setTabs(prev => [...prev, newTab]);
+                    setActiveTabId(newId);
+                };
+
+                const addShortcut = (title, url) => {
+                    if (shortcuts.length >= 8) return;
+                    const newShortcut = {
+                        id: Date.now(),
+                        title,
+                        url,
+                        icon: title.charAt(0).toUpperCase()
+                    };
+                    const updated = [...shortcuts, newShortcut];
+                    setShortcuts(updated);
+                    localStorage.setItem('anechoic_shortcuts', JSON.stringify(updated));
+                };
+
+                const removeShortcut = (id) => {
+                    const updated = shortcuts.filter(s => s.id !== id);
+                    setShortcuts(updated);
+                    localStorage.setItem('anechoic_shortcuts', JSON.stringify(updated));
+                };
+
             // === [新增結束] ===
             // Verify anechoicAPI on mount
             useEffect(() => {
@@ -2825,6 +3125,13 @@
                     });
                 } else {
                     console.error('❌ electronAPI.onLoginSuccess is missing!');
+                }
+
+                if (window.electronAPI && window.electronAPI.on) {
+                    const handleTabCreate = (event, { url }) => {
+                        openInNewTab(url);
+                    };
+                    window.electronAPI.on('tabs:create', handleTabCreate);
                 }
             }, []);
 
@@ -3134,6 +3441,7 @@
                                     themeSettings={themeSettings}
                                     handleThemeChange={handleThemeChange}
                                     resetTheme={resetTheme}
+                                    onClearAllUserData={handleClearAllUserData}
                                     onOpenModule={setActiveModule}
                                     addTab={addTab}
                                     language={language}
@@ -3147,7 +3455,13 @@
                             {tabs.map(tab => (
                                 <div key={tab.id} className={`w-full h-full ${activeTabId === tab.id ? 'block' : 'hidden'}`}>
                                     {!tab.url ? (
-                                        <HomeView onNavigate={(url) => navigate(url)} onOpenModule={(module) => setActiveModule(module)} language={language} />
+                                        <HomeView
+                                            onNavigate={(url) => navigate(url)}
+                                            onOpenModule={(module) => setActiveModule(module)} language={language}
+                                            shortcuts={shortcuts}
+                                            onAddShortcut={addShortcut}
+                                            onRemoveShortcut={removeShortcut}
+                                        />
                                     ) : (
                                         <webview ref={(el) => { if (el) { webviewRefs.current[tab.id] = el; handleWebviewMount(el); } }} src={tab.url} className="w-full h-full" />
                                     )}
