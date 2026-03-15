@@ -1914,6 +1914,40 @@
             const [input, setInput] = useState('');
             const [loading, setLoading] = useState(false);
 
+            // 視圖與日期狀態
+            const [viewMode, setViewMode] = useState('list'); // 預設改為 'list' 以便看清三大區域
+            const [selectedDate, setSelectedDate] = useState('');
+            const [currentMonth, setCurrentMonth] = useState(new Date());
+
+            // 表單狀態
+            const [priority, setPriority] = useState('medium');
+            const [startDate, setStartDate] = useState('');
+            const [startTime, setStartTime] = useState('');
+            const [endDate, setEndDate] = useState('');
+            const [endTime, setEndTime] = useState('');
+
+            // 拖曳排序狀態
+            const [draggedItemId, setDraggedItemId] = useState(null);
+
+            // 權重設定：用於自動排序與日曆圓點顏色
+            const priorityWeight = { high: 3, medium: 2, low: 1 };
+            const priorityColors = {
+                high: 'border-l-red-500',
+                medium: 'border-l-yellow-400',
+                low: 'border-l-green-500'
+            };
+
+            // 取得本地系統的「今日」字串 (YYYY-MM-DD)
+            const getLocalToday = () => {
+                const d = new Date();
+                const year = d.getFullYear();
+                const month = String(d.getMonth() + 1).padStart(2, '0');
+                const day = String(d.getDate()).padStart(2, '0');
+                return `${year}-${month}-${day}`;
+            };
+
+            const systemToday = getLocalToday();
+
             useEffect(() => {
                 if (isOpen) {
                     setLoading(true);
@@ -1925,22 +1959,59 @@
                         console.error(e);
                         setTodos([]);
                     }
+                    setSelectedDate(systemToday);
+                    setStartDate(systemToday);
+                    setEndDate(systemToday);
                     setLoading(false);
                 }
-            }, [isOpen]);
+            }, [isOpen, systemToday]);
 
             const saveTodos = (newTodos) => {
                 localStorage.setItem(getStorageKey('anechoic_todos'), JSON.stringify(newTodos));
                 setTodos(newTodos);
             };
 
+            // === 自動排序邏輯 ===
+            const sortTodosArray = (list) => {
+                return [...list].sort((a, b) => {
+                    // 1. 未完成排前面
+                    if (a.completed !== b.completed) return a.completed ? 1 : -1;
+                    // 2. 緊急程度 (High > Med > Low)
+                    if (priorityWeight[a.priority] !== priorityWeight[b.priority]) {
+                        return priorityWeight[b.priority] - priorityWeight[a.priority];
+                    }
+                    // 3. 截止時間早的排前面
+                    const dateA = a.endDate || a.startDate || '9999-12-31';
+                    const dateB = b.endDate || b.startDate || '9999-12-31';
+                    if (dateA !== dateB) return dateA.localeCompare(dateB);
+
+                    const timeA = a.endTime || a.startTime || '23:59';
+                    const timeB = b.endTime || b.startTime || '23:59';
+                    return timeA.localeCompare(timeB);
+                });
+            };
+
             const addTodo = (e) => {
                 e.preventDefault();
                 if (!input.trim()) return;
-                const newTodo = { id: Date.now(), text: input.trim(), completed: false };
-                const newTodos = [...todos, newTodo];
+
+                const newTodo = {
+                    id: Date.now(),
+                    text: input.trim(),
+                    completed: false,
+                    priority,
+                    startDate: viewMode === 'calendar' ? selectedDate : startDate,
+                    startTime,
+                    endDate: viewMode === 'calendar' ? selectedDate : endDate,
+                    endTime
+                };
+
+                const newTodos = sortTodosArray([...todos, newTodo]);
                 saveTodos(newTodos);
+
                 setInput('');
+                setStartTime('');
+                setEndTime('');
                 showToast('Task added', 'success');
             };
 
@@ -1948,7 +2019,7 @@
                 const newTodos = todos.map(todo =>
                     todo.id === id ? { ...todo, completed: !todo.completed } : todo
                 );
-                saveTodos(newTodos);
+                saveTodos(sortTodosArray(newTodos));
             };
 
             const deleteTodo = (id) => {
@@ -1957,59 +2028,268 @@
                 showToast('Task deleted', 'success');
             };
 
+            // === 拖曳排序邏輯 ===
+            const handleDragStart = (e, id) => {
+                setDraggedItemId(id);
+                e.dataTransfer.effectAllowed = "move";
+            };
+
+            const handleDragOver = (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = "move";
+            };
+
+            const handleDrop = (e, targetId) => {
+                e.preventDefault();
+                if (draggedItemId === targetId || !draggedItemId) return;
+
+                const newTodos = [...todos];
+                const draggedIdx = newTodos.findIndex(t => t.id === draggedItemId);
+                const targetIdx = newTodos.findIndex(t => t.id === targetId);
+
+                if (draggedIdx !== -1 && targetIdx !== -1) {
+                    const [draggedItem] = newTodos.splice(draggedIdx, 1);
+                    newTodos.splice(targetIdx, 0, draggedItem);
+                    saveTodos(newTodos);
+                }
+                setDraggedItemId(null);
+            };
+
+            // === 日曆與跨日判斷邏輯 ===
+            const isTaskOnDate = (t, dateStr) => {
+                const start = t.startDate || t.endDate;
+                const end = t.endDate || t.startDate;
+                if (!start && !end) return false;
+                return dateStr >= start && dateStr <= end;
+            };
+
+            const isLongTermTask = (t) => t.startDate && t.endDate && t.startDate !== t.endDate;
+
+            const renderCalendar = () => {
+                const year = currentMonth.getFullYear();
+                const month = currentMonth.getMonth();
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                const firstDay = new Date(year, month, 1).getDay();
+
+                const days = [];
+                for (let i = 0; i < firstDay; i++) {
+                    days.push(<div key={`empty-${i}`} className="h-8"></div>);
+                }
+
+                for (let i = 1; i <= daysInMonth; i++) {
+                    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(i).padStart(2, '0')}`;
+                    const isSelected = selectedDate === dateStr;
+                    const isToday = dateStr === systemToday;
+
+                    const tasksOnThisDay = todos.filter(t => !t.completed && isTaskOnDate(t, dateStr));
+
+                    let dotClass = '';
+                    if (tasksOnThisDay.length > 0) {
+                        const highestPriority = tasksOnThisDay.sort((a, b) => priorityWeight[b.priority] - priorityWeight[a.priority])[0].priority;
+                        dotClass = highestPriority === 'high' ? 'bg-red-500' : highestPriority === 'medium' ? 'bg-yellow-400' : 'bg-green-500';
+                    }
+
+                    days.push(
+                        <button
+                            key={i}
+                            onClick={() => {
+                                setSelectedDate(dateStr);
+                                setStartDate(dateStr);
+                                setEndDate(dateStr);
+                            }}
+                            className={`h-8 w-8 rounded-full flex items-center justify-center text-sm relative transition-all mx-auto
+                        ${isSelected ? 'bg-pink-500 text-white font-bold shadow-md' : 'text-gray-700 hover:bg-pink-100'}
+                        ${isToday && !isSelected ? 'border-2 border-pink-300' : ''}
+                    `}
+                        >
+                            {i}
+                            {dotClass && !isSelected && (
+                                <span className={`absolute bottom-1 w-1.5 h-1.5 rounded-full ${dotClass}`}></span>
+                            )}
+                        </button>
+                    );
+                }
+                return days;
+            };
+
+            const changeMonth = (offset) => {
+                setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + offset, 1));
+            };
+
+            // === 三大區域分流邏輯 ===
+            // 日曆模式：僅顯示選定日期的任務。清單模式：顯示所有任務
+            const displayTodos = viewMode === 'calendar'
+                ? todos.filter(t => isTaskOnDate(t, selectedDate))
+                : todos;
+
+            // 分流規則：
+            // 1. 長期計畫：起始與結束日期不同。
+            // 2. 今日任務：非長期計畫，且日期等於系統當前日期。
+            // 3. 其他任務：非長期計畫，且日期不等於系統當前日期 (可能是過去或未來)。
+            const longTermTodos = displayTodos.filter(isLongTermTask);
+            const todayTodos = displayTodos.filter(t => !isLongTermTask(t) && (t.startDate === systemToday || t.endDate === systemToday));
+            const otherTodos = displayTodos.filter(t => !isLongTermTask(t) && t.startDate !== systemToday && t.endDate !== systemToday);
+
+            const completedCount = displayTodos.filter(t => t.completed).length;
+            const totalCount = displayTodos.length;
+            const progress = totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
+
+            const renderTodoListGroup = (list, title, iconStr) => {
+                if (list.length === 0) return null;
+                return (
+                    <div className="mb-5 animate-fade-in">
+                        <div className="text-xs font-bold text-gray-500 mb-2 flex items-center gap-1.5 px-1 uppercase tracking-wider">
+                            <span className="text-sm">{iconStr}</span> {title}
+                            <span className="bg-gray-200 text-gray-500 rounded-full px-2 py-0.5 text-[10px] ml-1">{list.length}</span>
+                        </div>
+                        <div className="space-y-2">
+                            {list.map((todo) => (
+                                <div
+                                    key={todo.id}
+                                    draggable
+                                    onDragStart={(e) => handleDragStart(e, todo.id)}
+                                    onDragOver={handleDragOver}
+                                    onDrop={(e) => handleDrop(e, todo.id)}
+                                    className={`flex items-start gap-3 p-3 bg-white border border-gray-100 shadow-sm rounded-lg hover:shadow-md transition-all group border-l-[3px] cursor-move ${priorityColors[todo.priority || 'medium']} ${draggedItemId === todo.id ? 'opacity-50 border-dashed' : ''}`}
+                                >
+                                    <button
+                                        onClick={() => toggleTodo(todo.id)}
+                                        className={`w-5 h-5 rounded border-2 mt-0.5 flex items-center justify-center transition-colors shrink-0 ${todo.completed
+                                            ? 'bg-pink-500 border-pink-500 text-white'
+                                            : 'border-gray-300 hover:border-pink-400'
+                                            }`}
+                                    >
+                                        {todo.completed && <Icons.CheckSquare className="w-3 h-3" />}
+                                    </button>
+
+                                    <div className="flex flex-col flex-1 min-w-0">
+                                        <span className={`text-sm font-medium ${todo.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}>
+                                            {todo.text}
+                                        </span>
+                                        {(todo.startDate || todo.endDate) && (
+                                            <div className="text-[10px] text-gray-400 mt-1 flex flex-wrap gap-2 font-mono bg-gray-50 px-2 py-1 rounded w-fit">
+                                                {(todo.startDate || todo.startTime) && <span>起: {todo.startDate} {todo.startTime}</span>}
+                                                {(todo.endDate || todo.endTime) && <span className={todo.priority === 'high' ? 'text-red-400 font-bold' : ''}>迄: {todo.endDate} {todo.endTime}</span>}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <button
+                                        onClick={() => deleteTodo(todo.id)}
+                                        className="p-1.5 opacity-0 group-hover:opacity-100 hover:bg-red-50 rounded-lg transition-all text-red-500 shrink-0 mt-0.5"
+                                        title="Delete task"
+                                    >
+                                        <Icons.Trash className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                );
+            };
+
             if (!isOpen) return null;
 
             return (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm animate-fade-in">
-                    <div className="w-[500px] h-[600px] bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl flex flex-col border border-white/50 overflow-hidden animate-slide-up">
-                        <div className="h-14 border-b border-gray-200/50 flex items-center justify-between px-4 bg-white/50">
+                    <div className="w-[500px] h-[750px] bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl flex flex-col border border-white/50 overflow-hidden animate-slide-up">
+
+                        {/* 頂部 Header & 視圖切換 */}
+                        <div className="h-14 border-b border-gray-200/50 flex items-center justify-between px-4 bg-white/50 shrink-0">
                             <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center text-pink-600"><Icons.CheckSquare className="w-5 h-5" /></div>
+                                <div className="w-8 h-8 rounded-full bg-pink-100 flex items-center justify-center text-pink-600">
+                                    <Icons.CheckSquare className="w-5 h-5" />
+                                </div>
                                 <span className="font-semibold text-gray-700">{t('Todo List', language)}</span>
                             </div>
-                            <button onClick={onClose} className="p-2 hover:bg-gray-200/50 rounded-full transition-colors"><Icons.X className="w-5 h-5 text-gray-500" /></button>
+
+                            <div className="flex items-center gap-3">
+                                <div className="flex bg-gray-100 p-1 rounded-lg">
+                                    <button onClick={() => setViewMode('list')} className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${viewMode === 'list' ? 'bg-white shadow-sm text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}>清單</button>
+                                    <button onClick={() => setViewMode('calendar')} className={`px-3 py-1 text-xs font-bold rounded-md transition-all ${viewMode === 'calendar' ? 'bg-white shadow-sm text-gray-800' : 'text-gray-500 hover:text-gray-700'}`}>日曆</button>
+                                </div>
+                                <button onClick={onClose} className="p-2 hover:bg-gray-200/50 rounded-full transition-colors"><Icons.X className="w-5 h-5 text-gray-500" /></button>
+                            </div>
                         </div>
-                        <div className="p-4 border-b border-gray-200/50">
+
+                        {/* 1. 細長進度條 */}
+                        <div className="h-1.5 w-full bg-gray-100 shrink-0">
+                            <div className="h-full bg-gradient-to-r from-pink-400 to-pink-600 transition-all duration-500 ease-out" style={{ width: `${progress}%` }}></div>
+                        </div>
+
+                        {/* 2. 日曆區塊 (僅在日曆模式顯示) */}
+                        {viewMode === 'calendar' && (
+                            <div className="p-4 bg-gray-50/30 border-b border-gray-200/50 shrink-0 animate-slide-up">
+                                <div className="flex justify-between items-center mb-2">
+                                    <button onClick={() => changeMonth(-1)} className="p-1 hover:bg-gray-200 rounded-lg text-gray-600"><Icons.ChevronLeft className="w-4 h-4" /></button>
+                                    <span className="font-bold text-gray-700">
+                                        {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
+                                    </span>
+                                    <button onClick={() => changeMonth(1)} className="p-1 hover:bg-gray-200 rounded-lg text-gray-600"><Icons.ChevronRight className="w-4 h-4" /></button>
+                                </div>
+                                <div className="grid grid-cols-7 gap-1 text-center mb-1">
+                                    {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map(d => (
+                                        <div key={d} className="text-xs font-semibold text-gray-400">{d}</div>
+                                    ))}
+                                </div>
+                                <div className="grid grid-cols-7 gap-1">
+                                    {renderCalendar()}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* 3. 任務新增表單 */}
+                        <div className="p-4 bg-gray-50 border-b border-gray-200/50 flex flex-col gap-3 shrink-0">
+                            <div className="flex flex-wrap gap-2 items-center">
+                                <select value={priority} onChange={e => setPriority(e.target.value)} className="text-xs border border-gray-200 rounded-md p-1.5 outline-none bg-white font-medium text-gray-700 shadow-sm cursor-pointer hover:border-pink-300 transition-colors">
+                                    <option value="high">🔴 緊急</option>
+                                    <option value="medium">🟡 一般</option>
+                                    <option value="low">🟢 次要</option>
+                                </select>
+
+                                <div className="flex text-xs items-center gap-1 bg-white border border-gray-200 rounded-md p-1 shadow-sm">
+                                    <span className="text-gray-400 font-medium px-1">起</span>
+                                    {viewMode === 'list' && <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} className="outline-none text-gray-600 bg-transparent cursor-pointer" />}
+                                    <input type="time" value={startTime} onChange={e => setStartTime(e.target.value)} className="outline-none text-gray-600 bg-transparent cursor-pointer" />
+                                </div>
+
+                                <div className="flex text-xs items-center gap-1 bg-white border border-gray-200 rounded-md p-1 shadow-sm">
+                                    <span className="text-gray-400 font-medium px-1">迄</span>
+                                    {viewMode === 'list' && <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} className="outline-none text-gray-600 bg-transparent cursor-pointer" />}
+                                    <input type="time" value={endTime} onChange={e => setEndTime(e.target.value)} className="outline-none text-gray-600 bg-transparent cursor-pointer" />
+                                </div>
+                            </div>
+
                             <form onSubmit={addTodo} className="flex gap-2">
                                 <input
                                     type="text"
                                     value={input}
                                     onChange={(e) => setInput(e.target.value)}
-                                    placeholder={t('Add a new task...', language)}
-                                    className="flex-1 bg-gray-100/50 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500"
+                                    placeholder="新增待辦事項..."
+                                    className="flex-1 bg-white border border-gray-200 shadow-sm rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-pink-500 transition-all"
                                 />
-                                <button type="submit" disabled={!input.trim()} className="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"><Icons.Plus className="w-4 h-4" /></button>
+                                <button type="submit" disabled={!input.trim()} className="px-4 py-2 bg-pink-500 text-white font-bold rounded-lg hover:bg-pink-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-md shadow-pink-500/20">
+                                    新增
+                                </button>
                             </form>
                         </div>
-                        <div className="flex-1 overflow-y-auto p-4 space-y-2">
+
+                        {/* 4. 任務列表 (三區域顯示) */}
+                        <div className="flex-1 overflow-y-auto p-4 bg-slate-50 relative">
                             {loading ? (
                                 <div className="text-center text-gray-500 py-8">{t('Loading todos...', language)}</div>
-                            ) : todos.length === 0 ? (
-                                <div className="text-center text-gray-500 py-8">{t('No tasks yet. Add one above!', language)}</div>
+                            ) : totalCount === 0 ? (
+                                <div className="absolute inset-0 flex flex-col items-center justify-center py-10 text-gray-400">
+                                    <Icons.CheckSquare className="w-12 h-12 mb-3 opacity-20" />
+                                    <p className="text-sm font-medium">目前沒有任務，在上方新增吧！</p>
+                                </div>
                             ) : (
-                                todos.map((todo) => (
-                                    <div key={todo.id} className="flex items-center gap-3 p-3 bg-gray-50/50 rounded-lg hover:bg-gray-100/50 transition-colors group">
-                                        <button
-                                            onClick={() => toggleTodo(todo.id)}
-                                            className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${todo.completed
-                                                ? 'bg-pink-500 border-pink-500 text-white'
-                                                : 'border-gray-300 hover:border-pink-400'
-                                                }`}
-                                        >
-                                            {todo.completed && <Icons.CheckSquare className="w-3 h-3" />}
-                                        </button>
-                                        <span className={`flex-1 text-sm ${todo.completed ? 'line-through text-gray-500' : 'text-gray-700'}`}>
-                                            {todo.text}
-                                        </span>
-                                        <button
-                                            onClick={() => deleteTodo(todo.id)}
-                                            className="p-1 opacity-0 group-hover:opacity-100 hover:bg-red-100 rounded transition-all text-red-500"
-                                            title="Delete task"
-                                        >
-                                            <Icons.Trash className="w-4 h-4" />
-                                        </button>
-                                    </div>
-                                ))
+                                <>
+                                    {/* 順序：今日 -> 其他 -> 長期 */}
+                                    {renderTodoListGroup(todayTodos, '今日任務', '🎯')}
+                                    {renderTodoListGroup(otherTodos, '其他任務', '📅')}
+                                    {renderTodoListGroup(longTermTodos, '長期計畫 (跨日)', '📌')}
+                                </>
                             )}
                         </div>
                     </div>
