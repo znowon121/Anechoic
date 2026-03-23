@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Notes</title>
+    <!-- Tailwind CSS (for optional UI elements like the close button) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/notes.css">
+</head>
+<body class="h-screen w-screen m-0 overflow-hidden">
+    <div id="smart-notes-container" class="notes-active relative w-full h-full">
+        <!-- Floating Close Button (Mock) -->
+        <button class="absolute top-2 right-4 p-2.5 bg-gray-100/80 hover:bg-gray-200 text-gray-600 rounded-full transition-all z-50 shadow-sm backdrop-blur-sm" title="Close Notes">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+        
+        <!-- Vanilla JS notes app mounts here -->
+        <div id="notes-app-root" class="notes" style="height: 100%;"></div>
+    </div>
+
+    <!-- Notes App Module -->
+    <script src="js/App.js" type="module"></script>
+</body>
+</html>

@@ -118,8 +118,8 @@ function addToHistory(title, url) {
 }
 
 function createWindow() {
-  const preloadPath = path.join(__dirname, 'preload.js');
-  const iconPath = path.join(__dirname, 'Browser', 'assets', 'icon.png');
+  const preloadPath = path.join(__dirname, '..', 'preload', 'preload.js');
+  const iconPath = path.join(__dirname, '..', 'renderer', 'assets', 'icon.png');
 
   const windowOptions = {
     width: 1200,
@@ -141,7 +141,7 @@ function createWindow() {
   mainWindow = new BrowserWindow(windowOptions);
 
   // 載入 Browser/index.html
-  mainWindow.loadFile(path.join(__dirname, 'Browser', 'index.html'));
+  mainWindow.loadFile(path.join(__dirname, '..', 'renderer', 'features', 'browser', 'browser.html'));
 
   // 開發模式下開啟 DevTools
   if (process.argv.includes('--dev')) {
@@ -599,7 +599,7 @@ let aiContext = null;
 let aiSession = null;
 
 ipcMain.handle('ai:get-local-models', () => {
-  const modelsDir = path.join(__dirname, 'models');
+  const modelsDir = path.join(__dirname, '..', '..', 'models');
   if (!fs.existsSync(modelsDir)) {
     fs.mkdirSync(modelsDir, { recursive: true });
     return [];
@@ -618,7 +618,7 @@ ipcMain.handle('ai:load-model', async (event, filename) => {
     return { ok: false, error: 'Invalid model filename' };
   }
   
-  const modelsDir = path.resolve(__dirname, 'models');
+  const modelsDir = path.resolve(__dirname, '..', '..', 'models');
   const resolvedPath = path.resolve(modelsDir, filename);
   const relPath = path.relative(modelsDir, resolvedPath);
   
@@ -639,7 +639,7 @@ async function initLocalAI(modelFilename = "Meta-Llama-3.1-8B-Instruct-Q8_0.gguf
       llama = await getLlama();
     }
 
-    const modelPath = path.join(__dirname, "models", modelFilename);
+    const modelPath = path.join(__dirname, '..', '..', 'models', modelFilename);
     
     if (!fs.existsSync(modelPath)) {
       throw new Error(`找不到模型檔案：${modelFilename}`);

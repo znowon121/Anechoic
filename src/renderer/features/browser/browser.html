@@ -20,7 +20,9 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
     <!-- External Stylesheet -->
-    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="browser.css">
+    <!-- Notes Stylesheet -->
+    <link rel="stylesheet" href="../notes/css/notes.css">
     <script>
         tailwind.config = {
             theme: {
@@ -3169,8 +3171,28 @@
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
-    <!-- Notes App Module (vanilla JS, loaded as ES module) -->
-    <script src="js/notes/main.js" type="module"></script>
+    <!-- Notes App Module -->
+    <script type="module">
+        import App from "../notes/js/App.js";
+        
+        // Initialize the Notes App for React module to call
+        let notesAppInstance = null;
+        window.initNotesApp = function () {
+            if (notesAppInstance) return;
+            const root = document.getElementById("notes-app-root");
+            if (root) notesAppInstance = new App(root);
+        };
+        
+        window.notesAutoSave = function (text, url) {
+            if (!notesAppInstance) return false;
+            return notesAppInstance.addNoteFromCopy(text, url);
+        };
+        
+        window.isNotesAutoSaveEnabled = function () {
+            if (!notesAppInstance) return false;
+            return notesAppInstance.isAutoSaveEnabled;
+        };
+    </script>
 </body>
 
 </html>
