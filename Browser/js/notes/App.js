@@ -38,14 +38,28 @@ export default class App {
      * @returns {boolean} true if a note was saved
      */
     addNoteFromCopy(text, url) {
+        console.log("🔥 [STEP 3] 進入 App.js addNoteFromCopy 函數");
+        console.log("   -> isAutoSaveEnabled 狀態:", this.isAutoSaveEnabled);
+
         if (!this.isAutoSaveEnabled) {
+            console.warn("⚠️ 自動儲存未開啟，已攔截");
             return false;
         }
 
-        NotesAPI.saveNote({
-            title: url || "Copied Text",
-            body: text
-        });
+        let title = "Copied Text";
+        let body = text;
+
+        if (url) {
+            try {
+                const parsed = new URL(url);
+                title = parsed.hostname.replace(/^www\./, "");
+            } catch (e) {
+                title = "Copied Text";
+            }
+            body = `${text}\n\nSource: ${url}`;
+        }
+
+        NotesAPI.saveNote({ title, body });
 
         this._refreshNotes();
         return true;

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="zh-HK">
 
 <head>
@@ -1380,39 +1380,44 @@
         const SmartNotesModule = ({ isOpen, onClose, language }) => {
             const notesInitRef = useRef(false);
 
-            // Initialize the vanilla JS notes app exactly once
+            // Initialize the vanilla JS notes app exactly once in the background
             useEffect(() => {
-                if (isOpen && !notesInitRef.current) {
-                    // Small delay to ensure DOM is painted before vanilla JS touches it
-                    requestAnimationFrame(() => {
-                        if (typeof window.initNotesApp === 'function') {
-                            window.initNotesApp();
-                            notesInitRef.current = true;
-                        }
-                    });
-                }
-            }, [isOpen]);
+                if (notesInitRef.current) return;
+
+                let attempts = 0;
+                const tryInit = () => {
+                    if (typeof window.initNotesApp === 'function') {
+                        window.initNotesApp();
+                        notesInitRef.current = true;
+                        console.log("✅ [NotesApp] 后台初始化成功！");
+                    } else if (attempts < 50) {
+                        attempts++;
+                        setTimeout(tryInit, 100); // Retry every 100ms until the module is loaded
+                    } else {
+                        console.error("❌ [NotesApp] 初始化失败，等待超时。");
+                    }
+                };
+                
+                // Start trying to initialize immediately
+                tryInit();
+            }, []); // Empty dependency array -> runs immediately on app mount
 
             // Always render — toggle class for CSS slide transition
             const containerClass = isOpen ? 'notes-active' : '';
 
             return (
                 <div id="smart-notes-container" className={containerClass}>
-                    {/* Header (React-managed) */}
-                    <div className="h-14 border-b border-gray-200 flex items-center justify-between px-6 bg-white" style={{ flexShrink: 0 }}>
-                        <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 shadow-sm">
-                                <Icons.FileText className="w-5 h-5" />
-                            </div>
-                            <span className="font-semibold text-gray-800 text-lg">{t('Smart Notes', language)}</span>
-                        </div>
-                        <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-                            <Icons.X className="w-5 h-5 text-gray-500" />
-                        </button>
-                    </div>
-
-                    {/* Vanilla JS notes app mounts here — React leaf node, never re-rendered */}
-                    <div id="notes-app-root" className="notes" style={{ height: 'calc(100% - 3.5rem)' }}></div>
+                    {/* Floating Close Button */}
+                    <button 
+                        onClick={onClose} 
+                        className="absolute top-2 right-4 p-2.5 bg-gray-100/80 hover:bg-gray-200 text-gray-600 rounded-full transition-all z-50 shadow-sm backdrop-blur-sm"
+                        title="Close Notes"
+                    >
+                        <Icons.X className="w-5 h-5" />
+                    </button>
+                    
+                    {/* Vanilla JS notes app mounts here */}
+                    <div id="notes-app-root" className="notes" style={{ height: '100%' }}></div>
                 </div>
             );
         };
@@ -2169,10 +2174,10 @@
                         <div className="my-2 border-t border-gray-200/50 mx-4"></div>
 
                         <div className={`px-3 py-2 ${!isOpen && 'flex justify-center'}`}>
-                            <button onClick={() => setMode(mode === 'daily' ? 'learning' : 'daily')} className={`...`}>
-                                {mode === 'daily' ? <Icons.Sun className="w-5 h-5" /> : <Icons.Moon className="w-5 h-5" />}
+                            <button onClick={() => setMode(mode === 'daily' ? 'learning' : 'daily')} className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl transition-all overflow-hidden ${mode === 'learning' ? 'text-blue-700 bg-blue-50 hover:bg-blue-100' : 'text-orange-700 bg-orange-50 hover:bg-orange-100'} ${!isOpen && 'justify-center px-0 w-auto'}`}>
+                                {mode === 'daily' ? <Icons.Sun className="w-5 h-5 flex-shrink-0" /> : <Icons.Moon className="w-5 h-5 flex-shrink-0" />}
                                 {/* 替換按鈕文字 */}
-                                {isOpen && <span className="text-sm font-medium">{mode === 'daily' ? t('Daily Mode', language) : t('Learning Mode', language)}</span>}
+                                {isOpen && <span className="text-sm font-medium truncate min-w-0">{mode === 'daily' ? t('Daily Mode', language) : t('Learning Mode', language)}</span>}
                             </button>
                         </div>
 
@@ -2785,6 +2790,18 @@
                 }
             }, []);
 
+            // Listen for navigation requests from Vanilla JS (Smart Notes)
+            useEffect(() => {
+                const handleCustomNav = (e) => {
+                    if (e.detail) {
+                        navigate(e.detail);
+                        setActiveModule(null); // Auto-close the notes panel
+                    }
+                };
+                window.addEventListener('ANECHOIC_NAVIGATE', handleCustomNav);
+                return () => window.removeEventListener('ANECHOIC_NAVIGATE', handleCustomNav);
+            });
+
             // 侧边栏宽度通信
             const handleSidebarToggle = async (newOpenState) => {
                 setSidebarOpen(newOpenState);
@@ -2895,7 +2912,7 @@
                 // Attach dom-ready listener
                 const onDomReady = () => {
                     try {
-                        // Inject script to capture copy events
+                        console.log("🔥 注入复制监听脚本成功!");
                         el.executeJavaScript(`
                             document.addEventListener('copy', () => {
                                 const selection = document.getSelection().toString();
@@ -2909,22 +2926,28 @@
                     }
                 };
 
-                // Check if already ready or existing listener? 
-                // Simplest is just add listener.
+                // ONLY rely on the event listener. NEVER call webview methods synchronously here.
                 el.addEventListener('dom-ready', onDomReady);
 
                 // Listen for console messages
                 el.addEventListener('console-message', (e) => {
                     if (e.message && e.message.startsWith('ANECHOIC_COPY_EVENT::')) {
                         const text = e.message.replace('ANECHOIC_COPY_EVENT::', '');
-                        const url = el.getURL();
+                        const url = el.getURL(); // Safe here because console-message implies it's loaded
 
-                        // Delegate to notes app auto-save (checks isAutoSaveEnabled internally)
+                        console.log("🔥 [STEP 1] 成功拦截 Webview 复制事件!");
+                        console.log("   -> URL:", url);
+                        console.log("   -> Text Length:", text.length);
+
                         if (typeof window.notesAutoSave === 'function') {
+                            console.log("🔥 [STEP 2] 呼叫 window.notesAutoSave...");
                             const saved = window.notesAutoSave(text, url);
+                            console.log("🔥 [STEP 4] notesAutoSave 回傳結果:", saved);
                             if (saved) {
                                 showToast('Smart Note Saved!', 'success');
                             }
+                        } else {
+                            console.error("❌ 錯誤：找不到 window.notesAutoSave 函數！");
                         }
                     }
                 });

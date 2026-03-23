@@ -16,7 +16,10 @@ export default class NotesView {
                 <div class="notes__list"></div>
             </div>
             <div class="notes__preview">
-                <input class="notes__title" type="text" placeholder="New Note...">
+                <div class="notes__title-wrapper" style="display: flex; gap: 12px; align-items: center; width: 100%;">
+                    <input class="notes__title" type="text" placeholder="New Note..." style="flex: 1; min-width: 0;">
+                    <button class="notes__open-btn" style="display: none;" title="Open Source Link">🌐 Open</button>
+                </div>
                 <textarea class="notes__body">Take Note...</textarea>
             </div>
         `;
@@ -25,6 +28,14 @@ export default class NotesView {
         const btnAddNote = this.root.querySelector(".notes__add");
         const inpTitle = this.root.querySelector(".notes__title");
         const inpBody = this.root.querySelector(".notes__body");
+
+        const btnOpen = this.root.querySelector(".notes__open-btn");
+        btnOpen.addEventListener("click", () => {
+            const url = btnOpen.dataset.url;
+            if (url) {
+                window.dispatchEvent(new CustomEvent('ANECHOIC_NAVIGATE', { detail: url }));
+            }
+        });
 
         btnAutoSave.addEventListener("click", () => {
             this.onAutoSaveToggle();
@@ -57,7 +68,8 @@ export default class NotesView {
                     ${body.length > MAX_BODY_LENGTH ? "..." : ""}
                 </div>
                 <div class="notes__small-updated">
-                    ${updated.toLocaleString(undefined, { dateStyle: "full", timeStyle: "short" })}
+                    <div class="notes__updated-date">${updated.toLocaleDateString(undefined, { dateStyle: "long" })}</div>
+                    <div class="notes__updated-time">${updated.toLocaleTimeString(undefined, { timeStyle: "short" })}</div>
                 </div>
             </div>
         `;
@@ -94,6 +106,16 @@ export default class NotesView {
     updateActiveNote(note) {
         this.root.querySelector(".notes__title").value = note.title;
         this.root.querySelector(".notes__body").value = note.body;
+
+        const btnOpen = this.root.querySelector(".notes__open-btn");
+        const sourceMatch = note.body.match(/Source:\s*(https?:\/\/[^\s]+)/);
+        if (sourceMatch && sourceMatch[1]) {
+            btnOpen.style.display = "block";
+            btnOpen.dataset.url = sourceMatch[1];
+        } else {
+            btnOpen.style.display = "none";
+            btnOpen.dataset.url = "";
+        }
 
         this.root.querySelectorAll(".notes__list-item").forEach(noteListItem => {
             noteListItem.classList.remove("notes__list-item--selected");

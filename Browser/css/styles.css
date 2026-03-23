@@ -157,11 +157,11 @@ body {
 }
 
 #smart-notes-container .notes__sidebar {
-    border-right: 2px solid #dddddd;
+    border-right: 1px solid #e5e7eb;
     flex-shrink: 0;
     overflow-y: auto;
     padding: 1em;
-    width: 300px;
+    width: 220px;
 }
 
 #smart-notes-container .notes__add {
@@ -170,10 +170,10 @@ body {
     border-radius: 7px;
     color: #ffffff;
     cursor: pointer;
-    font-size: 1.25em;
+    font-size: 0.9em;
     font-weight: bold;
     margin-bottom: 1em;
-    padding: 0.75em 0;
+    padding: 0.5em 0;
     width: 100%;
 }
 
@@ -183,31 +183,58 @@ body {
 
 #smart-notes-container .notes__list-item {
     cursor: pointer;
+    padding: 12px; /* Move padding to the parent container */
+    margin-bottom: 8px;
+    border-radius: 7px;
+    box-sizing: border-box; /* Ensure padding doesn't add to 100% width */
+    width: 100%;
+    overflow: hidden; /* Contain everything */
 }
 
 #smart-notes-container .notes__list-item--selected {
     background: #eeeeee;
-    border-radius: 7px;
     font-weight: bold;
 }
 
+/* Unbreakable truncation rule for ALL text inside the list item */
 #smart-notes-container .notes__small-title,
-#smart-notes-container .notes__small-updated {
-    padding: 10px;
+#smart-notes-container .notes__small-body {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    display: block;
+    padding: 0; /* Remove inner padding to prevent width calculation issues */
 }
 
 #smart-notes-container .notes__small-title {
-    font-size: 1.2em;
+    font-size: 1.1em;
+    margin-bottom: 4px;
 }
 
 #smart-notes-container .notes__small-body {
-    padding: 0 10px;
+    font-size: 0.9em;
+    color: #555555;
+    margin-bottom: 6px;
 }
 
 #smart-notes-container .notes__small-updated {
     color: #aaaaaa;
     font-style: italic;
-    text-align: right;
+    text-align: left;
+    font-size: 0.8em;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 4px;
+}
+
+#smart-notes-container .notes__updated-date,
+#smart-notes-container .notes__updated-time {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
 }
 
 #smart-notes-container .notes__preview {
@@ -227,6 +254,9 @@ body {
 #smart-notes-container .notes__title {
     font-size: 3em;
     font-weight: bold;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 #smart-notes-container .notes__body {
@@ -241,16 +271,17 @@ body {
 #smart-notes-container .notes__autosave-toggle {
     display: flex;
     align-items: center;
-    gap: 8px;
+    justify-content: center;
+    gap: 6px;
     width: 100%;
-    padding: 0.65em 0.8em;
+    padding: 0.4em 0.6em;
     margin-bottom: 0.5em;
     border: 2px solid #dddddd;
     border-radius: 7px;
     background: #ffffff;
     color: #666666;
     cursor: pointer;
-    font-size: 0.95em;
+    font-size: 0.8em;
     font-weight: 600;
     transition: all 0.2s ease;
 }
@@ -275,4 +306,21 @@ body {
 #smart-notes-container .notes__autosave-icon {
     font-size: 1.1em;
     line-height: 1;
+}
+
+#smart-notes-container .notes__open-btn {
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #2563eb;
+    border-radius: 8px;
+    padding: 0.5em 1em;
+    font-size: 0.85em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+#smart-notes-container .notes__open-btn:hover {
+    background: #dbeafe;
+    border-color: #93c5fd;
 }
