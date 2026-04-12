@@ -34,6 +34,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Smart Notes API
   getNotes: () => ipcRenderer.invoke('notes:get'),
+  saveNote: (noteData) => ipcRenderer.invoke('notes:save', noteData),
   addNote: (noteData) => ipcRenderer.invoke('notes:add', noteData),
   deleteNote: (id) => ipcRenderer.invoke('notes:delete', id),
   clearNotes: () => ipcRenderer.invoke('notes:clear'),

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, globalShortcut } = require('electron');
+const { app, BrowserWindow, ipcMain, globalShortcut, Menu, clipboard } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
@@ -75,6 +75,70 @@ function writeDataFile(filename, data) {
     console.error(`Error writing ${filename}:`, error);
     return false;
   }
+}
+
+function deriveNoteTitle(body, sourceUrl) {
+  if (sourceUrl) {
+    try {
+      return new URL(sourceUrl).hostname.replace(/^www\./, '');
+    } catch (error) {
+      // Fall back to the note body when the URL is not parseable.
+    }
+  }
+
+  if (typeof body === 'string') {
+    const firstLine = body
+      .split(/\r?\n/)
+      .map(line => line.trim())
+      .find(Boolean);
+
+    if (firstLine) {
+      return firstLine.slice(0, 60);
+    }
+  }
+
+  return 'New Note';
+}
+
+function normalizeStoredNote(note) {
+  const body = typeof note?.body === 'string'
+    ? note.body
+    : typeof note?.content === 'string'
+      ? note.content
+      : '';
+  const sourceUrl = typeof note?.sourceUrl === 'string' ? note.sourceUrl : '';
+  const updated = typeof note?.updated === 'string'
+    ? note.updated
+    : typeof note?.timestamp === 'string'
+      ? note.timestamp
+      : new Date().toISOString();
+  const id = note?.id != null ? String(note.id) : Date.now().toString();
+  const title = typeof note?.title === 'string' && note.title.trim()
+    ? note.title.trim()
+    : deriveNoteTitle(body, sourceUrl);
+
+  return {
+    id,
+    title,
+    body,
+    sourceUrl,
+    updated
+  };
+}
+
+function readNotes() {
+  const notes = readDataFile('notes.json');
+  if (!Array.isArray(notes)) {
+    return [];
+  }
+
+  return notes
+    .map(normalizeStoredNote)
+    .sort((left, right) => new Date(right.updated) - new Date(left.updated));
+}
+
+function writeNotes(notes) {
+  return writeDataFile('notes.json', notes.map(normalizeStoredNote));
 }
 
 // Read FLASK_URL (or FLASK_HOST/FLASK_PORT) from environment (dotenv already loaded earlier)
@@ -175,6 +239,14 @@ function createWindow() {
   // 3. 失去焦點時強制拉回 (防禦 Alt+Tab 或點擊其他副螢幕)
   mainWindow.on('blur', () => {
     if (isMuteModeActive && mainWindow) {
+      mainWindow.focus();
+    }
+  });
+
+  mainWindow.on('hide', (event) => {
+    if (isMuteModeActive && mainWindow) {
+      event.preventDefault();
+      mainWindow.show();
       mainWindow.focus();
     }
   });
@@ -391,6 +463,74 @@ app.on('web-contents-created', (event, contents) => {
       addToHistory(contents.getTitle(), url);
     });
 
+    contents.on('context-menu', (menuEvent, params) => {
+      const menuItems = [];
+
+      if (params.selectionText && params.selectionText.trim()) {
+        menuItems.push({
+          label: 'Copy',
+          accelerator: 'CmdOrCtrl+C',
+          click: () => {
+            contents.copy();
+          }
+        });
+      }
+
+      if (params.mediaType === 'image' && params.srcURL) {
+        menuItems.push({
+          label: 'Copy image link',
+          click: () => {
+            clipboard.writeText(params.srcURL);
+          }
+        });
+      }
+
+      if (params.isEditable) {
+        menuItems.push({
+          label: 'Cut',
+          accelerator: 'CmdOrCtrl+X',
+          click: () => {
+            contents.cut();
+          }
+        });
+        menuItems.push({
+          label: 'Paste',
+          accelerator: 'CmdOrCtrl+V',
+          click: () => {
+            contents.paste();
+          }
+        });
+      }
+
+      if (menuItems.length === 0) {
+        menuItems.push({
+          label: 'Back',
+          accelerator: 'CmdOrCtrl+[',
+          enabled: contents.canGoBack(),
+          click: () => {
+            contents.goBack();
+          }
+        });
+        menuItems.push({
+          label: 'Forward',
+          accelerator: 'CmdOrCtrl+]',
+          enabled: contents.canGoForward(),
+          click: () => {
+            contents.goForward();
+          }
+        });
+        menuItems.push({
+          label: 'Reload',
+          accelerator: 'CmdOrCtrl+R',
+          click: () => {
+            contents.reload();
+          }
+        });
+      }
+
+      Menu.buildFromTemplate(menuItems).popup();
+    });
+
     // Update history again when title is finalized (for better UX)
     contents.on('page-title-updated', (event, title) => {
       addToHistory(title, contents.getURL());
@@ -473,26 +613,18 @@ ipcMain.handle('system:enter-mute', () => {
     const blockKeys = [
       'CommandOrControl+Q',
       'CommandOrControl+W',
+      'Alt+F4',
       'Alt+Tab',
       'Escape',
       'Super+D',   // 攔截 Win + D (顯示桌面)
       'Super+Tab'  // 攔截 Win + Tab (工作檢視)
     ];
 
-    for (const key of blockKeys) {
-      const success = globalShortcut.register(key, () => {
+    blockKeys.forEach(key => {
+      globalShortcut.register(key, () => {
         console.log(`[Mute Mode] 已攔截快速鍵: ${key}`);
       });
-      if (!success) {
-        console.error(`[Mute Mode] 無法註冊快速鍵: ${key}`);
-        globalShortcut.unregisterAll();
-        isMuteModeActive = false;
-        mainWindow.setKiosk(false);
-        mainWindow.setAlwaysOnTop(false);
-        mainWindow.setSkipTaskbar(false);
-        return { ok: false, error: `Failed to register global shortcut: ${key}` };
-      }
-    }
+    });
     return { ok: true };
   }
   return { ok: false };
@@ -501,13 +633,13 @@ ipcMain.handle('system:enter-mute', () => {
 ipcMain.handle('system:exit-mute', () => {
   if (mainWindow) {
     isMuteModeActive = false;
-    mainWindow.setKiosk(false); 
+    mainWindow.setKiosk(false);
     mainWindow.setAlwaysOnTop(false);
-    
+
     // 恢復顯示工作列圖示
-    mainWindow.setSkipTaskbar(false); 
-    
-    globalShortcut.unregisterAll(); 
+    mainWindow.setSkipTaskbar(false);
+
+    globalShortcut.unregisterAll();
     return { ok: true };
   }
   return { ok: false };
@@ -520,7 +652,7 @@ ipcMain.handle('system:exit-mute', () => {
 
 ipcMain.handle('notes:get', async () => {
   try {
-    const notes = readDataFile('notes.json');
+    const notes = readNotes();
     return { ok: true, data: notes };
   } catch (error) {
     console.error('notes:get error', error);
@@ -530,35 +662,93 @@ ipcMain.handle('notes:get', async () => {
 
 ipcMain.handle('notes:add', async (event, noteData) => {
   try {
-    if (!noteData || !noteData.content) {
+    const content = typeof noteData?.content === 'string' ? noteData.content.trim() : '';
+    const sourceUrl = typeof noteData?.sourceUrl === 'string' ? noteData.sourceUrl : '';
+
+    if (!content) {
       return { ok: false, error: 'Content is required' };
     }
 
-    const notes = readDataFile('notes.json');
+    const notes = readNotes();
 
     // DUPLICATE CHECK: Ignore if identical to the latest note
     if (notes.length > 0) {
       const latest = notes[0];
-      if (latest.content === noteData.content && latest.sourceUrl === noteData.sourceUrl) {
+      if (latest.body === content && latest.sourceUrl === sourceUrl) {
         return { ok: true, data: notes, added: false };
       }
     }
 
     // Create new note
-    const newNote = {
+    const newNote = normalizeStoredNote({
       id: Date.now().toString(),
-      content: noteData.content,
-      sourceUrl: noteData.sourceUrl || '',
-      timestamp: new Date().toISOString()
-    };
+      title: deriveNoteTitle(content, sourceUrl),
+      body: content,
+      sourceUrl,
+      updated: new Date().toISOString()
+    });
 
     // Add to top
     const updatedNotes = [newNote, ...notes];
-    writeDataFile('notes.json', updatedNotes);
+    writeNotes(updatedNotes);
 
     return { ok: true, data: updatedNotes, added: true };
   } catch (error) {
     console.error('notes:add error', error);
+    return { ok: false, error: error.message };
+  }
+});
+
+ipcMain.handle('notes:save', async (event, noteData) => {
+  try {
+    if (!noteData || typeof noteData !== 'object') {
+      return { ok: false, error: 'Note data is required' };
+    }
+
+    const body = typeof noteData.body === 'string' ? noteData.body.trimEnd() : '';
+    const sourceUrl = typeof noteData.sourceUrl === 'string' ? noteData.sourceUrl : '';
+
+    if (!body && !sourceUrl) {
+      return { ok: false, error: 'Note body is required' };
+    }
+
+    const notes = readNotes();
+    const updated = new Date().toISOString();
+    const title = typeof noteData.title === 'string' && noteData.title.trim()
+      ? noteData.title.trim()
+      : deriveNoteTitle(body, sourceUrl);
+    const noteId = noteData.id != null ? String(noteData.id) : null;
+    const existingIndex = noteId ? notes.findIndex(note => note.id === noteId) : -1;
+
+    let savedNote;
+
+    if (existingIndex >= 0) {
+      savedNote = normalizeStoredNote({
+        ...notes[existingIndex],
+        id: notes[existingIndex].id,
+        title,
+        body,
+        sourceUrl,
+        updated
+      });
+      notes.splice(existingIndex, 1);
+      notes.unshift(savedNote);
+    } else {
+      savedNote = normalizeStoredNote({
+        id: Date.now().toString(),
+        title,
+        body,
+        sourceUrl,
+        updated
+      });
+      notes.unshift(savedNote);
+    }
+
+    writeNotes(notes);
+
+    return { ok: true, data: savedNote, notes };
+  } catch (error) {
+    console.error('notes:save error', error);
     return { ok: false, error: error.message };
   }
 });
@@ -569,10 +759,10 @@ ipcMain.handle('notes:delete', async (event, noteId) => {
       return { ok: false, error: 'Note ID is required' };
     }
 
-    const notes = readDataFile('notes.json');
+    const notes = readNotes();
     const updatedNotes = notes.filter(n => n.id !== noteId);
 
-    writeDataFile('notes.json', updatedNotes);
+    writeNotes(updatedNotes);
 
     return { ok: true, data: updatedNotes };
   } catch (error) {
@@ -583,7 +773,7 @@ ipcMain.handle('notes:delete', async (event, noteId) => {
 
 ipcMain.handle('notes:clear', async () => {
   try {
-    writeDataFile('notes.json', []);
+    writeNotes([]);
     return { ok: true, data: [] };
   } catch (error) {
     console.error('notes:clear error', error);
