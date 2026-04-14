@@ -2,15 +2,12 @@ const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
 
-  // 打開 Chatroom 視窗
-  openChatroom: async () => ipcRenderer.invoke('chatroom:open-window'),
-
   // 設定 Sidebar 寬度
   setSidebarWidth: (width) => ipcRenderer.invoke('sidebar:set-width', width),
 
   // 接收事件
   on: (channel, callback) => {
-    const validChannels = ['chatroom:message-received', 'chatroom:open-in-app', 'auth:login-success', 'downloads:updated'];
+    const validChannels = ['auth:login-success', 'downloads:updated'];
     if (validChannels.includes(channel)) {
       ipcRenderer.on(channel, (event, ...args) => callback(...args));
     }
@@ -19,7 +16,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // 獲取本地模型列表
   getLocalModels: () => ipcRenderer.invoke('ai:get-local-models'),
 
-  // 請求載入特定的本地模型
+  // 請求載入特定的本地模�?
   loadLocalModel: (filename) => ipcRenderer.invoke('ai:load-model', filename),
 
   // [新增] 本地 AI 呼叫介面

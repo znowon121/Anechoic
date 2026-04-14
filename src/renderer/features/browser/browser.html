@@ -21,8 +21,6 @@
 
     <!-- External Stylesheet -->
     <link rel="stylesheet" href="browser.css">
-    <!-- Notes Stylesheet -->
-    <link rel="stylesheet" href="../notes/css/notes.css">
     <script>
         tailwind.config = {
             theme: {
@@ -1480,7 +1478,7 @@
             return translations[lang] && translations[lang][key] ? translations[lang][key] : (translations['en'][key] || key);
         };
 
-        const { useState, useEffect, useRef } = React;
+        const { useState, useEffect, useRef, useMemo, useCallback } = React;
         // [新增] 根據當前使用者產生專屬的 LocalStorage Key
         const getStorageKey = (baseKey) => {
             const savedUser = localStorage.getItem('anechoic_user');
@@ -2259,220 +2257,489 @@
             );
         };
 
-        // Chat Room Module
-        const ChatRoomModule = ({ isOpen, onClose, language, user }) => {
-            const [messages, setMessages] = useState([]);
-            const [input, setInput] = useState('');
-            const [isAskingAI, setIsAskingAI] = useState(false);
-            const messagesEndRef = useRef(null);
+        const CHATROOM_EXTERNAL_URL = 'https://chatroom-i3afd.sevalla.app/';
+        const SMART_NOTES_STORAGE_KEY = 'notesapp-notes';
 
-            const storageKey = getStorageKey('anechoic_chatroom_messages');
-            const currentUsername = user?.name || t('Guest User', language);
-
-            useEffect(() => {
-                if (!isOpen) return;
-
+        const deriveSmartNoteTitle = (body, sourceUrl) => {
+            if (sourceUrl) {
                 try {
-                    const saved = localStorage.getItem(storageKey);
-                    const parsed = saved ? JSON.parse(saved) : [];
-                    if (Array.isArray(parsed) && parsed.length > 0) {
-                        setMessages(parsed);
-                    } else {
-                        setMessages([{
-                            id: `system-${Date.now()}`,
-                            role: 'system',
-                            user: 'Anechoic',
-                            text: 'Chat room ready. Messages are saved locally for this user.',
-                            createdAt: new Date().toISOString()
-                        }]);
-                    }
+                    return new URL(sourceUrl).hostname.replace(/^www\./, '');
                 } catch (error) {
-                    setMessages([]);
+                    // Ignore URL parse errors and derive from note body.
                 }
-            }, [isOpen, storageKey]);
+            }
 
-            useEffect(() => {
-                if (messagesEndRef.current) {
-                    messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+            if (typeof body === 'string') {
+                const firstLine = body
+                    .split(/\r?\n/)
+                    .map(line => line.trim())
+                    .find(Boolean);
+
+                if (firstLine) {
+                    return firstLine.slice(0, 60);
                 }
-            }, [messages, isOpen]);
+            }
 
-            const saveMessages = (nextMessages) => {
-                localStorage.setItem(storageKey, JSON.stringify(nextMessages));
-                setMessages(nextMessages);
+            return 'New Note';
+        };
+
+        const normalizeSmartNote = (note = {}) => {
+            const body = typeof note.body === 'string'
+                ? note.body
+                : typeof note.content === 'string'
+                    ? note.content
+                    : '';
+            const sourceUrl = typeof note.sourceUrl === 'string' ? note.sourceUrl : '';
+            const title = typeof note.title === 'string' && note.title.trim()
+                ? note.title.trim()
+                : deriveSmartNoteTitle(body, sourceUrl);
+            const updated = typeof note.updated === 'string'
+                ? note.updated
+                : typeof note.timestamp === 'string'
+                    ? note.timestamp
+                    : new Date().toISOString();
+
+            return {
+                id: note.id != null ? String(note.id) : `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+                title,
+                body,
+                sourceUrl,
+                updated
             };
+        };
 
-            const appendMessage = (message) => {
-                const nextMessages = [...messages, message];
-                saveMessages(nextMessages);
-            };
+        const sortSmartNotes = (notes = []) => {
+            return [...notes].sort((left, right) => new Date(right.updated) - new Date(left.updated));
+        };
 
-            const handleSend = (event) => {
-                event.preventDefault();
-                const text = input.trim();
-                if (!text) return;
+        const readLocalSmartNotes = () => {
+            const raw = JSON.parse(localStorage.getItem(SMART_NOTES_STORAGE_KEY) || '[]');
+            return sortSmartNotes(raw.map(note => normalizeSmartNote(note)));
+        };
 
-                appendMessage({
-                    id: `msg-${Date.now()}`,
-                    role: 'user',
-                    user: currentUsername,
-                    text,
-                    createdAt: new Date().toISOString()
-                });
-                setInput('');
-            };
-
-            const handleAskAI = async () => {
-                const latestUserMessage = [...messages].reverse().find(msg => msg.role === 'user');
-                if (!latestUserMessage || isAskingAI) return;
-
-                setIsAskingAI(true);
-                let aiText = 'AI reply failed.';
-                try {
-                    if (window.electronAPI?.chatWithLocalAI) {
-                        aiText = await window.electronAPI.chatWithLocalAI(`You are helping in a study chatroom. Reply briefly and clearly.\nUser message: ${latestUserMessage.text}`);
-                    } else {
-                        aiText = 'Local AI is not available in this runtime.';
-                    }
-                } catch (error) {
-                    aiText = `AI error: ${error.message}`;
-                }
-
-                appendMessage({
-                    id: `ai-${Date.now()}`,
-                    role: 'ai',
-                    user: 'AI Moderator',
-                    text: aiText,
-                    createdAt: new Date().toISOString()
-                });
-                setIsAskingAI(false);
-            };
-
-            const handleClear = () => {
-                const nextMessages = [{
-                    id: `system-${Date.now()}`,
-                    role: 'system',
-                    user: 'Anechoic',
-                    text: 'Chat history cleared.',
-                    createdAt: new Date().toISOString()
-                }];
-                saveMessages(nextMessages);
-            };
-
-            const formatTimestamp = (timestamp) => {
-                const date = new Date(timestamp);
-                if (Number.isNaN(date.getTime())) return '';
-                return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-            };
-
-            if (!isOpen) return null;
-
-            return (
-                <div className="ane-overlay-backdrop" onClick={onClose}>
-                    <div className="ane-utility-modal ane-utility-modal--assistant" style={{ width: '720px', height: '640px' }} onClick={(e) => e.stopPropagation()}>
-                        <div className="ane-utility-header">
-                            <span className="ane-utility-header__icon" style={{ background: 'rgba(111,160,106,0.08)', color: '#6FA06A' }}>
-                                <Icons.Users />
-                            </span>
-                            <span className="ane-utility-header__title">{t('Chat Room', language)}</span>
-                            <button type="button" className="ane-utility-ghost" onClick={handleAskAI} disabled={isAskingAI}>
-                                {isAskingAI ? 'AI...' : 'AI Reply'}
-                            </button>
-                            <button type="button" className="ane-utility-ghost is-destructive" onClick={handleClear}>
-                                {t('Clear All', language)}
-                            </button>
-                            <button type="button" className="ane-utility-close" onClick={onClose}><Icons.X /></button>
-                        </div>
-
-                        <div className="ane-utility-list" style={{ padding: '14px', gap: '8px', background: '#f7f7f8' }}>
-                            {messages.length === 0 ? (
-                                <div className="ane-utility-empty">
-                                    <Icons.Users />
-                                    <div>No messages yet.</div>
-                                </div>
-                            ) : (
-                                messages.map((msg) => (
-                                    <div key={msg.id} style={{ alignSelf: msg.role === 'user' ? 'flex-end' : 'stretch', maxWidth: msg.role === 'user' ? '78%' : '100%' }}>
-                                        <div
-                                            style={{
-                                                padding: '10px 12px',
-                                                borderRadius: '10px',
-                                                border: '1px solid rgba(0,0,0,0.06)',
-                                                background: msg.role === 'user' ? '#1f2023' : '#ffffff',
-                                                color: msg.role === 'user' ? '#ffffff' : '#1f2023'
-                                            }}
-                                        >
-                                            <div style={{ fontSize: '11px', opacity: 0.72, marginBottom: '4px' }}>
-                                                {msg.user} {formatTimestamp(msg.createdAt)}
-                                            </div>
-                                            <div style={{ fontSize: '13px', lineHeight: 1.45, whiteSpace: 'pre-wrap' }}>{msg.text}</div>
-                                        </div>
-                                    </div>
-                                ))
-                            )}
-                            <div ref={messagesEndRef}></div>
-                        </div>
-
-                        <form onSubmit={handleSend} style={{ padding: '12px', borderTop: '1px solid #ececef', display: 'flex', gap: '10px', background: '#ffffff' }}>
-                            <input
-                                type="text"
-                                value={input}
-                                onChange={(e) => setInput(e.target.value)}
-                                placeholder="Type a message..."
-                                style={{ flex: 1, border: '1px solid #e4e4e7', borderRadius: '9px', padding: '9px 12px', fontSize: '13px', outline: 'none' }}
-                            />
-                            <button type="submit" className="ane-ai-save" style={{ minWidth: '90px', height: '38px' }}>
-                                Send
-                            </button>
-                        </form>
-                    </div>
-                </div>
+        const writeLocalSmartNotes = (notes) => {
+            localStorage.setItem(
+                SMART_NOTES_STORAGE_KEY,
+                JSON.stringify(notes.map(note => normalizeSmartNote(note)))
             );
         };
 
+        const hasNativeNotesAPI = () => {
+            return typeof window !== 'undefined' && typeof window.electronAPI?.getNotes === 'function';
+        };
 
-        // Smart Notes Module — Full-Screen Slide-Out hosting vanilla JS notes app
+        const fetchSmartNotes = async () => {
+            if (hasNativeNotesAPI()) {
+                const result = await window.electronAPI.getNotes();
+                if (!result?.ok) {
+                    return [];
+                }
+                return sortSmartNotes((result.data || []).map(note => normalizeSmartNote(note)));
+            }
+
+            return readLocalSmartNotes();
+        };
+
+        const saveSmartNote = async (noteData) => {
+            const normalized = normalizeSmartNote({
+                ...noteData,
+                updated: new Date().toISOString()
+            });
+
+            if (hasNativeNotesAPI() && typeof window.electronAPI?.saveNote === 'function') {
+                const result = await window.electronAPI.saveNote(normalized);
+                if (!result?.ok) {
+                    throw new Error(result?.error || 'Unable to save note');
+                }
+                return normalizeSmartNote(result.data || normalized);
+            }
+
+            const notes = readLocalSmartNotes();
+            const existingIndex = notes.findIndex(note => note.id === normalized.id);
+            if (existingIndex >= 0) {
+                notes.splice(existingIndex, 1);
+            }
+            notes.unshift(normalized);
+            writeLocalSmartNotes(notes);
+            return normalized;
+        };
+
+        const addSmartAutoSavedNote = async (content, sourceUrl) => {
+            if (hasNativeNotesAPI() && typeof window.electronAPI?.addNote === 'function') {
+                const result = await window.electronAPI.addNote({ content, sourceUrl: sourceUrl || '' });
+                if (!result?.ok) {
+                    throw new Error(result?.error || 'Unable to auto-save note');
+                }
+                return Boolean(result.added);
+            }
+
+            const notes = readLocalSmartNotes();
+            const latest = notes[0];
+            if (latest && latest.body === content && latest.sourceUrl === (sourceUrl || '')) {
+                return false;
+            }
+
+            const note = normalizeSmartNote({
+                body: content,
+                sourceUrl: sourceUrl || '',
+                updated: new Date().toISOString()
+            });
+            notes.unshift(note);
+            writeLocalSmartNotes(notes);
+            return true;
+        };
+
+        const deleteSmartNote = async (noteId) => {
+            const normalizedId = String(noteId || '');
+            if (!normalizedId) return;
+
+            if (hasNativeNotesAPI() && typeof window.electronAPI?.deleteNote === 'function') {
+                const result = await window.electronAPI.deleteNote(normalizedId);
+                if (!result?.ok) {
+                    throw new Error(result?.error || 'Unable to delete note');
+                }
+                return;
+            }
+
+            const notes = readLocalSmartNotes().filter(note => note.id !== normalizedId);
+            writeLocalSmartNotes(notes);
+        };
+
+
+        // Smart Notes Module — redesigned React-native module with preserved note data behavior
         const SmartNotesModule = ({ isOpen, onClose, language }) => {
-            const notesInitRef = useRef(false);
+            const [notes, setNotes] = useState([]);
+            const [activeNoteId, setActiveNoteId] = useState(null);
+            const [searchTerm, setSearchTerm] = useState('');
+            const [draftTitle, setDraftTitle] = useState('');
+            const [draftBody, setDraftBody] = useState('');
+            const [isLoading, setIsLoading] = useState(false);
+            const [saveError, setSaveError] = useState('');
+            const [isAutoSaveEnabled, setIsAutoSaveEnabled] = useState(() => {
+                return localStorage.getItem('notesapp-autosave') === 'true';
+            });
+            const notesRef = useRef([]);
+            const activeNoteIdRef = useRef(null);
+            const autoSaveEnabledRef = useRef(isAutoSaveEnabled);
+            const saveTimerRef = useRef(null);
 
-            // Initialize the vanilla JS notes app exactly once in the background
-            useEffect(() => {
-                if (notesInitRef.current) return;
+            const activeNote = useMemo(() => {
+                return notes.find(note => note.id === activeNoteId) || null;
+            }, [notes, activeNoteId]);
 
-                let attempts = 0;
-                const tryInit = () => {
-                    if (typeof window.initNotesApp === 'function') {
-                        window.initNotesApp();
-                        notesInitRef.current = true;
-                        console.log("✅ [NotesApp] 后台初始化成功！");
-                    } else if (attempts < 50) {
-                        attempts++;
-                        setTimeout(tryInit, 100); // Retry every 100ms until the module is loaded
-                    } else {
-                        console.error("❌ [NotesApp] 初始化失败，等待超时。");
+            const filteredNotes = useMemo(() => {
+                const query = searchTerm.trim().toLowerCase();
+                if (!query) {
+                    return notes;
+                }
+
+                return notes.filter(note => {
+                    const haystack = `${note.title}\n${note.body}\n${note.sourceUrl}`.toLowerCase();
+                    return haystack.includes(query);
+                });
+            }, [notes, searchTerm]);
+
+            const refreshNotes = useCallback(async (preferredNoteId = null) => {
+                setIsLoading(true);
+                try {
+                    const fetchedNotes = await fetchSmartNotes();
+                    setNotes(fetchedNotes);
+
+                    const preferredId = preferredNoteId || activeNoteIdRef.current;
+                    const nextActiveNote = fetchedNotes.find(note => note.id === preferredId) || fetchedNotes[0] || null;
+                    setActiveNoteId(nextActiveNote ? nextActiveNote.id : null);
+                } catch (error) {
+                    console.error('Failed to refresh notes:', error);
+                } finally {
+                    setIsLoading(false);
+                }
+            }, []);
+
+            const persistActiveNote = useCallback(async (titleValue, bodyValue) => {
+                const noteId = activeNoteIdRef.current;
+                if (!noteId) return;
+
+                const currentNote = notesRef.current.find(note => note.id === noteId);
+                if (!currentNote) return;
+
+                const body = typeof bodyValue === 'string' ? bodyValue.trimEnd() : '';
+                const sourceUrl = currentNote.sourceUrl || '';
+                if (!body && !sourceUrl) {
+                    return;
+                }
+
+                const normalizedTitle = typeof titleValue === 'string' && titleValue.trim()
+                    ? titleValue.trim()
+                    : deriveSmartNoteTitle(body, sourceUrl);
+
+                try {
+                    const savedNote = await saveSmartNote({
+                        id: currentNote.id,
+                        title: normalizedTitle,
+                        body,
+                        sourceUrl
+                    });
+
+                    await refreshNotes(savedNote.id);
+                    setSaveError('');
+                } catch (error) {
+                    setSaveError(error.message || 'Unable to save note.');
+                }
+            }, [refreshNotes]);
+
+            const addNoteFromCopy = useCallback(async (text, sourceUrl) => {
+                const content = typeof text === 'string' ? text.trim() : '';
+                if (!content || !autoSaveEnabledRef.current) {
+                    return false;
+                }
+
+                try {
+                    const added = await addSmartAutoSavedNote(content, sourceUrl || '');
+                    if (added) {
+                        await refreshNotes();
                     }
+                    return added;
+                } catch (error) {
+                    console.error('Failed to auto-save note:', error);
+                    return false;
+                }
+            }, [refreshNotes]);
+
+            useEffect(() => {
+                notesRef.current = notes;
+            }, [notes]);
+
+            useEffect(() => {
+                activeNoteIdRef.current = activeNoteId;
+            }, [activeNoteId]);
+
+            useEffect(() => {
+                autoSaveEnabledRef.current = isAutoSaveEnabled;
+                localStorage.setItem('notesapp-autosave', String(isAutoSaveEnabled));
+            }, [isAutoSaveEnabled]);
+
+            useEffect(() => {
+                window.notesAutoSave = async (text, sourceUrl) => {
+                    return addNoteFromCopy(text, sourceUrl);
                 };
 
-                // Start trying to initialize immediately
-                tryInit();
-            }, []); // Empty dependency array -> runs immediately on app mount
+                window.isNotesAutoSaveEnabled = () => {
+                    return autoSaveEnabledRef.current;
+                };
 
-            // Always render — toggle class for CSS slide transition
-            const containerClass = isOpen ? 'notes-active' : '';
+                return () => {
+                    delete window.notesAutoSave;
+                    delete window.isNotesAutoSaveEnabled;
+                };
+            }, [addNoteFromCopy]);
+
+            useEffect(() => {
+                void refreshNotes();
+            }, [refreshNotes]);
+
+            useEffect(() => {
+                if (activeNote) {
+                    setDraftTitle(activeNote.title);
+                    setDraftBody(activeNote.body);
+                } else {
+                    setDraftTitle('');
+                    setDraftBody('');
+                }
+                setSaveError('');
+            }, [activeNote?.id]);
+
+            useEffect(() => {
+                if (!activeNote) return;
+                if (draftTitle === activeNote.title && draftBody === activeNote.body) return;
+
+                if (saveTimerRef.current) {
+                    clearTimeout(saveTimerRef.current);
+                }
+
+                saveTimerRef.current = setTimeout(() => {
+                    void persistActiveNote(draftTitle, draftBody);
+                }, 420);
+
+                return () => {
+                    if (saveTimerRef.current) {
+                        clearTimeout(saveTimerRef.current);
+                    }
+                };
+            }, [activeNote, draftTitle, draftBody, persistActiveNote]);
+
+            const handleAddNote = async () => {
+                try {
+                    const savedNote = await saveSmartNote({
+                        title: 'New Note',
+                        body: 'Take note...',
+                        sourceUrl: ''
+                    });
+                    await refreshNotes(savedNote.id);
+                    setSearchTerm('');
+                    setSaveError('');
+                } catch (error) {
+                    setSaveError(error.message || 'Unable to add note.');
+                }
+            };
+
+            const handleDeleteActiveNote = async () => {
+                if (!activeNote) return;
+
+                if (!window.confirm('Are you sure you want to delete this note?')) {
+                    return;
+                }
+
+                try {
+                    await deleteSmartNote(activeNote.id);
+                    await refreshNotes();
+                    setSaveError('');
+                } catch (error) {
+                    setSaveError(error.message || 'Unable to delete note.');
+                }
+            };
+
+            const handleOpenSource = (sourceUrl) => {
+                if (!sourceUrl) return;
+                window.dispatchEvent(new CustomEvent('ANECHOIC_NAVIGATE', { detail: sourceUrl }));
+                onClose();
+            };
 
             return (
-                <div id="smart-notes-container" className={containerClass}>
-                    {/* Floating Close Button */}
-                    <button
-                        onClick={onClose}
-                        className="absolute top-2 right-4 p-2.5 bg-gray-100/80 hover:bg-gray-200 text-gray-600 rounded-full transition-all z-50 shadow-sm backdrop-blur-sm"
-                        title="Close Notes"
-                    >
-                        <Icons.X className="w-5 h-5" />
-                    </button>
+                <div className={`ane-notes-shell ${isOpen ? 'is-open' : ''}`} aria-hidden={!isOpen}>
+                    <button type="button" className="ane-notes-backdrop" onClick={onClose} aria-label="Close Smart Notes" />
+                    <div className="ane-notes-panel">
+                        <header className="ane-notes-toolbar">
+                            <div className="ane-notes-toolbar__left">
+                                <span className="ane-notes-toolbar__badge">
+                                    <Icons.Sparkles />
+                                </span>
+                                <span className="ane-notes-toolbar__title">{t('Smart Notes', language)}</span>
+                            </div>
 
-                    {/* Vanilla JS notes app mounts here */}
-                    <div id="notes-app-root" className="notes" style={{ height: '100%' }}></div>
+                            <label className={`ane-notes-toggle ${isAutoSaveEnabled ? 'is-on' : ''}`}>
+                                <input
+                                    type="checkbox"
+                                    checked={isAutoSaveEnabled}
+                                    onChange={(event) => setIsAutoSaveEnabled(event.target.checked)}
+                                />
+                                <span className="ane-notes-toggle__track">
+                                    <span className="ane-notes-toggle__thumb"></span>
+                                </span>
+                                <span className="ane-notes-toggle__label">Auto Save Copied Link</span>
+                            </label>
+
+                            <button type="button" className="ane-notes-toolbar__add" onClick={handleAddNote}>
+                                <Icons.Plus />
+                                <span>Add Note</span>
+                            </button>
+
+                            <button type="button" className="ane-notes-toolbar__close" onClick={onClose} aria-label="Close Smart Notes">
+                                <Icons.X />
+                            </button>
+                        </header>
+
+                        <div className="ane-notes-body">
+                            <aside className="ane-notes-sidebar">
+                                <div className="ane-notes-sidebar__header">
+                                    <span className="ane-notes-sidebar__title">Notes</span>
+                                    <span className="ane-notes-sidebar__count">{notes.length}</span>
+                                </div>
+
+                                <label className="ane-notes-search">
+                                    <Icons.Search className="ane-notes-search__icon" />
+                                    <input
+                                        type="text"
+                                        value={searchTerm}
+                                        onChange={(event) => setSearchTerm(event.target.value)}
+                                        placeholder="Search notes..."
+                                    />
+                                </label>
+
+                                <div className="ane-notes-list">
+                                    {isLoading ? (
+                                        <div className="ane-notes-empty">Loading notes...</div>
+                                    ) : filteredNotes.length === 0 ? (
+                                        <div className="ane-notes-empty">{notes.length === 0 ? 'No notes yet' : 'No notes match your search'}</div>
+                                    ) : (
+                                        filteredNotes.map(note => (
+                                            <button
+                                                key={note.id}
+                                                type="button"
+                                                className={`ane-notes-card ${note.id === activeNoteId ? 'is-active' : ''}`}
+                                                onClick={() => setActiveNoteId(note.id)}
+                                            >
+                                                <div className="ane-notes-card__title">{note.title || 'Untitled note'}</div>
+                                                <div className="ane-notes-card__body">{note.body || 'No content yet.'}</div>
+                                                <div className="ane-notes-card__updated">
+                                                    {new Date(note.updated).toLocaleDateString(undefined, { dateStyle: 'medium' })} · {new Date(note.updated).toLocaleTimeString(undefined, { timeStyle: 'short' })}
+                                                </div>
+                                            </button>
+                                        ))
+                                    )}
+                                </div>
+                            </aside>
+
+                            <main className="ane-notes-editor">
+                                {!activeNote ? (
+                                    <div className="ane-notes-editor__empty">
+                                        <Icons.FileText />
+                                        <h3>Select a note</h3>
+                                        <p>Pick a note on the left or create a new one to start writing.</p>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div className="ane-notes-editor__meta">
+                                            {activeNote.sourceUrl ? (
+                                                <button
+                                                    type="button"
+                                                    className="ane-notes-source"
+                                                    onClick={() => handleOpenSource(activeNote.sourceUrl)}
+                                                    title={activeNote.sourceUrl}
+                                                >
+                                                    <Icons.Globe />
+                                                    <span>{activeNote.sourceUrl}</span>
+                                                </button>
+                                            ) : (
+                                                <span className="ane-notes-source is-muted">Manual note</span>
+                                            )}
+
+                                            <div className="ane-notes-editor__actions">
+                                                {activeNote.sourceUrl && (
+                                                    <button type="button" className="ane-notes-ghost" onClick={() => handleOpenSource(activeNote.sourceUrl)}>
+                                                        Open
+                                                    </button>
+                                                )}
+                                                <button type="button" className="ane-notes-ghost is-danger" onClick={handleDeleteActiveNote}>
+                                                    <Icons.Trash />
+                                                    <span>{t('Delete', language)}</span>
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        <input
+                                            type="text"
+                                            className="ane-notes-title-input"
+                                            value={draftTitle}
+                                            onChange={(event) => setDraftTitle(event.target.value)}
+                                            onBlur={() => void persistActiveNote(draftTitle, draftBody)}
+                                            placeholder="Untitled note"
+                                        />
+                                        <div className="ane-notes-editor__updated">
+                                            Last updated {new Date(activeNote.updated).toLocaleDateString(undefined, { dateStyle: 'long' })} · {new Date(activeNote.updated).toLocaleTimeString(undefined, { timeStyle: 'short' })}
+                                        </div>
+                                        <textarea
+                                            className="ane-notes-body-input"
+                                            value={draftBody}
+                                            onChange={(event) => setDraftBody(event.target.value)}
+                                            onBlur={() => void persistActiveNote(draftTitle, draftBody)}
+                                            placeholder="Write your note here..."
+                                        ></textarea>
+                                        {saveError && <div className="ane-notes-error">{saveError}</div>}
+                                    </>
+                                )}
+                            </main>
+                        </div>
+                    </div>
                 </div>
             );
         };
@@ -4730,7 +4997,7 @@
             const [showSettings, setShowSettings] = useState(false);
             const [searchEngine, setSearchEngine] = useState('google');
             const [addressBarValue, setAddressBarValue] = useState('');
-            const [activeModule, setActiveModule] = useState(null); // 'ai-assistant' | 'chatroom' | 'notes' | 'history' | 'bookmarks' | 'downloads' | 'pomodoro' | 'todo' | 'schedule' | 'weather' | 'mute' | null
+            const [activeModule, setActiveModule] = useState(null); // 'ai-assistant' | 'notes' | 'history' | 'bookmarks' | 'downloads' | 'pomodoro' | 'todo' | 'schedule' | 'weather' | 'mute' | null
             const [isBookmarked, setIsBookmarked] = useState(false);
             const webviewRefs = useRef({});
             const [webview, setWebview] = useState(null); // Webview state
@@ -4783,7 +5050,6 @@
                     localStorage.removeItem(getStorageKey('my_bookmarks'));
                     localStorage.removeItem(getStorageKey('anechoic_todos'));
                     localStorage.removeItem(getStorageKey('anechoic_schedule'));
-                    localStorage.removeItem(getStorageKey('anechoic_chatroom_messages'));
                     localStorage.removeItem(getStorageKey('anechoic_shortcuts'));
                 } catch (error) {
                     errors.push(error.message);
@@ -4935,11 +5201,6 @@
                     console.error('❌ electronAPI.onLoginSuccess is missing!');
                 }
 
-                if (window.electronAPI?.on) {
-                    window.electronAPI.on('chatroom:open-in-app', () => {
-                        setActiveModule('chatroom');
-                    });
-                }
             }, []);
 
             // 计算当前激活的 Tab
@@ -5114,6 +5375,16 @@
                 setAddressBarValue(targetUrl);
             };
 
+            const handleOpenModule = (module) => {
+                if (module === 'chatroom') {
+                    navigate(CHATROOM_EXTERNAL_URL);
+                    setActiveModule(null);
+                    return;
+                }
+
+                setActiveModule(module);
+            };
+
             const goBack = () => webview?.canGoBack() && webview.goBack();
             const goForward = () => webview?.canGoForward() && webview.goForward();
             const reload = () => webview?.reload();
@@ -5181,7 +5452,7 @@
                         toggle={() => handleSidebarToggle(!sidebarOpen)}
                         mode={mode}
                         setMode={setMode}
-                        onOpenModule={setActiveModule}
+                        onOpenModule={handleOpenModule}
                         language={language}
                     />
 
@@ -5269,7 +5540,7 @@
                                         themeSettings={themeSettings}
                                         handleThemeChange={handleThemeChange}
                                         resetTheme={resetTheme}
-                                        onOpenModule={setActiveModule}
+                                        onOpenModule={handleOpenModule}
                                         addTab={addTab}
                                         language={language}
                                         setLanguage={handleLanguageChange}
@@ -5284,7 +5555,7 @@
                             {tabs.map(tab => (
                                 <div key={tab.id} className={`w-full h-full ${activeTabId === tab.id ? 'block' : 'hidden'}`}>
                                     {!tab.url ? (
-                                        <HomeView onNavigate={(url) => navigate(url)} onOpenModule={(module) => setActiveModule(module)} language={language} />
+                                        <HomeView onNavigate={(url) => navigate(url)} onOpenModule={handleOpenModule} language={language} />
                                     ) : (
                                         <webview ref={(el) => { if (el) { webviewRefs.current[tab.id] = el; handleWebviewMount(el); } }} src={tab.url} className="w-full h-full" />
                                     )}
@@ -5367,7 +5638,6 @@
 
                         {/* Modules Overlay */}
                         <AIAssistantModule isOpen={activeModule === 'ai-assistant'} onClose={() => setActiveModule(null)} language={language} />
-                        <ChatRoomModule isOpen={activeModule === 'chatroom'} onClose={() => setActiveModule(null)} language={language} user={user} />
                         <SmartNotesModule isOpen={activeModule === 'notes'} onClose={() => setActiveModule(null)} language={language} />
                         <HistoryModule isOpen={activeModule === 'history'} onClose={() => setActiveModule(null)} tabs={tabs} onNavigate={(url) => { navigate(url); setActiveModule(null); }} language={language} />
                         <BookmarksModule isOpen={activeModule === 'bookmarks'} onClose={() => setActiveModule(null)} onNavigate={(url) => { navigate(url); setActiveModule(null); }} language={language} />
@@ -5385,28 +5655,6 @@
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
-    </script>
-    <!-- Notes App Module -->
-    <script type="module">
-        import App from "../notes/js/App.js";
-
-        // Initialize the Notes App for React module to call
-        let notesAppInstance = null;
-        window.initNotesApp = function () {
-            if (notesAppInstance) return;
-            const root = document.getElementById("notes-app-root");
-            if (root) notesAppInstance = new App(root);
-        };
-
-        window.notesAutoSave = async function (text, url) {
-            if (!notesAppInstance) return false;
-            return await notesAppInstance.addNoteFromCopy(text, url);
-        };
-
-        window.isNotesAutoSaveEnabled = function () {
-            if (!notesAppInstance) return false;
-            return notesAppInstance.isAutoSaveEnabled;
-        };
     </script>
 </body>
 

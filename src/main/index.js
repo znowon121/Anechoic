@@ -422,27 +422,6 @@ function createWindow() {
 
 }
 
-// IPC: open Chat Room in the main app shell
-ipcMain.handle('chatroom:open-window', async () => {
-  try {
-    if (!mainWindow || mainWindow.isDestroyed()) {
-      return { ok: false, error: 'Main window is unavailable' };
-    }
-
-    if (mainWindow.isMinimized()) {
-      mainWindow.restore();
-    }
-    mainWindow.show();
-    mainWindow.focus();
-    mainWindow.webContents.send('chatroom:open-in-app');
-
-    return { ok: true, inApp: true };
-  } catch (e) {
-    console.error('chatroom:open-window error', e);
-    return { ok: false, error: e.message };
-  }
-});
-
 // ============================================================================
 // IPC: Auth (Google Login)
 // ============================================================================

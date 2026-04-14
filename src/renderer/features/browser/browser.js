@@ -269,33 +269,6 @@ const AIAssistantModule = ({ isOpen, onClose }) => {
     );
 };
 
-// Chat Room Module (connects to original Flask chatroom)
-const ChatRoomModule = ({ isOpen, onClose }) => {
-    if (!isOpen) return null;
-
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm animate-fade-in">
-            <div className="w-[800px] h-[700px] bg-white/90 backdrop-blur-xl rounded-2xl shadow-2xl flex flex-col border border-white/50 overflow-hidden animate-slide-up">
-                <div className="h-14 border-b border-gray-200/50 flex items-center justify-between px-4 bg-white/50">
-                    <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600"><Icons.Users className="w-5 h-5" /></div>
-                        <span className="font-semibold text-gray-700">Chat Room</span>
-                    </div>
-                    <button onClick={onClose} className="p-2 hover:bg-gray-200/50 rounded-full transition-colors"><Icons.X className="w-5 h-5 text-gray-500" /></button>
-                </div>
-                <div className="flex-1 bg-gray-50">
-                    <iframe
-                        src="about:blank"
-                        className="w-full h-full border-none"
-                        title="Chat Room"
-                    />
-                </div>
-            </div>
-        </div>
-    );
-};
-
-
 // AI Smart Notes Module
 const SmartNotesModule = ({ isOpen, onClose }) => {
     const [note, setNote] = useState('');
@@ -1316,7 +1289,7 @@ const App = () => {
     const [showSettings, setShowSettings] = useState(false);
     const [searchEngine, setSearchEngine] = useState('google');
     const [addressBarValue, setAddressBarValue] = useState('');
-    const [activeModule, setActiveModule] = useState(null); // 'ai-assistant' | 'chatroom' | 'notes' | 'history' | 'bookmarks' | 'pomodoro' | 'todo' | 'schedule' | 'weather' | null
+    const [activeModule, setActiveModule] = useState(null); // 'ai-assistant' | 'notes' | 'history' | 'bookmarks' | 'pomodoro' | 'todo' | 'schedule' | 'weather' | null
     const [isBookmarked, setIsBookmarked] = useState(false);
     const webviewRefs = useRef({});
     const [webview, setWebview] = useState(null); // Webview state
@@ -1598,11 +1571,12 @@ const App = () => {
                     mode={mode}
                     setMode={setMode}
                     onOpenModule={(module) => {
-                        if (module === 'chatroom' && window.electronAPI) {
-                            window.electronAPI.openChatroom();
-                        } else {
-                            setActiveModule(module);
+                        if (module === 'chatroom') {
+                            navigate('https://chatroom-i3afd.sevalla.app/');
+                            setActiveModule(null);
+                            return;
                         }
+                        setActiveModule(module);
                     }}
                     isCustomTheme={isCustomTheme}
                     themeColor={currentThemeColor}
@@ -1688,7 +1662,6 @@ const App = () => {
 
                 {/* Modules Overlay */}
                 <AIAssistantModule isOpen={activeModule === 'ai-assistant'} onClose={() => setActiveModule(null)} />
-                <ChatRoomModule isOpen={activeModule === 'chatroom'} onClose={() => setActiveModule(null)} />
                 <SmartNotesModule isOpen={activeModule === 'notes'} onClose={() => setActiveModule(null)} />
                 <HistoryModule isOpen={activeModule === 'history'} onClose={() => setActiveModule(null)} tabs={tabs} onNavigate={(url) => { navigate(url); setActiveModule(null); }} />
                 <BookmarksModule isOpen={activeModule === 'bookmarks'} onClose={() => setActiveModule(null)} onNavigate={(url) => { navigate(url); setActiveModule(null); }} />

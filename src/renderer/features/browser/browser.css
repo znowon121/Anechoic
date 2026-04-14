@@ -2681,6 +2681,479 @@ textarea {
     color: #c04040;
 }
 
+/* Smart Notes — redesigned panel */
+.ane-notes-shell {
+    position: fixed;
+    inset: 0;
+    z-index: 75;
+    pointer-events: none;
+}
+
+.ane-notes-shell.is-open {
+    pointer-events: auto;
+}
+
+.ane-notes-backdrop {
+    position: absolute;
+    inset: 0;
+    border: 0;
+    background: rgba(17, 18, 20, 0.16);
+    opacity: 0;
+    transition: opacity 0.24s ease;
+}
+
+.ane-notes-shell.is-open .ane-notes-backdrop {
+    opacity: 1;
+}
+
+.ane-notes-panel {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    background: #f7f8fa;
+    border-left: 1px solid #e6e8ec;
+    transform: translateY(110%);
+    transition: transform 0.28s cubic-bezier(0.22, 0.61, 0.36, 1);
+    overflow: hidden;
+}
+
+.ane-notes-shell.is-open .ane-notes-panel {
+    transform: translateY(0);
+}
+
+.ane-notes-toolbar {
+    min-height: 56px;
+    padding: 10px 14px;
+    border-bottom: 1px solid #e7e8ed;
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.ane-notes-toolbar__left {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-right: auto;
+}
+
+.ane-notes-toolbar__badge {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #e7edf3;
+    color: #4f5d6e;
+}
+
+.ane-notes-toolbar__badge svg {
+    width: 15px;
+    height: 15px;
+}
+
+.ane-notes-toolbar__title {
+    font-size: 15px;
+    font-weight: 600;
+    color: #17181b;
+}
+
+.ane-notes-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #626670;
+    user-select: none;
+}
+
+.ane-notes-toggle input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.ane-notes-toggle__track {
+    width: 38px;
+    height: 22px;
+    border-radius: 999px;
+    background: #d5d8de;
+    position: relative;
+    transition: background-color 0.2s ease;
+}
+
+.ane-notes-toggle__thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 18px;
+    height: 18px;
+    border-radius: 999px;
+    background: #ffffff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.16);
+    transition: transform 0.2s ease;
+}
+
+.ane-notes-toggle.is-on .ane-notes-toggle__track {
+    background: #262930;
+}
+
+.ane-notes-toggle.is-on .ane-notes-toggle__thumb {
+    transform: translateX(16px);
+}
+
+.ane-notes-toggle__label {
+    white-space: nowrap;
+}
+
+.ane-notes-toolbar__add {
+    height: 34px;
+    border: 1px solid #dbdde3;
+    border-radius: 10px;
+    background: #ffffff;
+    padding: 0 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #252731;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.ane-notes-toolbar__add:hover {
+    background: #f4f5f7;
+}
+
+.ane-notes-toolbar__add svg {
+    width: 14px;
+    height: 14px;
+}
+
+.ane-notes-toolbar__close {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    border: 1px solid #dbdde3;
+    background: #ffffff;
+    color: #575d68;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ane-notes-toolbar__close:hover {
+    background: #f4f5f7;
+}
+
+.ane-notes-toolbar__close svg {
+    width: 14px;
+    height: 14px;
+}
+
+.ane-notes-body {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: 300px minmax(0, 1fr);
+}
+
+.ane-notes-sidebar {
+    border-right: 1px solid #e6e8ec;
+    background: #f3f4f7;
+    padding: 16px 10px 12px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    gap: 10px;
+}
+
+.ane-notes-sidebar__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 6px;
+}
+
+.ane-notes-sidebar__title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #9ca1ad;
+}
+
+.ane-notes-sidebar__count {
+    min-width: 20px;
+    height: 20px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background: #e6e8ef;
+    color: #5f6571;
+    font-size: 11px;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ane-notes-search {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+    border: 1px solid #dfe2e8;
+    border-radius: 10px;
+    background: #ffffff;
+    padding: 0 10px;
+}
+
+.ane-notes-search__icon {
+    width: 14px;
+    height: 14px;
+    color: #a2a7b3;
+}
+
+.ane-notes-search input {
+    flex: 1;
+    border: 0;
+    outline: none;
+    background: transparent;
+    font-size: 12px;
+    color: #2a2c33;
+}
+
+.ane-notes-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-right: 2px;
+}
+
+.ane-notes-card {
+    width: 100%;
+    text-align: left;
+    border: 1px solid transparent;
+    border-radius: 12px;
+    background: transparent;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.ane-notes-card:hover {
+    background: #eceff4;
+}
+
+.ane-notes-card.is-active {
+    background: #ffffff;
+    border-color: #ccd4df;
+    box-shadow: 0 6px 16px rgba(31, 37, 48, 0.08);
+}
+
+.ane-notes-card__title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1e2026;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ane-notes-card__body {
+    font-size: 12px;
+    color: #7a808d;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.ane-notes-card__updated {
+    font-size: 11px;
+    color: #9ca2af;
+}
+
+.ane-notes-empty {
+    min-height: 80px;
+    border: 1px dashed #d6dae2;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.7);
+    color: #8f96a3;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 12px;
+}
+
+.ane-notes-editor {
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    padding: 18px 18px 14px;
+    gap: 10px;
+}
+
+.ane-notes-editor__empty {
+    margin: auto;
+    text-align: center;
+    color: #8f96a3;
+}
+
+.ane-notes-editor__empty svg {
+    width: 32px;
+    height: 32px;
+    margin: 0 auto 12px;
+    opacity: 0.65;
+}
+
+.ane-notes-editor__empty h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1f232d;
+    margin-bottom: 6px;
+}
+
+.ane-notes-editor__empty p {
+    font-size: 13px;
+}
+
+.ane-notes-editor__meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.ane-notes-source {
+    min-height: 28px;
+    max-width: 62%;
+    border: 1px solid #dce2ea;
+    border-radius: 9px;
+    background: #f6f8fb;
+    color: #5f6673;
+    padding: 0 9px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+}
+
+.ane-notes-source span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ane-notes-source svg {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+}
+
+.ane-notes-source.is-muted {
+    border-style: dashed;
+    color: #9ca2af;
+    background: #fafbfc;
+}
+
+.ane-notes-editor__actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.ane-notes-ghost {
+    min-height: 30px;
+    border-radius: 9px;
+    border: 1px solid #dce1e8;
+    background: #ffffff;
+    color: #4f5664;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 0 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.ane-notes-ghost:hover {
+    background: #f4f6f9;
+}
+
+.ane-notes-ghost svg {
+    width: 13px;
+    height: 13px;
+}
+
+.ane-notes-ghost.is-danger {
+    color: #b44848;
+    border-color: #ead3d3;
+    background: #fff8f8;
+}
+
+.ane-notes-title-input {
+    width: 100%;
+    border: 0;
+    outline: none;
+    background: transparent;
+    color: #17191f;
+    font-size: 44px;
+    line-height: 1.16;
+    font-weight: 700;
+    padding: 4px 0;
+}
+
+.ane-notes-title-input::placeholder {
+    color: #bcc2cf;
+}
+
+.ane-notes-editor__updated {
+    font-size: 13px;
+    color: #a2a8b3;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eff2f6;
+}
+
+.ane-notes-body-input {
+    flex: 1;
+    min-height: 0;
+    resize: none;
+    border: 0;
+    outline: none;
+    background: transparent;
+    color: #272b34;
+    font-size: 34px;
+    line-height: 1.42;
+    letter-spacing: 0.01em;
+    padding: 2px 0 12px;
+}
+
+.ane-notes-body-input::placeholder {
+    color: #c2c7d2;
+}
+
+.ane-notes-error {
+    border: 1px solid #f2d7d7;
+    background: #fff5f5;
+    color: #bb4545;
+    border-radius: 10px;
+    padding: 8px 10px;
+    font-size: 12px;
+}
+
 @media (max-width: 1440px) {
     .ane-sidebar--open {
         width: 170px;
@@ -2722,6 +3195,25 @@ textarea {
 
     .ane-home {
         padding: 18px;
+    }
+
+    .ane-notes-body {
+        grid-template-columns: 1fr;
+    }
+
+    .ane-notes-sidebar {
+        min-height: 220px;
+        max-height: 260px;
+        border-right: 0;
+        border-bottom: 1px solid #e6e8ec;
+    }
+
+    .ane-notes-title-input {
+        font-size: 32px;
+    }
+
+    .ane-notes-body-input {
+        font-size: 28px;
     }
 }
 
@@ -2806,6 +3298,58 @@ textarea {
 
     .ane-shortcut__label {
         font-size: 10px;
+    }
+
+    .ane-notes-toolbar {
+        flex-wrap: wrap;
+        padding: 10px;
+        gap: 8px;
+    }
+
+    .ane-notes-toolbar__left {
+        order: 1;
+        width: calc(100% - 40px);
+    }
+
+    .ane-notes-toolbar__close {
+        order: 2;
+    }
+
+    .ane-notes-toggle {
+        order: 3;
+        width: 100%;
+    }
+
+    .ane-notes-toolbar__add {
+        order: 4;
+        width: 100%;
+        justify-content: center;
+    }
+
+    .ane-notes-sidebar {
+        min-height: 190px;
+        max-height: 220px;
+    }
+
+    .ane-notes-editor {
+        padding: 12px;
+    }
+
+    .ane-notes-title-input {
+        font-size: 25px;
+    }
+
+    .ane-notes-body-input {
+        font-size: 21px;
+    }
+
+    .ane-notes-editor__meta {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .ane-notes-source {
+        max-width: 100%;
     }
 }
 
