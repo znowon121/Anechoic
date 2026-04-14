@@ -10,7 +10,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // 接收事件
   on: (channel, callback) => {
-    const validChannels = ['chatroom:message-received', 'auth:login-success'];
+    const validChannels = ['chatroom:message-received', 'chatroom:open-in-app', 'auth:login-success', 'downloads:updated'];
     if (validChannels.includes(channel)) {
       ipcRenderer.on(channel, (event, ...args) => callback(...args));
     }
@@ -38,6 +38,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
   addNote: (noteData) => ipcRenderer.invoke('notes:add', noteData),
   deleteNote: (id) => ipcRenderer.invoke('notes:delete', id),
   clearNotes: () => ipcRenderer.invoke('notes:clear'),
+
+  // Downloads API
+  getDownloads: () => ipcRenderer.invoke('downloads:get'),
+  openDownload: (id) => ipcRenderer.invoke('downloads:open', id),
+  showDownloadInFolder: (id) => ipcRenderer.invoke('downloads:show-in-folder', id),
+  removeDownload: (id) => ipcRenderer.invoke('downloads:remove', id),
+  clearDownloads: () => ipcRenderer.invoke('downloads:clear'),
+  onDownloadsUpdated: (callback) => {
+    const listener = (event, payload) => callback(payload);
+    ipcRenderer.on('downloads:updated', listener);
+    return () => ipcRenderer.removeListener('downloads:updated', listener);
+  },
 
   // 靜音模式 (鎖定電腦)
   enterMuteMode: () => ipcRenderer.invoke('system:enter-mute'),

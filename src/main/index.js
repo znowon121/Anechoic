@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, globalShortcut, Menu, clipboard } = require('electron');
+const { app, BrowserWindow, ipcMain, globalShortcut, Menu, clipboard, shell, session } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
@@ -12,10 +12,10 @@ try {
 
 let mainWindow;
 // let flaskProcess = null; // child process for Flask (Removed)
-let chatWindow = null; // separate BrowserWindow for chatroom
 let authWindow = null; // [新增]
 let currentUser = 'guest'; // [新增] 追蹤當前使用者，預設為訪客
 let isMuteModeActive = false;// 追蹤是否在靜音模式
+let isDownloadListenerRegistered = false;
 
 // [新增] 接收前端傳來的使用者名稱，切換資料夾身分
 ipcMain.handle('auth:set-user', (event, username) => {
@@ -27,6 +27,14 @@ ipcMain.handle('auth:set-user', (event, username) => {
   currentUser = safeUser;
   console.log(`👤 Current user set to: ${currentUser}`);
   return { ok: true, user: currentUser };
+});
+
+ipcMain.handle('sidebar:set-width', async (event, width) => {
+  const parsedWidth = Number(width);
+  return {
+    ok: Number.isFinite(parsedWidth),
+    width: Number.isFinite(parsedWidth) ? parsedWidth : null
+  };
 });
 
 // ============================================================================
@@ -141,6 +149,167 @@ function writeNotes(notes) {
   return writeDataFile('notes.json', notes.map(normalizeStoredNote));
 }
 
+function normalizeDownloadEntry(entry = {}) {
+  const validStatus = new Set(['downloading', 'completed', 'cancelled', 'interrupted']);
+  const startedAt = typeof entry.startedAt === 'string' ? entry.startedAt : new Date().toISOString();
+  const updatedAt = typeof entry.updatedAt === 'string' ? entry.updatedAt : startedAt;
+  const id = entry?.id ? String(entry.id) : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const status = validStatus.has(entry.status) ? entry.status : 'completed';
+
+  return {
+    id,
+    fileName: typeof entry.fileName === 'string' ? entry.fileName : 'download',
+    url: typeof entry.url === 'string' ? entry.url : '',
+    path: typeof entry.path === 'string' ? entry.path : '',
+    sourceTitle: typeof entry.sourceTitle === 'string' ? entry.sourceTitle : '',
+    totalBytes: Number.isFinite(Number(entry.totalBytes)) ? Number(entry.totalBytes) : 0,
+    receivedBytes: Number.isFinite(Number(entry.receivedBytes)) ? Number(entry.receivedBytes) : 0,
+    status,
+    startedAt,
+    updatedAt
+  };
+}
+
+function readDownloads() {
+  const downloads = readDataFile('downloads.json');
+  if (!Array.isArray(downloads)) {
+    return [];
+  }
+
+  return downloads
+    .map(normalizeDownloadEntry)
+    .sort((left, right) => new Date(right.startedAt) - new Date(left.startedAt));
+}
+
+function writeDownloads(downloads) {
+  const normalized = Array.isArray(downloads) ? downloads.map(normalizeDownloadEntry) : [];
+  return writeDataFile('downloads.json', normalized);
+}
+
+function pushDownloadUpdateToRenderer(download) {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('downloads:updated', normalizeDownloadEntry(download));
+  }
+}
+
+function upsertDownload(entry) {
+  const normalizedEntry = normalizeDownloadEntry(entry);
+  const downloads = readDownloads();
+  const existingIndex = downloads.findIndex(item => item.id === normalizedEntry.id);
+  const timestamp = new Date().toISOString();
+  let finalEntry = normalizedEntry;
+
+  if (existingIndex >= 0) {
+    finalEntry = normalizeDownloadEntry({
+      ...downloads[existingIndex],
+      ...normalizedEntry,
+      startedAt: downloads[existingIndex].startedAt || normalizedEntry.startedAt,
+      updatedAt: timestamp
+    });
+    downloads.splice(existingIndex, 1);
+  } else {
+    finalEntry = normalizeDownloadEntry({
+      ...normalizedEntry,
+      updatedAt: timestamp
+    });
+  }
+
+  downloads.unshift(finalEntry);
+  writeDownloads(downloads);
+  pushDownloadUpdateToRenderer(finalEntry);
+  return finalEntry;
+}
+
+function removeDownloadById(downloadId) {
+  const id = String(downloadId || '');
+  if (!id) return readDownloads();
+
+  const downloads = readDownloads().filter(item => item.id !== id);
+  writeDownloads(downloads);
+  return downloads;
+}
+
+function getUniqueDownloadPath(fileName) {
+  const downloadsDir = app.getPath('downloads');
+  const baseName = path.basename(fileName || 'download');
+  const ext = path.extname(baseName);
+  const stem = ext ? baseName.slice(0, -ext.length) : baseName;
+
+  let candidatePath = path.join(downloadsDir, baseName);
+  let counter = 1;
+
+  while (fs.existsSync(candidatePath)) {
+    candidatePath = path.join(downloadsDir, `${stem} (${counter})${ext}`);
+    counter += 1;
+  }
+
+  return candidatePath;
+}
+
+function setupDownloadCapture() {
+  if (isDownloadListenerRegistered) {
+    return;
+  }
+
+  const electronSession = session.defaultSession;
+  if (!electronSession) {
+    return;
+  }
+
+  isDownloadListenerRegistered = true;
+
+  electronSession.on('will-download', (event, item, webContents) => {
+    const downloadId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    const fileName = item.getFilename() || 'download';
+    const savePath = getUniqueDownloadPath(fileName);
+    const totalBytes = item.getTotalBytes() || 0;
+
+    item.setSavePath(savePath);
+
+    let latestEntry = upsertDownload({
+      id: downloadId,
+      fileName,
+      url: item.getURL(),
+      path: savePath,
+      sourceTitle: webContents?.getTitle?.() || '',
+      totalBytes,
+      receivedBytes: 0,
+      status: 'downloading',
+      startedAt: new Date().toISOString()
+    });
+
+    item.on('updated', (updateEvent, state) => {
+      const status = state === 'interrupted' ? 'interrupted' : 'downloading';
+      latestEntry = upsertDownload({
+        ...latestEntry,
+        status,
+        totalBytes: item.getTotalBytes() || latestEntry.totalBytes || 0,
+        receivedBytes: item.getReceivedBytes() || 0
+      });
+    });
+
+    item.once('done', (doneEvent, state) => {
+      const statusMap = {
+        completed: 'completed',
+        cancelled: 'cancelled',
+        interrupted: 'interrupted'
+      };
+      const status = statusMap[state] || 'cancelled';
+      const resolvedTotalBytes = item.getTotalBytes() || latestEntry.totalBytes || 0;
+      const resolvedReceivedBytes = status === 'completed'
+        ? (resolvedTotalBytes || item.getReceivedBytes() || latestEntry.receivedBytes || 0)
+        : (item.getReceivedBytes() || latestEntry.receivedBytes || 0);
+
+      upsertDownload({
+        ...latestEntry,
+        status,
+        totalBytes: resolvedTotalBytes,
+        receivedBytes: resolvedReceivedBytes
+      });
+    });
+  });
+}
+
 // Read FLASK_URL (or FLASK_HOST/FLASK_PORT) from environment (dotenv already loaded earlier)
 const FLASK_URL = process.env.FLASK_URL || `http://${process.env.FLASK_HOST || '127.0.0.1'}:${process.env.FLASK_PORT || '5000'}`;
 
@@ -253,34 +422,21 @@ function createWindow() {
 
 }
 
-// IPC: open Chatroom in a separate BrowserWindow (creates window if needed)
+// IPC: open Chat Room in the main app shell
 ipcMain.handle('chatroom:open-window', async () => {
   try {
-    // if already opened, focus and return
-    if (chatWindow && !chatWindow.isDestroyed()) {
-      chatWindow.focus();
-      return { ok: true };
+    if (!mainWindow || mainWindow.isDestroyed()) {
+      return { ok: false, error: 'Main window is unavailable' };
     }
 
-    // create new BrowserWindow for chatroom
-    chatWindow = new BrowserWindow({
-      width: 900,
-      height: 700,
-      webPreferences: {
-        contextIsolation: true,
-        nodeIntegration: false,
-        sandbox: true
-      }
-    });
+    if (mainWindow.isMinimized()) {
+      mainWindow.restore();
+    }
+    mainWindow.show();
+    mainWindow.focus();
+    mainWindow.webContents.send('chatroom:open-in-app');
 
-    // load Placeholder message instead of FLASK_URL
-    chatWindow.loadURL('data:text/html,<h2>Chat Service Unavailable</h2><p>The backend chat service has been removed.</p>');
-
-    chatWindow.on('closed', () => {
-      chatWindow = null;
-    });
-
-    return { ok: true };
+    return { ok: true, inApp: true };
   } catch (e) {
     console.error('chatroom:open-window error', e);
     return { ok: false, error: e.message };
@@ -453,6 +609,83 @@ ipcMain.handle('bookmarks:get', async () => {
 });
 
 // ============================================================================
+// IPC: Downloads Handlers
+// ============================================================================
+
+ipcMain.handle('downloads:get', async () => {
+  try {
+    return { ok: true, data: readDownloads() };
+  } catch (error) {
+    console.error('downloads:get error', error);
+    return { ok: false, error: error.message };
+  }
+});
+
+ipcMain.handle('downloads:open', async (event, downloadId) => {
+  try {
+    const target = readDownloads().find(item => item.id === String(downloadId || ''));
+    if (!target) {
+      return { ok: false, error: 'Download not found' };
+    }
+    if (!target.path || !fs.existsSync(target.path)) {
+      return { ok: false, error: 'Downloaded file is missing' };
+    }
+
+    const openError = await shell.openPath(target.path);
+    if (openError) {
+      return { ok: false, error: openError };
+    }
+
+    return { ok: true };
+  } catch (error) {
+    console.error('downloads:open error', error);
+    return { ok: false, error: error.message };
+  }
+});
+
+ipcMain.handle('downloads:show-in-folder', async (event, downloadId) => {
+  try {
+    const target = readDownloads().find(item => item.id === String(downloadId || ''));
+    if (!target) {
+      return { ok: false, error: 'Download not found' };
+    }
+    if (!target.path || !fs.existsSync(target.path)) {
+      return { ok: false, error: 'Downloaded file is missing' };
+    }
+
+    shell.showItemInFolder(target.path);
+    return { ok: true };
+  } catch (error) {
+    console.error('downloads:show-in-folder error', error);
+    return { ok: false, error: error.message };
+  }
+});
+
+ipcMain.handle('downloads:remove', async (event, downloadId) => {
+  try {
+    if (!downloadId) {
+      return { ok: false, error: 'Download ID is required' };
+    }
+
+    const updated = removeDownloadById(downloadId);
+    return { ok: true, data: updated };
+  } catch (error) {
+    console.error('downloads:remove error', error);
+    return { ok: false, error: error.message };
+  }
+});
+
+ipcMain.handle('downloads:clear', async () => {
+  try {
+    writeDownloads([]);
+    return { ok: true, data: [] };
+  } catch (error) {
+    console.error('downloads:clear error', error);
+    return { ok: false, error: error.message };
+  }
+});
+
+// ============================================================================
 // Capture navigation events from all webviews (tabs)
 // ============================================================================
 app.on('web-contents-created', (event, contents) => {
@@ -543,6 +776,7 @@ app.whenReady().then(() => {
   // Start Flask server automatically (Removed)
   // startFlaskServer();
   createWindow();
+  setupDownloadCapture();
 
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();

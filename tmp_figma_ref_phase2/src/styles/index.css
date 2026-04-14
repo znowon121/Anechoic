@@ -1,0 +1,19 @@
+@import './fonts.css';
+@import './tailwind.css';
+@import './theme.css';
+
+/* ─── Utility modal scrollbar ─────────────────────────────────────────────── */
+.utility-modal-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+.utility-modal-scroll::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 4px 0;
+}
+.utility-modal-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+}
+.utility-modal-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.14);
+}
