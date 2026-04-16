@@ -8,16 +8,20 @@ export default class App {
         this.isAutoSaveEnabled = localStorage.getItem("notesapp-autosave") === "true";
         this.view = new NotesView(root, this._handlers(), this.isAutoSaveEnabled);
 
-        this._refreshNotes();
+        void this._refreshNotes();
     }
 
-    _refreshNotes() {
-        const notes = NotesAPI.getAllNotes();
+    async _refreshNotes(preferredNoteId = this.activeNote?.id) {
+        const notes = await NotesAPI.getAllNotes();
 
         this._setNotes(notes);
 
-        if (notes.length > 0) {
-            this._setActiveNote(notes[0]);
+        const nextActiveNote = notes.find(note => note.id == preferredNoteId) || notes[0] || null;
+        if (nextActiveNote) {
+            this._setActiveNote(nextActiveNote);
+        } else {
+            this.activeNote = null;
+            this.view.clearActiveNote();
         }
     }
 
@@ -32,72 +36,59 @@ export default class App {
         this.view.updateActiveNote(note);
     }
 
-    /**
-     * Called externally (via window.notesAutoSave) when text is copied in a webview.
-     * Saves as a note only if auto-save is enabled.
-     * @returns {boolean} true if a note was saved
-     */
-    addNoteFromCopy(text, url) {
-        console.log("🔥 [STEP 3] 進入 App.js addNoteFromCopy 函數");
-        console.log("   -> isAutoSaveEnabled 狀態:", this.isAutoSaveEnabled);
-
+    async addNoteFromCopy(text, url) {
         if (!this.isAutoSaveEnabled) {
-            console.warn("⚠️ 自動儲存未開啟，已攔截");
             return false;
         }
 
-        let title = "Copied Text";
-        let body = text;
-
-        if (url) {
-            try {
-                const parsed = new URL(url);
-                title = parsed.hostname.replace(/^www\./, "");
-            } catch (e) {
-                title = "Copied Text";
-            }
-            body = `${text}\n\nSource: ${url}`;
+        const saved = await NotesAPI.addAutoSavedNote(text, url);
+        if (saved) {
+            await this._refreshNotes();
         }
 
-        NotesAPI.saveNote({ title, body });
-
-        this._refreshNotes();
-        return true;
+        return saved;
     }
 
     _handlers() {
         return {
             onNoteSelect: noteId => {
                 const selectedNote = this.notes.find(note => note.id == noteId);
-                this._setActiveNote(selectedNote);
+                if (selectedNote) {
+                    this._setActiveNote(selectedNote);
+                }
             },
-            onNoteAdd: () => {
-                const newNote = {
+            onNoteAdd: async () => {
+                const savedNote = await NotesAPI.saveNote({
                     title: "New Note",
-                    body: "Take note..."
-                };
-
-                NotesAPI.saveNote(newNote);
-                this._refreshNotes();
-            },
-            onNoteEdit: (title, body) => {
-                NotesAPI.saveNote({
-                    id: this.activeNote.id,
-                    title,
-                    body
+                    body: "Take note...",
+                    sourceUrl: ""
                 });
 
-                this._refreshNotes();
+                await this._refreshNotes(savedNote.id);
             },
-            onNoteDelete: noteId => {
-                NotesAPI.deleteNote(noteId);
-                this._refreshNotes();
+            onNoteEdit: async (title, body) => {
+                if (!this.activeNote) {
+                    return;
+                }
+
+                const savedNote = await NotesAPI.saveNote({
+                    id: this.activeNote.id,
+                    title,
+                    body,
+                    sourceUrl: this.activeNote.sourceUrl || ""
+                });
+
+                await this._refreshNotes(savedNote.id);
+            },
+            onNoteDelete: async noteId => {
+                await NotesAPI.deleteNote(noteId);
+                await this._refreshNotes();
             },
             onAutoSaveToggle: () => {
                 this.isAutoSaveEnabled = !this.isAutoSaveEnabled;
                 localStorage.setItem("notesapp-autosave", this.isAutoSaveEnabled.toString());
                 this.view.updateAutoSaveToggle(this.isAutoSaveEnabled);
-            },
+            }
         };
     }
 }

@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, globalShortcut } = require('electron');
+const { app, BrowserWindow, ipcMain, globalShortcut, Menu, clipboard, shell, session } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { spawn } = require('child_process');
@@ -12,10 +12,10 @@ try {
 
 let mainWindow;
 // let flaskProcess = null; // child process for Flask (Removed)
-let chatWindow = null; // separate BrowserWindow for chatroom
 let authWindow = null; // [新增]
 let currentUser = 'guest'; // [新增] 追蹤當前使用者，預設為訪客
 let isMuteModeActive = false;// 追蹤是否在靜音模式
+let isDownloadListenerRegistered = false;
 
 // [新增] 接收前端傳來的使用者名稱，切換資料夾身分
 ipcMain.handle('auth:set-user', (event, username) => {
@@ -27,6 +27,14 @@ ipcMain.handle('auth:set-user', (event, username) => {
   currentUser = safeUser;
   console.log(`👤 Current user set to: ${currentUser}`);
   return { ok: true, user: currentUser };
+});
+
+ipcMain.handle('sidebar:set-width', async (event, width) => {
+  const parsedWidth = Number(width);
+  return {
+    ok: Number.isFinite(parsedWidth),
+    width: Number.isFinite(parsedWidth) ? parsedWidth : null
+  };
 });
 
 // ============================================================================
@@ -77,6 +85,329 @@ function writeDataFile(filename, data) {
   }
 }
 
+const NOTE_DEFAULT_TITLE = 'New Note';
+const LEGACY_LONG_TITLE_THRESHOLD = 56;
+
+function isSourceBasedNoteTitle(title, sourceUrl) {
+  if (typeof title !== 'string' || typeof sourceUrl !== 'string') {
+    return false;
+  }
+
+  const normalizedTitle = title.trim();
+  const normalizedSourceUrl = sourceUrl.trim();
+  if (!normalizedTitle || !normalizedSourceUrl) {
+    return false;
+  }
+
+  if (normalizedTitle === normalizedSourceUrl || normalizedTitle === normalizedSourceUrl.replace(/\/$/, '')) {
+    return true;
+  }
+
+  try {
+    const parsed = new URL(normalizedSourceUrl);
+    const hostname = parsed.hostname.replace(/^www\./, '');
+    const fullHref = parsed.href.trim();
+    const fullHrefWithoutSlash = fullHref.replace(/\/$/, '');
+
+    return normalizedTitle === parsed.hostname
+      || normalizedTitle === hostname
+      || normalizedTitle === fullHref
+      || normalizedTitle === fullHrefWithoutSlash;
+  } catch (error) {
+    return false;
+  }
+}
+
+function isUrlLikeNoteTitle(title) {
+  if (typeof title !== 'string') {
+    return false;
+  }
+  const normalized = title.trim();
+  if (!normalized) {
+    return false;
+  }
+  if (/^(https?:\/\/|www\.)/i.test(normalized)) {
+    return true;
+  }
+  return /\bhttps?:\/\//i.test(normalized);
+}
+
+function isHostnameLikeNoteTitle(title) {
+  if (typeof title !== 'string') {
+    return false;
+  }
+  const normalized = title.trim();
+  if (!normalized || /\s/.test(normalized)) {
+    return false;
+  }
+  return /^([a-z0-9-]+\.)+[a-z]{2,}(?::\d+)?(\/\S*)?$/i.test(normalized);
+}
+
+function deriveLegacyNoteBodyTitle(body) {
+  if (typeof body !== 'string') {
+    return '';
+  }
+  const firstLine = body
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .find(Boolean);
+  if (!firstLine) {
+    return '';
+  }
+  return firstLine
+    .replace(/^#{1,6}\s+/, '')
+    .replace(/^>\s+/, '')
+    .replace(/^[-*]\s+/, '')
+    .replace(/^\d+[.)]\s+/, '')
+    .trim()
+    .slice(0, 60);
+}
+
+function shouldNormalizeLegacyNoteTitle(title, body, sourceUrl) {
+  if (!sourceUrl || typeof title !== 'string') {
+    return false;
+  }
+
+  const normalizedTitle = title.trim();
+  if (!normalizedTitle) {
+    return false;
+  }
+
+  if (
+    isSourceBasedNoteTitle(normalizedTitle, sourceUrl)
+    || isUrlLikeNoteTitle(normalizedTitle)
+    || isHostnameLikeNoteTitle(normalizedTitle)
+  ) {
+    return true;
+  }
+
+  const legacyBodyTitle = deriveLegacyNoteBodyTitle(body);
+  if (
+    legacyBodyTitle
+    && normalizedTitle === legacyBodyTitle
+    && normalizedTitle.length >= LEGACY_LONG_TITLE_THRESHOLD
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+function deriveNoteTitle(body, sourceUrl, options = {}) {
+  const fallbackTitle = typeof options?.fallbackTitle === 'string' && options.fallbackTitle.trim()
+    ? options.fallbackTitle.trim()
+    : NOTE_DEFAULT_TITLE;
+  return fallbackTitle;
+}
+
+function normalizeStoredNote(note) {
+  const body = typeof note?.body === 'string'
+    ? note.body
+    : typeof note?.content === 'string'
+      ? note.content
+      : '';
+  const sourceUrl = typeof note?.sourceUrl === 'string' ? note.sourceUrl : '';
+  const updated = typeof note?.updated === 'string'
+    ? note.updated
+    : typeof note?.timestamp === 'string'
+      ? note.timestamp
+      : new Date().toISOString();
+  const id = note?.id != null ? String(note.id) : Date.now().toString();
+  const hasExplicitTitle = typeof note?.title === 'string';
+  let title = hasExplicitTitle
+    ? note.title
+    : deriveNoteTitle(body, sourceUrl);
+  if (sourceUrl && hasExplicitTitle && shouldNormalizeLegacyNoteTitle(title, body, sourceUrl)) {
+    title = deriveNoteTitle(body, sourceUrl, {
+      fallbackTitle: NOTE_DEFAULT_TITLE
+    });
+  }
+
+  return {
+    id,
+    title,
+    body,
+    sourceUrl,
+    updated
+  };
+}
+
+function readNotes() {
+  const notes = readDataFile('notes.json');
+  if (!Array.isArray(notes)) {
+    return [];
+  }
+
+  return notes
+    .map(normalizeStoredNote)
+    .sort((left, right) => new Date(right.updated) - new Date(left.updated));
+}
+
+function writeNotes(notes) {
+  return writeDataFile('notes.json', notes.map(normalizeStoredNote));
+}
+
+function normalizeDownloadEntry(entry = {}) {
+  const validStatus = new Set(['downloading', 'completed', 'cancelled', 'interrupted']);
+  const startedAt = typeof entry.startedAt === 'string' ? entry.startedAt : new Date().toISOString();
+  const updatedAt = typeof entry.updatedAt === 'string' ? entry.updatedAt : startedAt;
+  const id = entry?.id ? String(entry.id) : `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const status = validStatus.has(entry.status) ? entry.status : 'completed';
+
+  return {
+    id,
+    fileName: typeof entry.fileName === 'string' ? entry.fileName : 'download',
+    url: typeof entry.url === 'string' ? entry.url : '',
+    path: typeof entry.path === 'string' ? entry.path : '',
+    sourceTitle: typeof entry.sourceTitle === 'string' ? entry.sourceTitle : '',
+    totalBytes: Number.isFinite(Number(entry.totalBytes)) ? Number(entry.totalBytes) : 0,
+    receivedBytes: Number.isFinite(Number(entry.receivedBytes)) ? Number(entry.receivedBytes) : 0,
+    status,
+    startedAt,
+    updatedAt
+  };
+}
+
+function readDownloads() {
+  const downloads = readDataFile('downloads.json');
+  if (!Array.isArray(downloads)) {
+    return [];
+  }
+
+  return downloads
+    .map(normalizeDownloadEntry)
+    .sort((left, right) => new Date(right.startedAt) - new Date(left.startedAt));
+}
+
+function writeDownloads(downloads) {
+  const normalized = Array.isArray(downloads) ? downloads.map(normalizeDownloadEntry) : [];
+  return writeDataFile('downloads.json', normalized);
+}
+
+function pushDownloadUpdateToRenderer(download) {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    mainWindow.webContents.send('downloads:updated', normalizeDownloadEntry(download));
+  }
+}
+
+function upsertDownload(entry) {
+  const normalizedEntry = normalizeDownloadEntry(entry);
+  const downloads = readDownloads();
+  const existingIndex = downloads.findIndex(item => item.id === normalizedEntry.id);
+  const timestamp = new Date().toISOString();
+  let finalEntry = normalizedEntry;
+
+  if (existingIndex >= 0) {
+    finalEntry = normalizeDownloadEntry({
+      ...downloads[existingIndex],
+      ...normalizedEntry,
+      startedAt: downloads[existingIndex].startedAt || normalizedEntry.startedAt,
+      updatedAt: timestamp
+    });
+    downloads.splice(existingIndex, 1);
+  } else {
+    finalEntry = normalizeDownloadEntry({
+      ...normalizedEntry,
+      updatedAt: timestamp
+    });
+  }
+
+  downloads.unshift(finalEntry);
+  writeDownloads(downloads);
+  pushDownloadUpdateToRenderer(finalEntry);
+  return finalEntry;
+}
+
+function removeDownloadById(downloadId) {
+  const id = String(downloadId || '');
+  if (!id) return readDownloads();
+
+  const downloads = readDownloads().filter(item => item.id !== id);
+  writeDownloads(downloads);
+  return downloads;
+}
+
+function getUniqueDownloadPath(fileName) {
+  const downloadsDir = app.getPath('downloads');
+  const baseName = path.basename(fileName || 'download');
+  const ext = path.extname(baseName);
+  const stem = ext ? baseName.slice(0, -ext.length) : baseName;
+
+  let candidatePath = path.join(downloadsDir, baseName);
+  let counter = 1;
+
+  while (fs.existsSync(candidatePath)) {
+    candidatePath = path.join(downloadsDir, `${stem} (${counter})${ext}`);
+    counter += 1;
+  }
+
+  return candidatePath;
+}
+
+function setupDownloadCapture() {
+  if (isDownloadListenerRegistered) {
+    return;
+  }
+
+  const electronSession = session.defaultSession;
+  if (!electronSession) {
+    return;
+  }
+
+  isDownloadListenerRegistered = true;
+
+  electronSession.on('will-download', (event, item, webContents) => {
+    const downloadId = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+    const fileName = item.getFilename() || 'download';
+    const savePath = getUniqueDownloadPath(fileName);
+    const totalBytes = item.getTotalBytes() || 0;
+
+    item.setSavePath(savePath);
+
+    let latestEntry = upsertDownload({
+      id: downloadId,
+      fileName,
+      url: item.getURL(),
+      path: savePath,
+      sourceTitle: webContents?.getTitle?.() || '',
+      totalBytes,
+      receivedBytes: 0,
+      status: 'downloading',
+      startedAt: new Date().toISOString()
+    });
+
+    item.on('updated', (updateEvent, state) => {
+      const status = state === 'interrupted' ? 'interrupted' : 'downloading';
+      latestEntry = upsertDownload({
+        ...latestEntry,
+        status,
+        totalBytes: item.getTotalBytes() || latestEntry.totalBytes || 0,
+        receivedBytes: item.getReceivedBytes() || 0
+      });
+    });
+
+    item.once('done', (doneEvent, state) => {
+      const statusMap = {
+        completed: 'completed',
+        cancelled: 'cancelled',
+        interrupted: 'interrupted'
+      };
+      const status = statusMap[state] || 'cancelled';
+      const resolvedTotalBytes = item.getTotalBytes() || latestEntry.totalBytes || 0;
+      const resolvedReceivedBytes = status === 'completed'
+        ? (resolvedTotalBytes || item.getReceivedBytes() || latestEntry.receivedBytes || 0)
+        : (item.getReceivedBytes() || latestEntry.receivedBytes || 0);
+
+      upsertDownload({
+        ...latestEntry,
+        status,
+        totalBytes: resolvedTotalBytes,
+        receivedBytes: resolvedReceivedBytes
+      });
+    });
+  });
+}
+
 // Read FLASK_URL (or FLASK_HOST/FLASK_PORT) from environment (dotenv already loaded earlier)
 const FLASK_URL = process.env.FLASK_URL || `http://${process.env.FLASK_HOST || '127.0.0.1'}:${process.env.FLASK_PORT || '5000'}`;
 
@@ -119,11 +450,16 @@ function addToHistory(title, url) {
 
 function createWindow() {
   const preloadPath = path.join(__dirname, '..', 'preload', 'preload.js');
-  const iconPath = path.join(__dirname, '..', 'renderer', 'assets', 'icon.png');
+  const iconCandidates = [
+    path.join(__dirname, '..', 'renderer', 'assets', 'icon.png'),
+    path.join(__dirname, '..', 'renderer', 'assets', 'icon.ico')
+  ];
+  const iconPath = iconCandidates.find(candidate => fs.existsSync(candidate));
 
   const windowOptions = {
     width: 1200,
     height: 800,
+    title: 'Anechoic',
     webPreferences: {
       preload: preloadPath,
       contextIsolation: true,
@@ -134,7 +470,7 @@ function createWindow() {
   };
 
   // 只有當 icon 真正存在時才傳入 icon 屬性，避免找不到檔案造成錯誤
-  if (fs.existsSync(iconPath)) {
+  if (iconPath) {
     windowOptions.icon = iconPath;
   }
 
@@ -179,41 +515,15 @@ function createWindow() {
     }
   });
 
-}
-
-// IPC: open Chatroom in a separate BrowserWindow (creates window if needed)
-ipcMain.handle('chatroom:open-window', async () => {
-  try {
-    // if already opened, focus and return
-    if (chatWindow && !chatWindow.isDestroyed()) {
-      chatWindow.focus();
-      return { ok: true };
+  mainWindow.on('hide', (event) => {
+    if (isMuteModeActive && mainWindow) {
+      event.preventDefault();
+      mainWindow.show();
+      mainWindow.focus();
     }
+  });
 
-    // create new BrowserWindow for chatroom
-    chatWindow = new BrowserWindow({
-      width: 900,
-      height: 700,
-      webPreferences: {
-        contextIsolation: true,
-        nodeIntegration: false,
-        sandbox: true
-      }
-    });
-
-    // load Placeholder message instead of FLASK_URL
-    chatWindow.loadURL('data:text/html,<h2>Chat Service Unavailable</h2><p>The backend chat service has been removed.</p>');
-
-    chatWindow.on('closed', () => {
-      chatWindow = null;
-    });
-
-    return { ok: true };
-  } catch (e) {
-    console.error('chatroom:open-window error', e);
-    return { ok: false, error: e.message };
-  }
-});
+}
 
 // ============================================================================
 // IPC: Auth (Google Login)
@@ -381,6 +691,83 @@ ipcMain.handle('bookmarks:get', async () => {
 });
 
 // ============================================================================
+// IPC: Downloads Handlers
+// ============================================================================
+
+ipcMain.handle('downloads:get', async () => {
+  try {
+    return { ok: true, data: readDownloads() };
+  } catch (error) {
+    console.error('downloads:get error', error);
+    return { ok: false, error: error.message };
+  }
+});
+
+ipcMain.handle('downloads:open', async (event, downloadId) => {
+  try {
+    const target = readDownloads().find(item => item.id === String(downloadId || ''));
+    if (!target) {
+      return { ok: false, error: 'Download not found' };
+    }
+    if (!target.path || !fs.existsSync(target.path)) {
+      return { ok: false, error: 'Downloaded file is missing' };
+    }
+
+    const openError = await shell.openPath(target.path);
+    if (openError) {
+      return { ok: false, error: openError };
+    }
+
+    return { ok: true };
+  } catch (error) {
+    console.error('downloads:open error', error);
+    return { ok: false, error: error.message };
+  }
+});
+
+ipcMain.handle('downloads:show-in-folder', async (event, downloadId) => {
+  try {
+    const target = readDownloads().find(item => item.id === String(downloadId || ''));
+    if (!target) {
+      return { ok: false, error: 'Download not found' };
+    }
+    if (!target.path || !fs.existsSync(target.path)) {
+      return { ok: false, error: 'Downloaded file is missing' };
+    }
+
+    shell.showItemInFolder(target.path);
+    return { ok: true };
+  } catch (error) {
+    console.error('downloads:show-in-folder error', error);
+    return { ok: false, error: error.message };
+  }
+});
+
+ipcMain.handle('downloads:remove', async (event, downloadId) => {
+  try {
+    if (!downloadId) {
+      return { ok: false, error: 'Download ID is required' };
+    }
+
+    const updated = removeDownloadById(downloadId);
+    return { ok: true, data: updated };
+  } catch (error) {
+    console.error('downloads:remove error', error);
+    return { ok: false, error: error.message };
+  }
+});
+
+ipcMain.handle('downloads:clear', async () => {
+  try {
+    writeDownloads([]);
+    return { ok: true, data: [] };
+  } catch (error) {
+    console.error('downloads:clear error', error);
+    return { ok: false, error: error.message };
+  }
+});
+
+// ============================================================================
 // Capture navigation events from all webviews (tabs)
 // ============================================================================
 app.on('web-contents-created', (event, contents) => {
@@ -389,6 +776,74 @@ app.on('web-contents-created', (event, contents) => {
     // Capture when a user navigates to a new URL
     contents.on('did-navigate', (event, url) => {
       addToHistory(contents.getTitle(), url);
+    });
+
+    contents.on('context-menu', (menuEvent, params) => {
+      const menuItems = [];
+
+      if (params.selectionText && params.selectionText.trim()) {
+        menuItems.push({
+          label: 'Copy',
+          accelerator: 'CmdOrCtrl+C',
+          click: () => {
+            contents.copy();
+          }
+        });
+      }
+
+      if (params.mediaType === 'image' && params.srcURL) {
+        menuItems.push({
+          label: 'Copy image link',
+          click: () => {
+            clipboard.writeText(params.srcURL);
+          }
+        });
+      }
+
+      if (params.isEditable) {
+        menuItems.push({
+          label: 'Cut',
+          accelerator: 'CmdOrCtrl+X',
+          click: () => {
+            contents.cut();
+          }
+        });
+        menuItems.push({
+          label: 'Paste',
+          accelerator: 'CmdOrCtrl+V',
+          click: () => {
+            contents.paste();
+          }
+        });
+      }
+
+      if (menuItems.length === 0) {
+        menuItems.push({
+          label: 'Back',
+          accelerator: 'CmdOrCtrl+[',
+          enabled: contents.canGoBack(),
+          click: () => {
+            contents.goBack();
+          }
+        });
+        menuItems.push({
+          label: 'Forward',
+          accelerator: 'CmdOrCtrl+]',
+          enabled: contents.canGoForward(),
+          click: () => {
+            contents.goForward();
+          }
+        });
+        menuItems.push({
+          label: 'Reload',
+          accelerator: 'CmdOrCtrl+R',
+          click: () => {
+            contents.reload();
+          }
+        });
+      }
+
+      Menu.buildFromTemplate(menuItems).popup();
     });
 
     // Update history again when title is finalized (for better UX)
@@ -403,6 +858,7 @@ app.whenReady().then(() => {
   // Start Flask server automatically (Removed)
   // startFlaskServer();
   createWindow();
+  setupDownloadCapture();
 
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
@@ -473,26 +929,18 @@ ipcMain.handle('system:enter-mute', () => {
     const blockKeys = [
       'CommandOrControl+Q',
       'CommandOrControl+W',
+      'Alt+F4',
       'Alt+Tab',
       'Escape',
       'Super+D',   // 攔截 Win + D (顯示桌面)
       'Super+Tab'  // 攔截 Win + Tab (工作檢視)
     ];
 
-    for (const key of blockKeys) {
-      const success = globalShortcut.register(key, () => {
+    blockKeys.forEach(key => {
+      globalShortcut.register(key, () => {
         console.log(`[Mute Mode] 已攔截快速鍵: ${key}`);
       });
-      if (!success) {
-        console.error(`[Mute Mode] 無法註冊快速鍵: ${key}`);
-        globalShortcut.unregisterAll();
-        isMuteModeActive = false;
-        mainWindow.setKiosk(false);
-        mainWindow.setAlwaysOnTop(false);
-        mainWindow.setSkipTaskbar(false);
-        return { ok: false, error: `Failed to register global shortcut: ${key}` };
-      }
-    }
+    });
     return { ok: true };
   }
   return { ok: false };
@@ -501,13 +949,13 @@ ipcMain.handle('system:enter-mute', () => {
 ipcMain.handle('system:exit-mute', () => {
   if (mainWindow) {
     isMuteModeActive = false;
-    mainWindow.setKiosk(false); 
+    mainWindow.setKiosk(false);
     mainWindow.setAlwaysOnTop(false);
-    
+
     // 恢復顯示工作列圖示
-    mainWindow.setSkipTaskbar(false); 
-    
-    globalShortcut.unregisterAll(); 
+    mainWindow.setSkipTaskbar(false);
+
+    globalShortcut.unregisterAll();
     return { ok: true };
   }
   return { ok: false };
@@ -520,7 +968,7 @@ ipcMain.handle('system:exit-mute', () => {
 
 ipcMain.handle('notes:get', async () => {
   try {
-    const notes = readDataFile('notes.json');
+    const notes = readNotes();
     return { ok: true, data: notes };
   } catch (error) {
     console.error('notes:get error', error);
@@ -530,35 +978,94 @@ ipcMain.handle('notes:get', async () => {
 
 ipcMain.handle('notes:add', async (event, noteData) => {
   try {
-    if (!noteData || !noteData.content) {
+    const content = typeof noteData?.content === 'string' ? noteData.content.trim() : '';
+    const sourceUrl = typeof noteData?.sourceUrl === 'string' ? noteData.sourceUrl : '';
+
+    if (!content) {
       return { ok: false, error: 'Content is required' };
     }
 
-    const notes = readDataFile('notes.json');
+    const notes = readNotes();
 
     // DUPLICATE CHECK: Ignore if identical to the latest note
     if (notes.length > 0) {
       const latest = notes[0];
-      if (latest.content === noteData.content && latest.sourceUrl === noteData.sourceUrl) {
+      if (latest.body === content && latest.sourceUrl === sourceUrl) {
         return { ok: true, data: notes, added: false };
       }
     }
 
     // Create new note
-    const newNote = {
+    const newNote = normalizeStoredNote({
       id: Date.now().toString(),
-      content: noteData.content,
-      sourceUrl: noteData.sourceUrl || '',
-      timestamp: new Date().toISOString()
-    };
+      title: deriveNoteTitle(content, sourceUrl),
+      body: content,
+      sourceUrl,
+      updated: new Date().toISOString()
+    });
 
     // Add to top
     const updatedNotes = [newNote, ...notes];
-    writeDataFile('notes.json', updatedNotes);
+    writeNotes(updatedNotes);
 
     return { ok: true, data: updatedNotes, added: true };
   } catch (error) {
     console.error('notes:add error', error);
+    return { ok: false, error: error.message };
+  }
+});
+
+ipcMain.handle('notes:save', async (event, noteData) => {
+  try {
+    if (!noteData || typeof noteData !== 'object') {
+      return { ok: false, error: 'Note data is required' };
+    }
+
+    const body = typeof noteData.body === 'string' ? noteData.body.trimEnd() : '';
+    const sourceUrl = typeof noteData.sourceUrl === 'string' ? noteData.sourceUrl : '';
+    const hasExplicitTitle = typeof noteData.title === 'string';
+
+    if (!body && !sourceUrl && !hasExplicitTitle) {
+      return { ok: false, error: 'Note body or title is required' };
+    }
+
+    const notes = readNotes();
+    const updated = new Date().toISOString();
+    const title = hasExplicitTitle
+      ? noteData.title
+      : deriveNoteTitle(body, sourceUrl);
+    const noteId = noteData.id != null ? String(noteData.id) : null;
+    const existingIndex = noteId ? notes.findIndex(note => note.id === noteId) : -1;
+
+    let savedNote;
+
+    if (existingIndex >= 0) {
+      savedNote = normalizeStoredNote({
+        ...notes[existingIndex],
+        id: notes[existingIndex].id,
+        title,
+        body,
+        sourceUrl,
+        updated
+      });
+      notes.splice(existingIndex, 1);
+      notes.unshift(savedNote);
+    } else {
+      savedNote = normalizeStoredNote({
+        id: Date.now().toString(),
+        title,
+        body,
+        sourceUrl,
+        updated
+      });
+      notes.unshift(savedNote);
+    }
+
+    writeNotes(notes);
+
+    return { ok: true, data: savedNote, notes };
+  } catch (error) {
+    console.error('notes:save error', error);
     return { ok: false, error: error.message };
   }
 });
@@ -569,10 +1076,10 @@ ipcMain.handle('notes:delete', async (event, noteId) => {
       return { ok: false, error: 'Note ID is required' };
     }
 
-    const notes = readDataFile('notes.json');
+    const notes = readNotes();
     const updatedNotes = notes.filter(n => n.id !== noteId);
 
-    writeDataFile('notes.json', updatedNotes);
+    writeNotes(updatedNotes);
 
     return { ok: true, data: updatedNotes };
   } catch (error) {
@@ -583,7 +1090,7 @@ ipcMain.handle('notes:delete', async (event, noteId) => {
 
 ipcMain.handle('notes:clear', async () => {
   try {
-    writeDataFile('notes.json', []);
+    writeNotes([]);
     return { ok: true, data: [] };
   } catch (error) {
     console.error('notes:clear error', error);

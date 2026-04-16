@@ -8,8 +8,8 @@ export default class NotesView {
         this.onAutoSaveToggle = onAutoSaveToggle;
         this.root.innerHTML = `
             <div class="notes__sidebar">
-                <button class="notes__autosave-toggle ${isAutoSaveEnabled ? 'notes__autosave-toggle--active' : ''}" type="button">
-                    <span class="notes__autosave-icon">${isAutoSaveEnabled ? '✅' : '📋'}</span>
+                <button class="notes__autosave-toggle ${isAutoSaveEnabled ? "notes__autosave-toggle--active" : ""}" type="button">
+                    <span class="notes__autosave-icon">${isAutoSaveEnabled ? "On" : "Off"}</span>
                     Auto Save Copy Link
                 </button>
                 <button class="notes__add" type="button">Add Note</button>
@@ -18,7 +18,7 @@ export default class NotesView {
             <div class="notes__preview">
                 <div class="notes__title-wrapper" style="display: flex; gap: 12px; align-items: center; width: 100%;">
                     <input class="notes__title" type="text" placeholder="New Note..." style="flex: 1; min-width: 0;">
-                    <button class="notes__open-btn" style="display: none;" title="Open Source Link">🌐 Open</button>
+                    <button class="notes__open-btn" style="display: none;" title="Open Source Link">Open</button>
                 </div>
                 <textarea class="notes__body">Take Note...</textarea>
             </div>
@@ -28,12 +28,12 @@ export default class NotesView {
         const btnAddNote = this.root.querySelector(".notes__add");
         const inpTitle = this.root.querySelector(".notes__title");
         const inpBody = this.root.querySelector(".notes__body");
-
         const btnOpen = this.root.querySelector(".notes__open-btn");
+
         btnOpen.addEventListener("click", () => {
             const url = btnOpen.dataset.url;
             if (url) {
-                window.dispatchEvent(new CustomEvent('ANECHOIC_NAVIGATE', { detail: url }));
+                window.dispatchEvent(new CustomEvent("ANECHOIC_NAVIGATE", { detail: url }));
             }
         });
 
@@ -57,14 +57,25 @@ export default class NotesView {
         this.updateNotePreviewVisibility(false);
     }
 
+    _escapeHTML(value) {
+        return String(value)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+    }
+
     _createListItemHTML(id, title, body, updated) {
         const MAX_BODY_LENGTH = 60;
+        const safeTitle = this._escapeHTML(title);
+        const safeBody = this._escapeHTML(body.substring(0, MAX_BODY_LENGTH));
 
         return `
             <div class="notes__list-item" data-note-id="${id}">
-                <div class="notes__small-title">${title}</div>
+                <div class="notes__small-title">${safeTitle}</div>
                 <div class="notes__small-body">
-                    ${body.substring(0, MAX_BODY_LENGTH)}
+                    ${safeBody}
                     ${body.length > MAX_BODY_LENGTH ? "..." : ""}
                 </div>
                 <div class="notes__small-updated">
@@ -77,17 +88,13 @@ export default class NotesView {
 
     updateNoteList(notes) {
         const notesListContainer = this.root.querySelector(".notes__list");
-
-        // Empty list
         notesListContainer.innerHTML = "";
 
         for (const note of notes) {
             const html = this._createListItemHTML(note.id, note.title, note.body, new Date(note.updated));
-
             notesListContainer.insertAdjacentHTML("beforeend", html);
         }
 
-        // Add select/delete events for each list item
         notesListContainer.querySelectorAll(".notes__list-item").forEach(noteListItem => {
             noteListItem.addEventListener("click", () => {
                 this.onNoteSelect(noteListItem.dataset.noteId);
@@ -104,14 +111,18 @@ export default class NotesView {
     }
 
     updateActiveNote(note) {
+        if (!note) {
+            this.clearActiveNote();
+            return;
+        }
+
         this.root.querySelector(".notes__title").value = note.title;
         this.root.querySelector(".notes__body").value = note.body;
 
         const btnOpen = this.root.querySelector(".notes__open-btn");
-        const sourceMatch = note.body.match(/Source:\s*(https?:\/\/[^\s]+)/);
-        if (sourceMatch && sourceMatch[1]) {
+        if (note.sourceUrl) {
             btnOpen.style.display = "block";
-            btnOpen.dataset.url = sourceMatch[1];
+            btnOpen.dataset.url = note.sourceUrl;
         } else {
             btnOpen.style.display = "none";
             btnOpen.dataset.url = "";
@@ -121,7 +132,23 @@ export default class NotesView {
             noteListItem.classList.remove("notes__list-item--selected");
         });
 
-        this.root.querySelector(`.notes__list-item[data-note-id="${note.id}"]`).classList.add("notes__list-item--selected");
+        const activeListItem = this.root.querySelector(`.notes__list-item[data-note-id="${note.id}"]`);
+        if (activeListItem) {
+            activeListItem.classList.add("notes__list-item--selected");
+        }
+    }
+
+    clearActiveNote() {
+        this.root.querySelector(".notes__title").value = "";
+        this.root.querySelector(".notes__body").value = "";
+
+        const btnOpen = this.root.querySelector(".notes__open-btn");
+        btnOpen.style.display = "none";
+        btnOpen.dataset.url = "";
+
+        this.root.querySelectorAll(".notes__list-item").forEach(noteListItem => {
+            noteListItem.classList.remove("notes__list-item--selected");
+        });
     }
 
     updateNotePreviewVisibility(visible) {
@@ -131,12 +158,13 @@ export default class NotesView {
     updateAutoSaveToggle(enabled) {
         const btn = this.root.querySelector(".notes__autosave-toggle");
         const icon = btn.querySelector(".notes__autosave-icon");
+
         if (enabled) {
             btn.classList.add("notes__autosave-toggle--active");
-            icon.textContent = "✅";
+            icon.textContent = "On";
         } else {
             btn.classList.remove("notes__autosave-toggle--active");
-            icon.textContent = "📋";
+            icon.textContent = "Off";
         }
     }
 }
