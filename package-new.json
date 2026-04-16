@@ -1,5 +1,6 @@
 {
   "name": "it-project-browser",
+  "productName": "Anechoic",
   "version": "1.0.0",
   "description": "Electron-based browser with integrated chatroom",
   "main": "src/main/electron-main.js",

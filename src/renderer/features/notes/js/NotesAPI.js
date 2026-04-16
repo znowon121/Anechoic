@@ -1,24 +1,122 @@
 const STORAGE_KEY = "notesapp-notes";
+const NOTE_DEFAULT_TITLE = "New Note";
+const LEGACY_LONG_TITLE_THRESHOLD = 56;
 
 export default class NotesAPI {
     static hasNativeAPI() {
         return typeof window !== "undefined" && typeof window.electronAPI?.getNotes === "function";
     }
 
-    static deriveTitle(body, sourceUrl) {
-        if (sourceUrl) {
-            try {
-                return new URL(sourceUrl).hostname.replace(/^www\./, "");
-            } catch (error) {
-                // Fall back to the body text when the URL is not valid.
-            }
+    static isSourceBasedTitle(title, sourceUrl) {
+        if (typeof title !== "string" || typeof sourceUrl !== "string") {
+            return false;
         }
 
-        const firstLine = typeof body === "string"
-            ? body.split(/\r?\n/).map(line => line.trim()).find(Boolean)
-            : "";
+        const normalizedTitle = title.trim();
+        const normalizedSourceUrl = sourceUrl.trim();
+        if (!normalizedTitle || !normalizedSourceUrl) {
+            return false;
+        }
 
-        return firstLine ? firstLine.slice(0, 60) : "New Note";
+        if (normalizedTitle === normalizedSourceUrl || normalizedTitle === normalizedSourceUrl.replace(/\/$/, "")) {
+            return true;
+        }
+
+        try {
+            const parsed = new URL(normalizedSourceUrl);
+            const hostname = parsed.hostname.replace(/^www\./, "");
+            const fullHref = parsed.href.trim();
+            const fullHrefWithoutSlash = fullHref.replace(/\/$/, "");
+
+            return normalizedTitle === parsed.hostname
+                || normalizedTitle === hostname
+                || normalizedTitle === fullHref
+                || normalizedTitle === fullHrefWithoutSlash;
+        } catch (error) {
+            return false;
+        }
+    }
+
+    static isUrlLikeTitle(title) {
+        if (typeof title !== "string") {
+            return false;
+        }
+        const normalized = title.trim();
+        if (!normalized) {
+            return false;
+        }
+        if (/^(https?:\/\/|www\.)/i.test(normalized)) {
+            return true;
+        }
+        return /\bhttps?:\/\//i.test(normalized);
+    }
+
+    static isHostnameLikeTitle(title) {
+        if (typeof title !== "string") {
+            return false;
+        }
+        const normalized = title.trim();
+        if (!normalized || /\s/.test(normalized)) {
+            return false;
+        }
+        return /^([a-z0-9-]+\.)+[a-z]{2,}(?::\d+)?(\/\S*)?$/i.test(normalized);
+    }
+
+    static deriveLegacyBodyTitle(body) {
+        if (typeof body !== "string") {
+            return "";
+        }
+        const firstLine = body
+            .split(/\r?\n/)
+            .map(line => line.trim())
+            .find(Boolean);
+        if (!firstLine) {
+            return "";
+        }
+        return firstLine
+            .replace(/^#{1,6}\s+/, "")
+            .replace(/^>\s+/, "")
+            .replace(/^[-*]\s+/, "")
+            .replace(/^\d+[.)]\s+/, "")
+            .trim()
+            .slice(0, 60);
+    }
+
+    static shouldNormalizeLegacyTitle(title, body, sourceUrl) {
+        if (!sourceUrl || typeof title !== "string") {
+            return false;
+        }
+
+        const normalizedTitle = title.trim();
+        if (!normalizedTitle) {
+            return false;
+        }
+
+        if (
+            NotesAPI.isSourceBasedTitle(normalizedTitle, sourceUrl)
+            || NotesAPI.isUrlLikeTitle(normalizedTitle)
+            || NotesAPI.isHostnameLikeTitle(normalizedTitle)
+        ) {
+            return true;
+        }
+
+        const legacyBodyTitle = NotesAPI.deriveLegacyBodyTitle(body);
+        if (
+            legacyBodyTitle
+            && normalizedTitle === legacyBodyTitle
+            && normalizedTitle.length >= LEGACY_LONG_TITLE_THRESHOLD
+        ) {
+            return true;
+        }
+
+        return false;
+    }
+
+    static deriveTitle(body, sourceUrl, options = {}) {
+        const fallbackTitle = typeof options.fallbackTitle === "string" && options.fallbackTitle.trim()
+            ? options.fallbackTitle.trim()
+            : NOTE_DEFAULT_TITLE;
+        return fallbackTitle;
     }
 
     static normalizeNote(note = {}) {
@@ -28,9 +126,15 @@ export default class NotesAPI {
                 ? note.content
                 : "";
         const sourceUrl = typeof note.sourceUrl === "string" ? note.sourceUrl : "";
-        const title = typeof note.title === "string" && note.title.trim()
-            ? note.title.trim()
+        const hasExplicitTitle = typeof note.title === "string";
+        let title = hasExplicitTitle
+            ? note.title
             : NotesAPI.deriveTitle(body, sourceUrl);
+        if (sourceUrl && hasExplicitTitle && NotesAPI.shouldNormalizeLegacyTitle(title, body, sourceUrl)) {
+            title = NotesAPI.deriveTitle(body, sourceUrl, {
+                fallbackTitle: NOTE_DEFAULT_TITLE
+            });
+        }
         const updated = typeof note.updated === "string"
             ? note.updated
             : typeof note.timestamp === "string"

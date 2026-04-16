@@ -118,6 +118,12 @@ textarea {
     color: var(--ane-text-strong);
 }
 
+.ane-sidebar--collapsed .ane-sidebar__header {
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+}
+
 .ane-sidebar__brand {
     font-weight: 600;
     font-size: 0.8125rem;
@@ -1264,6 +1270,137 @@ textarea {
     stroke-width: 1.7;
 }
 
+.ane-popover-menu {
+    position: absolute;
+    left: 0;
+    top: calc(100% + 6px);
+    min-width: 100%;
+    border-radius: 11px;
+    border: 1px solid var(--ane-overlay-border);
+    background: var(--ane-overlay-surface);
+    box-shadow: var(--ane-overlay-shadow);
+    padding: 6px;
+    z-index: 95;
+    animation: aneOverlayIn 0.14s ease;
+}
+
+.ane-custom-select {
+    position: relative;
+    min-width: 0;
+}
+
+.ane-custom-select__trigger {
+    width: 100%;
+    min-height: 36px;
+    border-radius: 10px;
+    border: 1.5px solid var(--ane-overlay-field-border);
+    background: var(--ane-overlay-field-bg);
+    box-shadow: var(--ane-overlay-field-shadow);
+    color: var(--ane-overlay-text);
+    padding: 0 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    text-align: left;
+    transition: all 140ms ease;
+}
+
+.ane-custom-select__trigger:hover {
+    border-color: #d9d9de;
+    background: #f4f4f6;
+}
+
+.ane-custom-select.is-open .ane-custom-select__trigger,
+.ane-custom-select__trigger:focus-visible {
+    border-color: var(--ane-overlay-field-focus);
+    background: #fff;
+    box-shadow: var(--ane-overlay-field-shadow-focus);
+}
+
+.ane-custom-select.is-disabled .ane-custom-select__trigger {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.ane-custom-select__value {
+    flex: 1;
+    min-width: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    line-height: 1;
+}
+
+.ane-custom-select__caret {
+    width: 14px;
+    height: 14px;
+    color: #b4b8bf;
+    stroke-width: 1.9;
+    transition: transform 130ms ease, color 130ms ease;
+}
+
+.ane-custom-select.is-open .ane-custom-select__caret {
+    transform: rotate(180deg);
+    color: #8f939a;
+}
+
+.ane-custom-select__menu {
+    max-height: 260px;
+    overflow-y: auto;
+}
+
+.ane-custom-select__menu.is-right {
+    left: auto;
+    right: 0;
+}
+
+.ane-custom-select__option {
+    width: 100%;
+    min-height: 30px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--ane-overlay-text);
+    padding: 6px 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    text-align: left;
+    font-size: 12.5px;
+    font-weight: 450;
+    letter-spacing: -0.01em;
+    transition: background 120ms ease, color 120ms ease;
+}
+
+.ane-custom-select__option:hover {
+    background: var(--ane-overlay-hover);
+}
+
+.ane-custom-select__option.is-selected {
+    background: rgba(200, 138, 66, 0.08);
+    color: #4f5058;
+}
+
+.ane-custom-select__option-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ane-custom-select__option-check {
+    color: #858a91;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+}
+
 .ane-settings-scroll {
     max-height: calc(100vh - 120px);
     overflow-y: auto;
@@ -1362,6 +1499,10 @@ textarea {
     padding: 0 16px 12px;
 }
 
+.ane-settings-select-wrap {
+    width: 100%;
+}
+
 .ane-settings-select {
     width: 100%;
     height: 40px;
@@ -1374,18 +1515,21 @@ textarea {
     font-weight: 400;
     letter-spacing: -0.01em;
     line-height: 1;
-    padding: 0 36px 0 12px;
-    appearance: none;
-    outline: none;
-    background-image: linear-gradient(45deg, transparent 50%, #b8b8bf 50%), linear-gradient(135deg, #b8b8bf 50%, transparent 50%);
-    background-position: calc(100% - 18px) 17px, calc(100% - 12px) 17px;
-    background-size: 6px 6px, 6px 6px;
-    background-repeat: no-repeat;
+    padding: 0 11px;
 }
 
-.ane-settings-select:focus {
+.ane-settings-select:hover {
+    border-color: #d7d7dc;
+}
+
+.ane-settings-select:focus,
+.ane-settings-select:focus-visible {
     border-color: var(--ane-overlay-field-focus);
     box-shadow: var(--ane-overlay-field-shadow-focus);
+}
+
+.ane-settings-select__menu {
+    min-width: 100%;
 }
 
 .ane-settings-destructive {
@@ -1636,6 +1780,280 @@ textarea {
 .ane-utility-ghost.is-destructive:hover {
     color: #c85040;
     background: rgba(200, 80, 64, 0.06);
+}
+
+.ane-overlay-backdrop--confirm {
+    z-index: 110;
+}
+
+.ane-confirm-dialog {
+    width: min(460px, calc(100vw - 28px));
+    max-height: unset;
+}
+
+.ane-confirm-dialog__icon.is-danger {
+    background: rgba(200, 80, 64, 0.1);
+    color: #c85040;
+}
+
+.ane-confirm-dialog__body {
+    padding: 14px 20px 10px;
+}
+
+.ane-confirm-dialog__body p {
+    margin: 0;
+    color: var(--ane-overlay-subtext);
+    font-size: 13px;
+    line-height: 1.5;
+    letter-spacing: -0.01em;
+}
+
+.ane-confirm-dialog__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 8px 20px 18px;
+}
+
+.ane-confirm-dialog__confirm.is-destructive {
+    color: #c85040;
+    background: rgba(200, 80, 64, 0.08);
+}
+
+.ane-confirm-dialog__confirm.is-destructive:hover {
+    background: rgba(200, 80, 64, 0.14);
+}
+
+.ane-field-shell {
+    position: relative;
+    min-height: 36px;
+    border-radius: 10px;
+    border: 1.5px solid var(--ane-overlay-field-border);
+    background: var(--ane-overlay-field-bg);
+    box-shadow: var(--ane-overlay-field-shadow);
+    padding: 4px 7px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    transition: all 140ms ease;
+}
+
+.ane-field-shell.is-clickable {
+    cursor: pointer;
+}
+
+.ane-field-shell:hover {
+    border-color: #d9d9de;
+}
+
+.ane-field-shell:focus-within {
+    border-color: var(--ane-overlay-field-focus);
+    background: #ffffff;
+    box-shadow: var(--ane-overlay-field-shadow-focus);
+}
+
+.ane-field-shell__label {
+    color: #8f939a;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    line-height: 1;
+    padding: 0 2px;
+    white-space: nowrap;
+}
+
+.ane-field-shell__controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    flex-wrap: nowrap;
+}
+
+.ane-field-shell__trigger {
+    min-height: 26px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 0 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: #59606c;
+    font-size: 11.5px;
+    font-weight: 500;
+    letter-spacing: -0.005em;
+    transition: all 130ms ease;
+}
+
+.ane-field-shell__trigger:hover {
+    border-color: #d8d8dd;
+    background: #fff;
+}
+
+.ane-field-shell__trigger svg {
+    width: 12px;
+    height: 12px;
+    stroke-width: 1.85;
+    color: #9aa0ab;
+}
+
+.ane-field-shell__trigger.is-placeholder {
+    color: #9ea2a8;
+}
+
+.ane-field-shell__native-input {
+    position: absolute;
+    width: 0;
+    height: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.ane-todo-form-row {
+    align-items: center;
+}
+
+.ane-todo-priority-select {
+    width: 188px;
+}
+
+.ane-todo-priority-select__trigger {
+    min-height: 36px;
+    border-radius: 10px;
+    border-color: #e2e2e7;
+}
+
+.ane-todo-priority-select__menu {
+    min-width: 210px;
+}
+
+.ane-todo-priority-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.ane-todo-priority-option__dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 999px;
+    flex-shrink: 0;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+
+.ane-todo-priority-option__label {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ane-field-shell--todo {
+    min-width: 130px;
+}
+
+.ane-field-shell--todo-time-only .ane-field-shell__controls {
+    flex: 1;
+    min-width: 0;
+}
+
+.ane-field-shell--todo-time-only .ane-field-shell__trigger {
+    width: 100%;
+    border-color: transparent;
+    background: transparent;
+    padding: 0 2px;
+    justify-content: flex-start;
+    cursor: pointer;
+}
+
+.ane-field-shell--todo-time-only .ane-field-shell__trigger:hover {
+    border-color: transparent;
+    background: transparent;
+}
+
+.ane-schedule-select-wrap {
+    min-width: 140px;
+}
+
+.ane-schedule-select {
+    min-height: 38px;
+    border-radius: 10px;
+    border-color: #d1d5db;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+
+.ane-schedule-select__menu {
+    min-width: 180px;
+}
+
+.ane-schedule-time-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-height: 38px;
+    border-radius: 10px;
+    border: 1px solid #d1d5db;
+    background: #ffffff;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.05);
+    padding: 2px 4px;
+}
+
+.ane-schedule-time-row:focus-within {
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18), 0 1px 2px rgba(15, 23, 42, 0.05);
+}
+
+.ane-schedule-time-separator {
+    color: #9ca3af;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.ane-schedule-time-select-wrap {
+    min-width: 0;
+}
+
+.ane-schedule-time-select-wrap.is-ampm {
+    padding-left: 4px;
+    border-left: 1px solid #e5e7eb;
+}
+
+.ane-schedule-time-select {
+    min-height: 30px;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    border-radius: 8px;
+    padding: 0 6px;
+    color: #4b5563;
+    font-size: 12.5px;
+    font-weight: 600;
+}
+
+.ane-schedule-time-select:hover {
+    background: #f9fafb;
+    border-color: transparent;
+}
+
+.ane-schedule-time-select:focus,
+.ane-schedule-time-select:focus-visible,
+.ane-custom-select.is-open .ane-schedule-time-select {
+    border: none;
+    background: #f5f7ff;
+    box-shadow: none;
+}
+
+.ane-schedule-time-select--ampm {
+    color: #4f46e5;
+    min-width: 58px;
+}
+
+.ane-schedule-time-select__menu {
+    min-width: 78px;
+    max-height: 220px;
 }
 
 .ane-utility-search-wrap {
@@ -2179,32 +2597,42 @@ textarea {
     font-weight: 500;
 }
 
+.ane-ai-local-model-select-wrap {
+    min-width: 116px;
+}
+
 .ane-ai-local-model-select {
-    appearance: none;
-    height: 20px;
-    border-radius: 6px;
+    min-height: 21px;
+    border-radius: 7px;
     border: 1px solid #e6e6e9;
     background: #f4f4f5;
+    box-shadow: none;
     color: var(--ane-overlay-subtext);
     font-size: 11px;
     font-weight: 450;
     letter-spacing: -0.01em;
     line-height: 1;
-    padding: 0 19px 0 8px;
-    background-image: linear-gradient(45deg, transparent 50%, #b8b8bf 50%), linear-gradient(135deg, #b8b8bf 50%, transparent 50%);
-    background-position: calc(100% - 8px) 8px, calc(100% - 5px) 8px;
-    background-size: 3px 3px, 3px 3px;
-    background-repeat: no-repeat;
-    outline: none;
+    padding: 0 8px;
 }
 
 .ane-ai-local-model-select:hover {
     background-color: #ececef;
 }
 
-.ane-ai-local-model-select:disabled {
+.ane-ai-local-model-select:focus,
+.ane-ai-local-model-select:focus-visible {
+    border-color: #bfc4ca;
+    box-shadow: 0 0 0 3px rgba(158, 162, 168, 0.12);
+}
+
+.ane-ai-local-model-select-wrap.is-disabled .ane-ai-local-model-select {
     opacity: 0.65;
     cursor: not-allowed;
+}
+
+.ane-ai-local-model-select__menu {
+    min-width: 180px;
+    max-width: 260px;
 }
 
 .ane-ai-head-actions {
@@ -3216,6 +3644,7 @@ textarea {
     min-height: 0;
     display: grid;
     grid-template-columns: 300px minmax(0, 1fr);
+    overflow-x: hidden;
 }
 
 .ane-notes-sidebar {
@@ -3225,7 +3654,10 @@ textarea {
     display: flex;
     flex-direction: column;
     min-height: 0;
+    min-width: 0;
     gap: 10px;
+    overflow-x: hidden;
+    box-sizing: border-box;
 }
 
 .ane-notes-sidebar__header {
@@ -3296,15 +3728,20 @@ textarea {
 .ane-notes-list {
     flex: 1;
     min-height: 0;
+    min-width: 0;
     overflow-y: auto;
+    overflow-x: hidden;
     display: flex;
     flex-direction: column;
     gap: 6px;
     padding-right: 2px;
+    box-sizing: border-box;
 }
 
 .ane-notes-card {
     width: 100%;
+    max-width: 100%;
+    min-width: 0;
     text-align: left;
     border: 1px solid transparent;
     border-radius: 12px;
@@ -3314,6 +3751,8 @@ textarea {
     flex-direction: column;
     gap: 6px;
     transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+    overflow: hidden;
+    box-sizing: border-box;
 }
 
 .ane-notes-card:hover {
@@ -3327,6 +3766,9 @@ textarea {
 }
 
 .ane-notes-card__title {
+    display: block;
+    min-width: 0;
+    max-width: 100%;
     font-size: 16px;
     font-weight: 600;
     color: #1e2026;
@@ -3336,18 +3778,29 @@ textarea {
 }
 
 .ane-notes-card__body {
+    display: -webkit-box;
+    min-width: 0;
+    max-width: 100%;
     font-size: 12px;
     color: #7a808d;
     line-height: 1.4;
-    display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    text-overflow: ellipsis;
 }
 
 .ane-notes-card__updated {
+    display: block;
+    min-width: 0;
+    max-width: 100%;
     font-size: 11px;
     color: #9ca2af;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 .ane-notes-empty {
@@ -3482,8 +3935,8 @@ textarea {
     outline: none;
     background: transparent;
     color: #17191f;
-    font-size: 44px;
-    line-height: 1.16;
+    font-size: 28px;
+    line-height: 1.24;
     font-weight: 700;
     padding: 4px 0;
 }
@@ -3516,8 +3969,8 @@ textarea {
     outline: none;
     background: transparent;
     color: #272b34;
-    font-size: 34px;
-    line-height: 1.42;
+    font-size: 18px;
+    line-height: 1.58;
     letter-spacing: 0.01em;
     padding: 2px 0 12px;
 }
@@ -3599,11 +4052,11 @@ textarea {
     }
 
     .ane-notes-title-input {
-        font-size: 32px;
+        font-size: 26px;
     }
 
     .ane-notes-body-input {
-        font-size: 28px;
+        font-size: 17px;
     }
 }
 
@@ -3734,11 +4187,11 @@ textarea {
     }
 
     .ane-notes-title-input {
-        font-size: 25px;
+        font-size: 24px;
     }
 
     .ane-notes-body-input {
-        font-size: 21px;
+        font-size: 16px;
     }
 
     .ane-notes-editor__meta {
@@ -3748,6 +4201,19 @@ textarea {
 
     .ane-notes-source {
         max-width: 100%;
+    }
+
+    .ane-todo-priority-select {
+        width: 100%;
+    }
+
+    .ane-field-shell--todo {
+        min-width: calc(50% - 4px);
+        flex: 1;
+    }
+
+    .ane-schedule-select-wrap {
+        min-width: 100%;
     }
 }
 

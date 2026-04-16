@@ -85,27 +85,119 @@ function writeDataFile(filename, data) {
   }
 }
 
-function deriveNoteTitle(body, sourceUrl) {
-  if (sourceUrl) {
-    try {
-      return new URL(sourceUrl).hostname.replace(/^www\./, '');
-    } catch (error) {
-      // Fall back to the note body when the URL is not parseable.
-    }
+const NOTE_DEFAULT_TITLE = 'New Note';
+const LEGACY_LONG_TITLE_THRESHOLD = 56;
+
+function isSourceBasedNoteTitle(title, sourceUrl) {
+  if (typeof title !== 'string' || typeof sourceUrl !== 'string') {
+    return false;
   }
 
-  if (typeof body === 'string') {
-    const firstLine = body
-      .split(/\r?\n/)
-      .map(line => line.trim())
-      .find(Boolean);
-
-    if (firstLine) {
-      return firstLine.slice(0, 60);
-    }
+  const normalizedTitle = title.trim();
+  const normalizedSourceUrl = sourceUrl.trim();
+  if (!normalizedTitle || !normalizedSourceUrl) {
+    return false;
   }
 
-  return 'New Note';
+  if (normalizedTitle === normalizedSourceUrl || normalizedTitle === normalizedSourceUrl.replace(/\/$/, '')) {
+    return true;
+  }
+
+  try {
+    const parsed = new URL(normalizedSourceUrl);
+    const hostname = parsed.hostname.replace(/^www\./, '');
+    const fullHref = parsed.href.trim();
+    const fullHrefWithoutSlash = fullHref.replace(/\/$/, '');
+
+    return normalizedTitle === parsed.hostname
+      || normalizedTitle === hostname
+      || normalizedTitle === fullHref
+      || normalizedTitle === fullHrefWithoutSlash;
+  } catch (error) {
+    return false;
+  }
+}
+
+function isUrlLikeNoteTitle(title) {
+  if (typeof title !== 'string') {
+    return false;
+  }
+  const normalized = title.trim();
+  if (!normalized) {
+    return false;
+  }
+  if (/^(https?:\/\/|www\.)/i.test(normalized)) {
+    return true;
+  }
+  return /\bhttps?:\/\//i.test(normalized);
+}
+
+function isHostnameLikeNoteTitle(title) {
+  if (typeof title !== 'string') {
+    return false;
+  }
+  const normalized = title.trim();
+  if (!normalized || /\s/.test(normalized)) {
+    return false;
+  }
+  return /^([a-z0-9-]+\.)+[a-z]{2,}(?::\d+)?(\/\S*)?$/i.test(normalized);
+}
+
+function deriveLegacyNoteBodyTitle(body) {
+  if (typeof body !== 'string') {
+    return '';
+  }
+  const firstLine = body
+    .split(/\r?\n/)
+    .map(line => line.trim())
+    .find(Boolean);
+  if (!firstLine) {
+    return '';
+  }
+  return firstLine
+    .replace(/^#{1,6}\s+/, '')
+    .replace(/^>\s+/, '')
+    .replace(/^[-*]\s+/, '')
+    .replace(/^\d+[.)]\s+/, '')
+    .trim()
+    .slice(0, 60);
+}
+
+function shouldNormalizeLegacyNoteTitle(title, body, sourceUrl) {
+  if (!sourceUrl || typeof title !== 'string') {
+    return false;
+  }
+
+  const normalizedTitle = title.trim();
+  if (!normalizedTitle) {
+    return false;
+  }
+
+  if (
+    isSourceBasedNoteTitle(normalizedTitle, sourceUrl)
+    || isUrlLikeNoteTitle(normalizedTitle)
+    || isHostnameLikeNoteTitle(normalizedTitle)
+  ) {
+    return true;
+  }
+
+  const legacyBodyTitle = deriveLegacyNoteBodyTitle(body);
+  if (
+    legacyBodyTitle
+    && normalizedTitle === legacyBodyTitle
+    && normalizedTitle.length >= LEGACY_LONG_TITLE_THRESHOLD
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
+function deriveNoteTitle(body, sourceUrl, options = {}) {
+  const fallbackTitle = typeof options?.fallbackTitle === 'string' && options.fallbackTitle.trim()
+    ? options.fallbackTitle.trim()
+    : NOTE_DEFAULT_TITLE;
+  return fallbackTitle;
 }
 
 function normalizeStoredNote(note) {
@@ -121,9 +213,15 @@ function normalizeStoredNote(note) {
       ? note.timestamp
       : new Date().toISOString();
   const id = note?.id != null ? String(note.id) : Date.now().toString();
-  const title = typeof note?.title === 'string' && note.title.trim()
-    ? note.title.trim()
+  const hasExplicitTitle = typeof note?.title === 'string';
+  let title = hasExplicitTitle
+    ? note.title
     : deriveNoteTitle(body, sourceUrl);
+  if (sourceUrl && hasExplicitTitle && shouldNormalizeLegacyNoteTitle(title, body, sourceUrl)) {
+    title = deriveNoteTitle(body, sourceUrl, {
+      fallbackTitle: NOTE_DEFAULT_TITLE
+    });
+  }
 
   return {
     id,
@@ -352,11 +450,16 @@ function addToHistory(title, url) {
 
 function createWindow() {
   const preloadPath = path.join(__dirname, '..', 'preload', 'preload.js');
-  const iconPath = path.join(__dirname, '..', 'renderer', 'assets', 'icon.png');
+  const iconCandidates = [
+    path.join(__dirname, '..', 'renderer', 'assets', 'icon.png'),
+    path.join(__dirname, '..', 'renderer', 'assets', 'icon.ico')
+  ];
+  const iconPath = iconCandidates.find(candidate => fs.existsSync(candidate));
 
   const windowOptions = {
     width: 1200,
     height: 800,
+    title: 'Anechoic',
     webPreferences: {
       preload: preloadPath,
       contextIsolation: true,
@@ -367,7 +470,7 @@ function createWindow() {
   };
 
   // 只有當 icon 真正存在時才傳入 icon 屬性，避免找不到檔案造成錯誤
-  if (fs.existsSync(iconPath)) {
+  if (iconPath) {
     windowOptions.icon = iconPath;
   }
 
@@ -920,15 +1023,16 @@ ipcMain.handle('notes:save', async (event, noteData) => {
 
     const body = typeof noteData.body === 'string' ? noteData.body.trimEnd() : '';
     const sourceUrl = typeof noteData.sourceUrl === 'string' ? noteData.sourceUrl : '';
+    const hasExplicitTitle = typeof noteData.title === 'string';
 
-    if (!body && !sourceUrl) {
-      return { ok: false, error: 'Note body is required' };
+    if (!body && !sourceUrl && !hasExplicitTitle) {
+      return { ok: false, error: 'Note body or title is required' };
     }
 
     const notes = readNotes();
     const updated = new Date().toISOString();
-    const title = typeof noteData.title === 'string' && noteData.title.trim()
-      ? noteData.title.trim()
+    const title = hasExplicitTitle
+      ? noteData.title
       : deriveNoteTitle(body, sourceUrl);
     const noteId = noteData.id != null ? String(noteData.id) : null;
     const existingIndex = noteId ? notes.findIndex(note => note.id === noteId) : -1;
