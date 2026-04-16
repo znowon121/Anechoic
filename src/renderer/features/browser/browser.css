@@ -292,6 +292,117 @@ textarea {
     text-overflow: ellipsis;
 }
 
+.ane-mode-toggle {
+    width: 100%;
+    min-height: var(--ane-size-sidebar-item);
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #6b7483;
+    padding: 0.3125rem 0.4375rem;
+    transition: all 140ms ease;
+}
+
+.ane-mode-toggle:hover {
+    border-color: transparent;
+    background: var(--ane-surface-control-hover);
+    color: var(--ane-text-strong);
+}
+
+.ane-mode-toggle__icon {
+    width: 14px;
+    height: 14px;
+    stroke-width: 1.75;
+    color: #a9adb4;
+}
+
+.ane-mode-toggle__label {
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 18px;
+    letter-spacing: -0.013em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ane-mode-toggle {
+    width: 100%;
+    min-height: var(--ane-size-sidebar-item);
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #6b7483;
+    padding: 0.3125rem 0.4375rem;
+    transition: all 140ms ease;
+}
+
+.ane-mode-toggle:hover {
+    border-color: transparent;
+    background: var(--ane-surface-control-hover);
+    color: var(--ane-text-strong);
+}
+
+.ane-mode-toggle__icon {
+    width: 14px;
+    height: 14px;
+    stroke-width: 1.75;
+    color: #a9adb4;
+}
+
+.ane-mode-toggle__label {
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 18px;
+    letter-spacing: -0.013em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.ane-mode-toggle {
+    width: 100%;
+    min-height: var(--ane-size-sidebar-item);
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #6b7483;
+    padding: 0.3125rem 0.4375rem;
+    transition: all 140ms ease;
+}
+
+.ane-mode-toggle:hover {
+    border-color: transparent;
+    background: var(--ane-surface-control-hover);
+    color: var(--ane-text-strong);
+}
+
+.ane-mode-toggle__icon {
+    width: 14px;
+    height: 14px;
+    stroke-width: 1.75;
+    color: #a9adb4;
+}
+
+.ane-mode-toggle__label {
+    font-size: 13px;
+    font-weight: 400;
+    line-height: 18px;
+    letter-spacing: -0.013em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .ane-content-shell {
     flex: 1;
     min-width: 0;
@@ -604,6 +715,14 @@ textarea {
     color: #9ea2a8;
 }
 
+.ane-address-input:focus,
+.ane-address-input:focus-visible {
+    outline: none;
+    box-shadow: none;
+    border: none;
+    background: transparent;
+}
+
 .ane-main-panel {
     flex: 1;
     min-height: 0;
@@ -748,8 +867,46 @@ textarea {
     font-size: 19px;
     font-weight: 700;
     letter-spacing: -0.03em;
+    position: relative;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 0 0 0.5px rgba(0, 0, 0, 0.04);
     transition: all 180ms ease;
+}
+
+.ane-shortcut__remove {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 18px;
+    height: 18px;
+    border: none;
+    border-radius: 999px;
+    padding: 0;
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(31, 32, 35, 0.08);
+    color: #6f7278;
+    opacity: 0;
+    transform: scale(0.9);
+    transition: opacity 140ms ease, transform 140ms ease, background 140ms ease, color 140ms ease;
+}
+
+.ane-shortcut__remove svg {
+    width: 10px;
+    height: 10px;
+    stroke-width: 2.3;
+}
+
+.ane-shortcut:hover .ane-shortcut__remove,
+.ane-shortcut__remove:focus-visible {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.ane-shortcut__remove:hover {
+    background: rgba(31, 32, 35, 0.16);
+    color: #1f2023;
 }
 
 .ane-shortcut__label {
@@ -796,6 +953,158 @@ textarea {
 
 .ane-shortcut--add:hover .ane-shortcut__label {
     color: #6f7278;
+}
+
+.ane-home-shortcut-backdrop {
+    z-index: 95;
+}
+
+.ane-home-shortcut-modal {
+    width: min(420px, calc(100vw - 32px));
+    border: 1px solid var(--ane-overlay-border);
+    border-radius: 16px;
+    background: var(--ane-overlay-surface);
+    box-shadow: var(--ane-overlay-shadow);
+    padding: 18px;
+    animation: aneOverlayIn 0.16s ease;
+}
+
+.ane-home-shortcut-modal__title {
+    margin: 0 0 14px;
+    color: #1f2023;
+    font-size: 18px;
+    line-height: 1.2;
+    letter-spacing: -0.015em;
+    font-weight: 600;
+}
+
+.ane-home-shortcut-modal__form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.ane-home-shortcut-modal__label {
+    color: #6f7278;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    letter-spacing: 0.01em;
+}
+
+.ane-home-shortcut-modal__input {
+    width: 100%;
+    min-height: 38px;
+    border: 1.5px solid var(--ane-overlay-field-border);
+    border-radius: 10px;
+    background: var(--ane-overlay-field-bg);
+    color: var(--ane-overlay-text);
+    padding: 0 12px;
+    font-size: 13px;
+    line-height: 1.2;
+    box-shadow: var(--ane-overlay-field-shadow);
+    transition: border-color 130ms ease, box-shadow 130ms ease, background 130ms ease;
+}
+
+.ane-home-shortcut-modal__input:focus,
+.ane-home-shortcut-modal__input:focus-visible {
+    outline: none;
+    border-color: var(--ane-overlay-field-focus);
+    box-shadow: var(--ane-overlay-field-shadow-focus);
+    background: #ffffff;
+}
+
+.ane-home-shortcut-modal__input::placeholder {
+    color: var(--ane-overlay-placeholder);
+}
+
+.ane-home-shortcut-palette {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: -2px;
+}
+
+.ane-home-shortcut-swatch {
+    width: 26px;
+    height: 26px;
+    border-radius: 999px;
+    border: none;
+    background: transparent;
+    -webkit-appearance: none;
+    appearance: none;
+    padding: 0;
+    margin: 0;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: none;
+    overflow: visible;
+    transition: transform 130ms ease;
+}
+
+.ane-home-shortcut-swatch:hover {
+    transform: translateY(-1px);
+    box-shadow: none;
+}
+
+.ane-home-shortcut-swatch:focus-visible {
+    outline: none;
+    box-shadow: none !important;
+    transform: translateY(-1px);
+}
+
+.ane-home-shortcut-swatch.is-selected {
+    box-shadow: none;
+    transform: translateY(-1px) scale(1.08);
+}
+
+.ane-home-shortcut-swatch__dot {
+    width: 26px;
+    height: 26px;
+    border-radius: 999px;
+    background: var(--ane-shortcut-swatch-dot, #d9b177);
+    display: block;
+}
+
+.ane-home-shortcut-modal__actions {
+    margin-top: 6px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+}
+
+.ane-home-shortcut-modal__button {
+    min-width: 88px;
+    min-height: 34px;
+    border-radius: 9px;
+    border: 1px solid transparent;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    transition: background 130ms ease, color 130ms ease, border-color 130ms ease, box-shadow 130ms ease;
+}
+
+.ane-home-shortcut-modal__button.is-cancel {
+    border-color: var(--ane-overlay-divider);
+    background: #f4f4f5;
+    color: #6f7278;
+}
+
+.ane-home-shortcut-modal__button.is-cancel:hover {
+    background: #ececef;
+    color: #4f5258;
+}
+
+.ane-home-shortcut-modal__button.is-primary {
+    background: #1f2023;
+    color: #ffffff;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+}
+
+.ane-home-shortcut-modal__button.is-primary:hover {
+    background: #2b2d31;
 }
 
 /* Phase 2: Overlay / Panel / Modal System */
@@ -1079,74 +1388,6 @@ textarea {
     box-shadow: var(--ane-overlay-field-shadow-focus);
 }
 
-.ane-settings-color-row {
-    padding: 0 16px;
-    height: 40px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.ane-settings-color-row + .ane-settings-color-row {
-    border-top: 1px solid var(--ane-overlay-divider);
-}
-
-.ane-settings-color-row__swatch {
-    width: 24px;
-    height: 24px;
-    border-radius: 7px;
-    border: none;
-    box-shadow: 0 0 0 1.5px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.12);
-}
-
-.ane-settings-color-row__label {
-    flex: 1;
-    min-width: 0;
-    color: var(--ane-overlay-text);
-    font-size: 13px;
-    font-weight: 400;
-    line-height: 1;
-    letter-spacing: -0.012em;
-}
-
-.ane-settings-color-row__hex {
-    display: inline-flex;
-    align-items: center;
-    height: 20px;
-    border-radius: 5px;
-    background: #f2f2f4;
-    color: #6a6a74;
-    font-size: 11px;
-    font-weight: 500;
-    letter-spacing: 0.03em;
-    padding: 0 7px;
-    font-family: "SF Mono", "Roboto Mono", "Menlo", monospace;
-}
-
-.ane-settings-reset-wrap {
-    padding: 8px 16px 12px;
-}
-
-.ane-settings-reset {
-    width: 100%;
-    height: 28px;
-    border-radius: 8px;
-    border: 1px solid #cfcfd4;
-    background: transparent;
-    color: #6f7278;
-    font-size: 12px;
-    font-weight: 450;
-    line-height: 1;
-    letter-spacing: -0.01em;
-    transition: all 120ms ease;
-}
-
-.ane-settings-reset:hover {
-    border-color: #d8d8dc;
-    background: #efeff1;
-    color: var(--ane-overlay-text);
-}
-
 .ane-settings-destructive {
     width: 100%;
     border: none;
@@ -1215,6 +1456,89 @@ textarea {
 
 .ane-utility-modal--pomodoro {
     width: 480px;
+}
+
+.ane-utility-modal--statistics {
+    width: 540px;
+}
+
+.ane-statistics-live {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    border: 1px solid rgba(117, 112, 204, 0.26);
+    background: rgba(117, 112, 204, 0.12);
+    color: #5f59bf;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    line-height: 1;
+    padding: 5px 9px;
+}
+
+.ane-statistics-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 16px 20px 22px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.ane-statistics-empty {
+    border: 1px solid rgba(117, 112, 204, 0.18);
+    background: rgba(117, 112, 204, 0.08);
+    border-radius: 12px;
+    padding: 12px;
+}
+
+.ane-statistics-empty p {
+    margin: 0;
+    color: #6e6f78;
+    font-size: 12px;
+    line-height: 1.45;
+    letter-spacing: -0.01em;
+}
+
+.ane-statistics-empty p + p {
+    margin-top: 3px;
+    color: #8f9098;
+}
+
+.ane-statistics-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.ane-statistics-card {
+    border: 1px solid rgba(53, 55, 64, 0.08);
+    background: #fafafc;
+    border-radius: 12px;
+    padding: 11px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 84px;
+}
+
+.ane-statistics-card__label {
+    color: #8d929c;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    line-height: 1.2;
+    text-transform: uppercase;
+}
+
+.ane-statistics-card__value {
+    color: #1f2023;
+    font-size: 21px;
+    font-weight: 550;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    word-break: break-word;
 }
 
 .ane-utility-modal--history .ane-utility-row:hover .ane-utility-row__chip {
@@ -1362,6 +1686,15 @@ textarea {
     font-size: 13px;
     font-weight: 400;
     letter-spacing: -0.01em;
+}
+
+.ane-utility-search input:hover,
+.ane-utility-search input:focus,
+.ane-utility-search input:focus-visible {
+    border: none;
+    outline: none;
+    box-shadow: none;
+    background: transparent;
 }
 
 .ane-utility-search input::placeholder {
@@ -1937,6 +2270,13 @@ textarea {
     background: #ffffff;
 }
 
+.ane-ai-api input:focus-visible {
+    outline: none;
+    border-color: var(--ane-overlay-field-focus);
+    box-shadow: var(--ane-overlay-field-shadow-focus);
+    background: #ffffff;
+}
+
 .ane-ai-api button {
     height: 34px;
     border: none;
@@ -2166,6 +2506,15 @@ textarea {
     font-size: 13px;
     line-height: 1.5;
     max-height: 80px;
+}
+
+.ane-ai-input-wrap textarea:hover,
+.ane-ai-input-wrap textarea:focus,
+.ane-ai-input-wrap textarea:focus-visible {
+    border: none;
+    outline: none;
+    box-shadow: none;
+    background: transparent;
 }
 
 .ane-ai-send {
@@ -2408,6 +2757,14 @@ textarea {
 
 .ane-ai-field input:focus,
 .ane-ai-field textarea:focus {
+    background: #fff;
+    border-color: var(--ane-overlay-field-focus);
+    box-shadow: var(--ane-overlay-field-shadow-focus);
+}
+
+.ane-ai-field input:focus-visible,
+.ane-ai-field textarea:focus-visible {
+    outline: none;
     background: #fff;
     border-color: var(--ane-overlay-field-focus);
     box-shadow: var(--ane-overlay-field-shadow-focus);
@@ -2919,11 +3276,21 @@ textarea {
 
 .ane-notes-search input {
     flex: 1;
-    border: 0;
+    border: none;
     outline: none;
+    box-shadow: none;
     background: transparent;
     font-size: 12px;
     color: #2a2c33;
+}
+
+.ane-notes-search input:hover,
+.ane-notes-search input:focus,
+.ane-notes-search input:focus-visible {
+    border: none;
+    outline: none;
+    box-shadow: none;
+    background: transparent;
 }
 
 .ane-notes-list {
@@ -3004,6 +3371,11 @@ textarea {
     min-height: 0;
     padding: 18px 18px 14px;
     gap: 10px;
+    transition: box-shadow 0.18s ease;
+}
+
+.ane-notes-editor:focus-within {
+    box-shadow: inset 0 0 0 2px rgba(158, 162, 168, 0.15);
 }
 
 .ane-notes-editor__empty {
@@ -3116,6 +3488,15 @@ textarea {
     padding: 4px 0;
 }
 
+.ane-notes-title-input:hover,
+.ane-notes-title-input:focus,
+.ane-notes-title-input:focus-visible {
+    border: none;
+    outline: none;
+    box-shadow: none;
+    background: transparent;
+}
+
 .ane-notes-title-input::placeholder {
     color: #bcc2cf;
 }
@@ -3139,6 +3520,15 @@ textarea {
     line-height: 1.42;
     letter-spacing: 0.01em;
     padding: 2px 0 12px;
+}
+
+.ane-notes-body-input:hover,
+.ane-notes-body-input:focus,
+.ane-notes-body-input:focus-visible {
+    border: none;
+    outline: none;
+    box-shadow: none;
+    background: transparent;
 }
 
 .ane-notes-body-input::placeholder {
@@ -3218,6 +3608,14 @@ textarea {
 }
 
 @media (max-width: 760px) {
+    .ane-utility-modal--statistics {
+        width: min(94vw, 540px);
+    }
+
+    .ane-statistics-grid {
+        grid-template-columns: 1fr;
+    }
+
     .ane-tabsbar {
         height: 40px;
         padding: 0 6px;

@@ -64,12 +64,12 @@
     <script type="text/babel">
         const translations = {
             'en': {
-                'Settings': 'Settings', 'Account': 'Account', 'Language': 'Language', 'Theme Colors': 'Theme Colors', 'Search Engine': 'Search Engine',
+                'Settings': 'Settings', 'Account': 'Account', 'Language': 'Language', 'Search Engine': 'Search Engine',
                 'History': 'History', 'Bookmarks': 'Bookmarks', 'Pomodoro': 'Pomodoro', 'Todo List': 'Todo List', 'Schedule': 'Schedule', 'Weather': 'Weather',
-                'AI Assistant': 'AI Assistant', 'Chat Room': 'Chat Room', 'Smart Notes': 'Smart Notes', 'Daily Mode': 'Daily Mode', 'Learning Mode': 'Learning Mode',
+                'AI Assistant': 'AI Assistant', 'Chat Room': 'Chat Room', 'Smart Notes': 'Smart Notes', 'Statistics': 'Statistics', 'Daily Mode': 'Daily Mode', 'Learning Mode': 'Learning Mode',
                 'New Tab': 'New Tab', 'Downloads': 'Downloads', 'Search or enter website...': 'Search or enter website...', 'Add': 'Add', 'Menu': 'Menu',
                 'Login': 'Login', 'Logout': 'Logout', 'Guest User': 'Guest User', 'Not logged in': 'Not logged in', 'Clear Browsing Data': 'Clear Browsing Data',
-                'Data': 'Data', 'Reset to Default': 'Reset to Default', 'Ask Gemini...': 'Ask Gemini...', 'Auto-captured from web': 'Auto-captured from web',
+                'Data': 'Data', 'Ask Gemini...': 'Ask Gemini...', 'Auto-captured from web': 'Auto-captured from web',
                 'Sure?': 'Sure?', 'Yes': 'Yes', 'No': 'No', 'Clear All': 'Clear All', 'No notes yet': 'No notes yet', 'Search history...': 'Search history...',
                 'Loading history...': 'Loading history...', 'No history found': 'No history found', 'Search bookmarks...': 'Search bookmarks...',
                 'Loading bookmarks...': 'Loading bookmarks...', 'No bookmarks found': 'No bookmarks found', 'Pomodoro Timer': 'Pomodoro Timer',
@@ -178,8 +178,14 @@
                 'Add shortcut': 'Add shortcut',
                 'Name': 'Name',
                 'URL': 'URL',
+                'Hover color': 'Hover color',
                 'e.g. Google': 'e.g. Google',
                 'Complete': 'Complete',
+                'Please enter both name and URL': 'Please enter both name and URL',
+                'Please enter a valid URL': 'Please enter a valid URL',
+                'Shortcut already exists': 'Shortcut already exists',
+                'Shortcut added': 'Shortcut added',
+                'Shortcut removed': 'Shortcut removed',
 
                 // AI Assistant
                 'local models': 'local models',
@@ -194,7 +200,7 @@
 
                 // Settings & System
                 'Clear all user data': 'Clear all user data',
-                'Are you sure you want to clear all user data? This will delete your history, bookmarks, and reset theme colors.': 'Are you sure you want to clear all user data? This will delete your history, bookmarks, and reset theme colors.',
+                'Are you sure you want to clear all user data? This will delete your history and bookmarks.': 'Are you sure you want to clear all user data? This will delete your history and bookmarks.',
 
                 // Toasts / Alerts
                 'All notes cleared': 'All notes cleared',
@@ -204,7 +210,6 @@
                 'Added to favorites!': 'Added to favorites!',
                 'Task added': 'Task added',
                 'Task deleted': 'Task deleted',
-                'Theme reset to default': 'Theme reset to default',
                 'All user data cleared': 'All user data cleared',
                 'Failed to clear some data': 'Failed to clear some data',
                 'Error: Please set your API Key first.': '🚨 Error: Please click ⚙️ in the top right to set your API Key.',
@@ -237,16 +242,24 @@
                 'Page': 'Page',
                 'Example: Ancient Greek Philosopher': 'Example: Ancient Greek Philosopher',
                 'Example: Young man, what is wisdom?': 'Example: Young man, what is wisdom?',
+                'Total Study Time': 'Total Study Time',
+                'Today\'s Study Time': 'Today\'s Study Time',
+                'Current Streak': 'Current Streak',
+                'Longest Streak': 'Longest Streak',
+                'Last Studied Date': 'Last Studied Date',
+                'Study Sessions': 'Study Sessions',
+                'No study statistics yet': 'No study statistics yet',
+                'Start Study Mode to build your streak.': 'Start Study Mode to build your streak.',
 
             },
 
             'zh-TW': {
-                'Settings': '設定', 'Account': '帳號', 'Language': '語言', 'Theme Colors': '主題顏色', 'Search Engine': '搜尋引擎',
+                'Settings': '設定', 'Account': '帳號', 'Language': '語言', 'Search Engine': '搜尋引擎',
                 'History': '歷史紀錄', 'Bookmarks': '書籤', 'Pomodoro': '番茄鐘', 'Todo List': '待辦事項', 'Schedule': '課表', 'Weather': '天氣',
                 'AI Assistant': 'AI 助手', 'Chat Room': '聊天室', 'Smart Notes': '智能筆記', 'Daily Mode': '日常模式', 'Learning Mode': '學習模式',
                 'New Tab': '新分頁', 'Downloads': '下載項目', 'Search or enter website...': '搜尋或輸入網址...', 'Add': '新增', 'Menu': '選單',
                 'Login': '登入', 'Logout': '登出', 'Guest User': '訪客', 'Not logged in': '尚未登入', 'Clear Browsing Data': '清除瀏覽資料',
-                'Data': '資料', 'Reset to Default': '恢復預設值', 'Ask Gemini...': '問問 Gemini...', 'Auto-captured from web': '從網頁自動擷取',
+                'Data': '資料', 'Ask Gemini...': '問問 Gemini...', 'Auto-captured from web': '從網頁自動擷取',
                 'Sure?': '確定嗎？', 'Yes': '是', 'No': '否', 'Clear All': '全部清除', 'No notes yet': '尚無筆記', 'Search history...': '搜尋歷史紀錄...',
                 'Loading history...': '載入歷史中...', 'No history found': '找不到歷史紀錄', 'Search bookmarks...': '搜尋書籤...',
                 'Loading bookmarks...': '載入書籤中...', 'No bookmarks found': '找不到書籤', 'Pomodoro Timer': '番茄鐘計時器',
@@ -371,7 +384,7 @@
 
                 // Settings & System
                 'Clear all user data': '清除所有資料',
-                'Are you sure you want to clear all user data? This will delete your history, bookmarks, and reset theme colors.': '確定要清除所有使用者資料嗎？這將會刪除您的歷史紀錄、書籤，並重設主題顏色。',
+                'Are you sure you want to clear all user data? This will delete your history and bookmarks.': '確定要清除所有使用者資料嗎？這將會刪除您的歷史紀錄與書籤。',
 
                 // Toasts / Alerts
                 'All notes cleared': '已清除所有筆記',
@@ -381,7 +394,6 @@
                 'Added to favorites!': '已加入我的最愛！',
                 'Task added': '已新增任務',
                 'Task deleted': '已刪除任務',
-                'Theme reset to default': '主題已恢復預設',
                 'All user data cleared': '已清除所有使用者資料',
                 'Failed to clear some data': '清除部分資料失敗',
                 'Error: Please set your API Key first.': '🚨 錯誤：請先點擊右上角 ⚙️ 設定您的 API Key。',
@@ -417,12 +429,12 @@
             },
 
             'zh-CN': {
-                'Settings': '设置', 'Account': '账号', 'Language': '语言', 'Theme Colors': '主题颜色', 'Search Engine': '搜索引擎',
+                'Settings': '设置', 'Account': '账号', 'Language': '语言', 'Search Engine': '搜索引擎',
                 'History': '历史记录', 'Bookmarks': '书签', 'Pomodoro': '番茄钟', 'Todo List': '待办事项', 'Schedule': '日程表', 'Weather': '天气',
                 'AI Assistant': 'AI 助手', 'Chat Room': '聊天室', 'Smart Notes': '智能笔记', 'Daily Mode': '日常模式', 'Learning Mode': '学习模式',
                 'New Tab': '新标签页', 'Downloads': '下载内容', 'Search or enter website...': '搜索或输入网址...', 'Add': '添加', 'Menu': '菜单',
                 'Login': '登录', 'Logout': '登出', 'Guest User': '访客', 'Not logged in': '未登录', 'Clear Browsing Data': '清除浏览数据',
-                'Data': '数据', 'Reset to Default': '恢复默认值', 'Ask Gemini...': '问问 Gemini...', 'Auto-captured from web': '从网页自动提取',
+                'Data': '数据', 'Ask Gemini...': '问问 Gemini...', 'Auto-captured from web': '从网页自动提取',
                 'Sure?': '确定吗？', 'Yes': '是', 'No': '否', 'Clear All': '全部清除', 'No notes yet': '暂无笔记', 'Search history...': '搜索历史记录...',
                 'Loading history...': '加载历史中...', 'No history found': '找不到历史记录', 'Search bookmarks...': '搜索书签...',
                 'Loading bookmarks...': '加载书签中...', 'No bookmarks found': '找不到书签', 'Pomodoro Timer': '番茄钟计时器',
@@ -547,7 +559,7 @@
 
                 // Settings & System
                 'Clear all user data': '清除所有数据',
-                'Are you sure you want to clear all user data? This will delete your history, bookmarks, and reset theme colors.': '确定要清除所有用户数据吗？这将会删除您的历史记录、书签，并重置主题颜色。',
+                'Are you sure you want to clear all user data? This will delete your history and bookmarks.': '确定要清除所有用户数据吗？这将会删除您的历史记录和书签。',
 
                 // Toasts / Alerts
                 'All notes cleared': '已清除所有笔记',
@@ -557,7 +569,6 @@
                 'Added to favorites!': '已加入收藏夹！',
                 'Task added': '已添加任务',
                 'Task deleted': '已删除任务',
-                'Theme reset to default': '主题已恢复默认',
                 'All user data cleared': '已清除所有用户数据',
                 'Failed to clear some data': '清除部分数据失败',
                 'Error: Please set your API Key first.': '🚨 错误：请先点击右上角 ⚙️ 设置您的 API Key。',
@@ -593,12 +604,12 @@
             },
 
             'ja': {
-                'Settings': '設定', 'Account': 'アカウント', 'Language': '言語', 'Theme Colors': 'テーマカラー', 'Search Engine': '検索エンジン',
+                'Settings': '設定', 'Account': 'アカウント', 'Language': '言語', 'Search Engine': '検索エンジン',
                 'History': '履歴', 'Bookmarks': 'ブックマーク', 'Pomodoro': 'ポモドーロ', 'Todo List': 'ToDoリスト', 'Schedule': 'スケジュール', 'Weather': '天気',
                 'AI Assistant': 'AIアシスタント', 'Chat Room': 'チャットルーム', 'Smart Notes': 'スマートノート', 'Daily Mode': '日常モード', 'Learning Mode': '学習モード',
                 'New Tab': '新しいタブ', 'Downloads': 'ダウンロード', 'Search or enter website...': '検索またはURLを入力...', 'Add': '追加', 'Menu': 'メニュー',
                 'Login': 'ログイン', 'Logout': 'ログアウト', 'Guest User': 'ゲストユーザー', 'Not logged in': '未ログイン', 'Clear Browsing Data': '閲覧データを消去',
-                'Data': 'データ', 'Reset to Default': 'デフォルトに戻す', 'Ask Gemini...': 'Geminiに質問...', 'Auto-captured from web': 'Webから自動取得',
+                'Data': 'データ', 'Ask Gemini...': 'Geminiに質問...', 'Auto-captured from web': 'Webから自動取得',
                 'Sure?': '本当に？', 'Yes': 'はい', 'No': 'いいえ', 'Clear All': 'すべてクリア', 'No notes yet': 'ノートはまだありません', 'Search history...': '履歴を検索...',
                 'Loading history...': '履歴を読み込み中...', 'No history found': '履歴が見つかりません', 'Search bookmarks...': 'ブックマークを検索...',
                 'Loading bookmarks...': 'ブックマークを読み込み中...', 'No bookmarks found': 'ブックマークが見つかりません', 'Pomodoro Timer': 'ポモドーロタイマー',
@@ -723,7 +734,7 @@
 
                 // Settings & System
                 'Clear all user data': 'すべてのユーザーデータを消去',
-                'Are you sure you want to clear all user data? This will delete your history, bookmarks, and reset theme colors.': 'すべてのユーザーデータを消去してもよろしいですか？履歴、ブックマークが削除され、テーマカラーがリセットされます。',
+                'Are you sure you want to clear all user data? This will delete your history and bookmarks.': 'すべてのユーザーデータを消去してもよろしいですか？履歴とブックマークが削除されます。',
 
                 // Toasts / Alerts
                 'All notes cleared': 'すべてのノートを消去しました',
@@ -733,7 +744,6 @@
                 'Added to favorites!': 'お気に入りに追加しました！',
                 'Task added': 'タスクを追加しました',
                 'Task deleted': 'タスクを削除しました',
-                'Theme reset to default': 'テーマをデフォルトにリセットしました',
                 'All user data cleared': 'すべてのユーザーデータを消去しました',
                 'Failed to clear some data': '一部のデータの消去に失敗しました',
                 'Error: Please set your API Key first.': '🚨 エラー：右上の ⚙️ をクリックしてAPI Keyを設定してください。',
@@ -769,12 +779,12 @@
             },
 
             'ko': {
-                'Settings': '설정', 'Account': '계정', 'Language': '언어', 'Theme Colors': '테마 색상', 'Search Engine': '검색 엔진',
+                'Settings': '설정', 'Account': '계정', 'Language': '언어', 'Search Engine': '검색 엔진',
                 'History': '기록', 'Bookmarks': '북마크', 'Pomodoro': '뽀모도로', 'Todo List': '할 일 목록', 'Schedule': '일정', 'Weather': '날씨',
                 'AI Assistant': 'AI 비서', 'Chat Room': '채팅방', 'Smart Notes': '스마트 노트', 'Daily Mode': '일상 모드', 'Learning Mode': '학습 모드',
                 'New Tab': '새 탭', 'Downloads': '다운로드', 'Search or enter website...': '검색 또는 웹사이트 입력...', 'Add': '추가', 'Menu': '메뉴',
                 'Login': '로그인', 'Logout': '로그아웃', 'Guest User': '게스트', 'Not logged in': '로그인되지 않음', 'Clear Browsing Data': '인터넷 사용 기록 삭제',
-                'Data': '데이터', 'Reset to Default': '기본값으로 재설정', 'Ask Gemini...': 'Gemini에게 질문하기...', 'Auto-captured from web': '웹에서 자동 캡처됨',
+                'Data': '데이터', 'Ask Gemini...': 'Gemini에게 질문하기...', 'Auto-captured from web': '웹에서 자동 캡처됨',
                 'Sure?': '확실합니까?', 'Yes': '예', 'No': '아니요', 'Clear All': '모두 지우기', 'No notes yet': '아직 노트가 없습니다', 'Search history...': '기록 검색...',
                 'Loading history...': '기록 불러오는 중...', 'No history found': '기록을 찾을 수 없습니다', 'Search bookmarks...': '북마크 검색...',
                 'Loading bookmarks...': '북마크 불러오는 중...', 'No bookmarks found': '북마크를 찾을 수 없습니다', 'Pomodoro Timer': '뽀모도로 타이머',
@@ -899,7 +909,7 @@
 
                 // Settings & System
                 'Clear all user data': '모든 사용자 데이터 지우기',
-                'Are you sure you want to clear all user data? This will delete your history, bookmarks, and reset theme colors.': '모든 사용자 데이터를 지우시겠습니까? 방문 기록, 북마크가 삭제되며 테마 색상이 초기화됩니다.',
+                'Are you sure you want to clear all user data? This will delete your history and bookmarks.': '모든 사용자 데이터를 지우시겠습니까? 방문 기록과 북마크가 삭제됩니다.',
 
                 // Toasts / Alerts
                 'All notes cleared': '모든 노트가 지워졌습니다',
@@ -909,7 +919,6 @@
                 'Added to favorites!': '즐겨찾기에 추가되었습니다!',
                 'Task added': '작업이 추가되었습니다',
                 'Task deleted': '작업이 삭제되었습니다',
-                'Theme reset to default': '테마가 기본값으로 초기화되었습니다',
                 'All user data cleared': '모든 사용자 데이터가 지워졌습니다',
                 'Failed to clear some data': '일부 데이터 삭제에 실패했습니다',
                 'Error: Please set your API Key first.': '🚨 오류: 오른쪽 상단의 ⚙️를 클릭하여 API Key를 설정해주세요.',
@@ -945,12 +954,12 @@
             },
 
             'es': {
-                'Settings': 'Ajustes', 'Account': 'Cuenta', 'Language': 'Idioma', 'Theme Colors': 'Colores del tema', 'Search Engine': 'Buscador',
+                'Settings': 'Ajustes', 'Account': 'Cuenta', 'Language': 'Idioma', 'Search Engine': 'Buscador',
                 'History': 'Historial', 'Bookmarks': 'Marcadores', 'Pomodoro': 'Pomodoro', 'Todo List': 'Tareas', 'Schedule': 'Horario', 'Weather': 'Clima',
                 'AI Assistant': 'Asistente IA', 'Chat Room': 'Chat', 'Smart Notes': 'Notas Inteligentes', 'Daily Mode': 'Modo Diario', 'Learning Mode': 'Modo Estudio',
                 'New Tab': 'Nueva Pestaña', 'Downloads': 'Descargas', 'Search or enter website...': 'Buscar o ingresar sitio web...', 'Add': 'Añadir', 'Menu': 'Menú',
                 'Login': 'Iniciar sesión', 'Logout': 'Cerrar sesión', 'Guest User': 'Invitado', 'Not logged in': 'No conectado', 'Clear Browsing Data': 'Borrar datos',
-                'Data': 'Datos', 'Reset to Default': 'Restablecer', 'Ask Gemini...': 'Preguntar a Gemini...', 'Auto-captured from web': 'Capturado automáticamente',
+                'Data': 'Datos', 'Ask Gemini...': 'Preguntar a Gemini...', 'Auto-captured from web': 'Capturado automáticamente',
                 'Sure?': '¿Seguro?', 'Yes': 'Sí', 'No': 'No', 'Clear All': 'Borrar todo', 'No notes yet': 'Aún no hay notas', 'Search history...': 'Buscar historial...',
                 'Loading history...': 'Cargando historial...', 'No history found': 'No se encontró historial', 'Search bookmarks...': 'Buscar marcadores...',
                 'Loading bookmarks...': 'Cargando marcadores...', 'No bookmarks found': 'No se encontraron marcadores', 'Pomodoro Timer': 'Temporizador Pomodoro',
@@ -1075,7 +1084,7 @@
 
                 // Settings & System
                 'Clear all user data': 'Borrar datos de usuario',
-                'Are you sure you want to clear all user data? This will delete your history, bookmarks, and reset theme colors.': '¿Seguro que quieres borrar todos los datos del usuario? Esto eliminará tu historial, marcadores y restablecerá los colores del tema.',
+                'Are you sure you want to clear all user data? This will delete your history and bookmarks.': '¿Seguro que quieres borrar todos los datos del usuario? Esto eliminará tu historial y marcadores.',
 
                 // Toasts / Alerts
                 'All notes cleared': 'Todas las notas borradas',
@@ -1085,7 +1094,6 @@
                 'Added to favorites!': '¡Añadido a favoritos!',
                 'Task added': 'Tarea añadida',
                 'Task deleted': 'Tarea eliminada',
-                'Theme reset to default': 'Tema restablecido',
                 'All user data cleared': 'Todos los datos borrados',
                 'Failed to clear some data': 'Error al borrar algunos datos',
                 'Error: Please set your API Key first.': '🚨 Error: Por favor, haz clic en ⚙️ en la parte superior derecha para configurar tu clave API.',
@@ -1121,12 +1129,12 @@
             },
 
             'fr': {
-                'Settings': 'Paramètres', 'Account': 'Compte', 'Language': 'Langue', 'Theme Colors': 'Couleurs', 'Search Engine': 'Moteur de recherche',
+                'Settings': 'Paramètres', 'Account': 'Compte', 'Language': 'Langue', 'Search Engine': 'Moteur de recherche',
                 'History': 'Historique', 'Bookmarks': 'Favoris', 'Pomodoro': 'Pomodoro', 'Todo List': 'Tâches', 'Schedule': 'Emploi du temps', 'Weather': 'Météo',
                 'AI Assistant': 'Assistant IA', 'Chat Room': 'Chat', 'Smart Notes': 'Notes Intelligentes', 'Daily Mode': 'Mode Quotidien', 'Learning Mode': 'Mode Apprentissage',
                 'New Tab': 'Nouvel onglet', 'Downloads': 'Téléchargements', 'Search or enter website...': 'Rechercher ou entrer une URL...', 'Add': 'Ajouter', 'Menu': 'Menu',
                 'Login': 'Connexion', 'Logout': 'Déconnexion', 'Guest User': 'Invité', 'Not logged in': 'Non connecté', 'Clear Browsing Data': 'Effacer les données',
-                'Data': 'Données', 'Reset to Default': 'Réinitialiser', 'Ask Gemini...': 'Demander à Gemini...', 'Auto-captured from web': 'Capturé du web',
+                'Data': 'Données', 'Ask Gemini...': 'Demander à Gemini...', 'Auto-captured from web': 'Capturé du web',
                 'Sure?': 'Vraiment ?', 'Yes': 'Oui', 'No': 'Non', 'Clear All': 'Tout effacer', 'No notes yet': 'Pas encore de notes', 'Search history...': 'Chercher l\'historique...',
                 'Loading history...': 'Chargement...', 'No history found': 'Aucun historique', 'Search bookmarks...': 'Chercher favoris...',
                 'Loading bookmarks...': 'Chargement...', 'No bookmarks found': 'Aucun favori', 'Pomodoro Timer': 'Minuteur Pomodoro',
@@ -1251,7 +1259,7 @@
 
                 // Settings & System
                 'Clear all user data': 'Effacer toutes les données',
-                'Are you sure you want to clear all user data? This will delete your history, bookmarks, and reset theme colors.': 'Êtes-vous sûr de vouloir effacer toutes les données utilisateur ? Cela supprimera votre historique, vos favoris et réinitialisera les couleurs du thème.',
+                'Are you sure you want to clear all user data? This will delete your history and bookmarks.': 'Êtes-vous sûr de vouloir effacer toutes les données utilisateur ? Cela supprimera votre historique et vos favoris.',
 
                 // Toasts / Alerts
                 'All notes cleared': 'Toutes les notes ont été effacées',
@@ -1261,7 +1269,6 @@
                 'Added to favorites!': 'Ajouté aux favoris !',
                 'Task added': 'Tâche ajoutée',
                 'Task deleted': 'Tâche supprimée',
-                'Theme reset to default': 'Thème réinitialisé',
                 'All user data cleared': 'Toutes les données utilisateur effacées',
                 'Failed to clear some data': 'Échec de l\'effacement de certaines données',
                 'Error: Please set your API Key first.': '🚨 Erreur : Veuillez d\'abord cliquer sur ⚙️ en haut à droite pour configurer votre clé API.',
@@ -1297,12 +1304,12 @@
             },
 
             'de': {
-                'Settings': 'Einstellungen', 'Account': 'Konto', 'Language': 'Sprache', 'Theme Colors': 'Themenfarben', 'Search Engine': 'Suchmaschine',
+                'Settings': 'Einstellungen', 'Account': 'Konto', 'Language': 'Sprache', 'Search Engine': 'Suchmaschine',
                 'History': 'Verlauf', 'Bookmarks': 'Lesezeichen', 'Pomodoro': 'Pomodoro', 'Todo List': 'Aufgaben', 'Schedule': 'Stundenplan', 'Weather': 'Wetter',
                 'AI Assistant': 'KI-Assistent', 'Chat Room': 'Chatraum', 'Smart Notes': 'Smarte Notizen', 'Daily Mode': 'Alltagsmodus', 'Learning Mode': 'Lernmodus',
                 'New Tab': 'Neuer Tab', 'Downloads': 'Downloads', 'Search or enter website...': 'Suchen oder Website eingeben...', 'Add': 'Hinzufügen', 'Menu': 'Menü',
                 'Login': 'Anmelden', 'Logout': 'Abmelden', 'Guest User': 'Gast', 'Not logged in': 'Nicht angemeldet', 'Clear Browsing Data': 'Browserdaten löschen',
-                'Data': 'Daten', 'Reset to Default': 'Zurücksetzen', 'Ask Gemini...': 'Gemini fragen...', 'Auto-captured from web': 'Aus dem Web erfasst',
+                'Data': 'Daten', 'Ask Gemini...': 'Gemini fragen...', 'Auto-captured from web': 'Aus dem Web erfasst',
                 'Sure?': 'Sicher?', 'Yes': 'Ja', 'No': 'Nein', 'Clear All': 'Alles löschen', 'No notes yet': 'Noch keine Notizen', 'Search history...': 'Verlauf durchsuchen...',
                 'Loading history...': 'Lade Verlauf...', 'No history found': 'Kein Verlauf gefunden', 'Search bookmarks...': 'Lesezeichen durchsuchen...',
                 'Loading bookmarks...': 'Lade Lesezeichen...', 'No bookmarks found': 'Keine Lesezeichen', 'Pomodoro Timer': 'Pomodoro-Timer',
@@ -1427,7 +1434,7 @@
 
                 // Settings & System
                 'Clear all user data': 'Alle Benutzerdaten löschen',
-                'Are you sure you want to clear all user data? This will delete your history, bookmarks, and reset theme colors.': 'Sind Sie sicher, dass Sie alle Benutzerdaten löschen möchten? Dies löscht Ihren Verlauf, Ihre Lesezeichen und setzt die Themenfarben zurück.',
+                'Are you sure you want to clear all user data? This will delete your history and bookmarks.': 'Sind Sie sicher, dass Sie alle Benutzerdaten löschen möchten? Dies löscht Ihren Verlauf und Ihre Lesezeichen.',
 
                 // Toasts / Alerts
                 'All notes cleared': 'Alle Notizen gelöscht',
@@ -1437,7 +1444,6 @@
                 'Added to favorites!': 'Zu Favoriten hinzugefügt!',
                 'Task added': 'Aufgabe hinzugefügt',
                 'Task deleted': 'Aufgabe gelöscht',
-                'Theme reset to default': 'Thema auf Standard zurückgesetzt',
                 'All user data cleared': 'Alle Benutzerdaten gelöscht',
                 'Failed to clear some data': 'Fehler beim Löschen einiger Daten',
                 'Error: Please set your API Key first.': '🚨 Fehler: Bitte klicken Sie oben rechts auf ⚙️, um Ihren API-Schlüssel festzulegen.',
@@ -1484,6 +1490,346 @@
             const savedUser = localStorage.getItem('anechoic_user');
             const username = savedUser ? JSON.parse(savedUser).name : 'guest';
             return `${baseKey}_${username}`;
+        };
+
+        const STUDY_STATS_STORAGE_BASE_KEY = 'anechoic_study_stats';
+        const MIN_STUDY_DAY_SECONDS = 60;
+
+        const createEmptyStudyStats = () => ({
+            totalSeconds: 0,
+            todaySeconds: 0,
+            currentStreak: 0,
+            longestStreak: 0,
+            lastStudiedDate: null,
+            studiedDateMap: {},
+            sessionCount: 0,
+            activeSessionStartedAt: null
+        });
+
+        const getStatsStorageKey = () => getStorageKey(STUDY_STATS_STORAGE_BASE_KEY);
+
+        const isValidDateKey = (value) => typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value);
+
+        const toSafePositiveInt = (value) => {
+            const num = Number(value);
+            return Number.isFinite(num) && num > 0 ? Math.floor(num) : 0;
+        };
+
+        const getLocalDateKey = (inputDate = new Date()) => {
+            const date = inputDate instanceof Date ? inputDate : new Date(inputDate);
+            if (Number.isNaN(date.getTime())) return '';
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        };
+
+        const parseDateKeyToLocalDate = (dateKey) => {
+            if (!isValidDateKey(dateKey)) return null;
+            const [year, month, day] = dateKey.split('-').map(Number);
+            const date = new Date(year, month - 1, day, 12, 0, 0, 0);
+            if (
+                date.getFullYear() !== year ||
+                date.getMonth() !== month - 1 ||
+                date.getDate() !== day
+            ) {
+                return null;
+            }
+            return date;
+        };
+
+        const normalizeStudiedDateMap = (rawMap, rawStudiedDates) => {
+            const normalized = {};
+
+            if (rawMap && typeof rawMap === 'object' && !Array.isArray(rawMap)) {
+                Object.entries(rawMap).forEach(([dateKey, seconds]) => {
+                    if (!isValidDateKey(dateKey)) return;
+                    const safeSeconds = toSafePositiveInt(seconds);
+                    if (safeSeconds > 0) {
+                        normalized[dateKey] = safeSeconds;
+                    }
+                });
+            }
+
+            if (Object.keys(normalized).length === 0 && Array.isArray(rawStudiedDates)) {
+                rawStudiedDates.forEach((dateKey) => {
+                    if (!isValidDateKey(dateKey)) return;
+                    normalized[dateKey] = Math.max(normalized[dateKey] || 0, MIN_STUDY_DAY_SECONDS);
+                });
+            }
+
+            return normalized;
+        };
+
+        const normalizeStudyStats = (rawStats) => {
+            const base = createEmptyStudyStats();
+            const safeRaw = rawStats && typeof rawStats === 'object' ? rawStats : {};
+
+            const studiedDateMap = normalizeStudiedDateMap(
+                safeRaw.studiedDateMap,
+                safeRaw.studiedDates
+            );
+
+            const activeSessionStartedAt = (
+                typeof safeRaw.activeSessionStartedAt === 'string' &&
+                !Number.isNaN(Date.parse(safeRaw.activeSessionStartedAt))
+            )
+                ? safeRaw.activeSessionStartedAt
+                : null;
+
+            return {
+                ...base,
+                totalSeconds: toSafePositiveInt(safeRaw.totalSeconds),
+                todaySeconds: toSafePositiveInt(safeRaw.todaySeconds),
+                currentStreak: toSafePositiveInt(safeRaw.currentStreak),
+                longestStreak: toSafePositiveInt(safeRaw.longestStreak),
+                lastStudiedDate: isValidDateKey(safeRaw.lastStudiedDate) ? safeRaw.lastStudiedDate : null,
+                studiedDateMap,
+                sessionCount: toSafePositiveInt(safeRaw.sessionCount),
+                activeSessionStartedAt
+            };
+        };
+
+        const mergeStudyDateSeconds = (existingMap, addedMap) => {
+            const merged = { ...existingMap };
+            Object.entries(addedMap || {}).forEach(([dateKey, seconds]) => {
+                if (!isValidDateKey(dateKey)) return;
+                const safeSeconds = toSafePositiveInt(seconds);
+                if (safeSeconds <= 0) return;
+                merged[dateKey] = toSafePositiveInt(merged[dateKey]) + safeSeconds;
+            });
+            return merged;
+        };
+
+        const splitSessionSecondsByDate = (startMs, endMs) => {
+            const segments = {};
+
+            if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) {
+                return segments;
+            }
+
+            let cursor = startMs;
+            while (cursor < endMs) {
+                const cursorDate = new Date(cursor);
+                if (Number.isNaN(cursorDate.getTime())) break;
+
+                const nextMidnight = new Date(
+                    cursorDate.getFullYear(),
+                    cursorDate.getMonth(),
+                    cursorDate.getDate() + 1,
+                    0,
+                    0,
+                    0,
+                    0
+                ).getTime();
+
+                const segmentEnd = Math.min(endMs, nextMidnight);
+                const segmentSeconds = Math.floor((segmentEnd - cursor) / 1000);
+                if (segmentSeconds > 0) {
+                    const dateKey = getLocalDateKey(cursorDate);
+                    segments[dateKey] = (segments[dateKey] || 0) + segmentSeconds;
+                }
+
+                if (segmentEnd <= cursor) break;
+                cursor = segmentEnd;
+            }
+
+            const totalSeconds = Math.floor((endMs - startMs) / 1000);
+            const allocatedSeconds = Object.values(segments).reduce((sum, seconds) => sum + seconds, 0);
+            if (totalSeconds > allocatedSeconds) {
+                const endDateKey = getLocalDateKey(new Date(endMs));
+                segments[endDateKey] = (segments[endDateKey] || 0) + (totalSeconds - allocatedSeconds);
+            }
+
+            return segments;
+        };
+
+        const computeStudyStreak = (studiedDateMap, minStudySeconds = MIN_STUDY_DAY_SECONDS) => {
+            const qualifiedDates = Object.entries(studiedDateMap || {})
+                .filter(([dateKey, seconds]) => isValidDateKey(dateKey) && toSafePositiveInt(seconds) >= minStudySeconds)
+                .map(([dateKey]) => ({
+                    dateKey,
+                    date: parseDateKeyToLocalDate(dateKey)
+                }))
+                .filter((item) => item.date)
+                .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+            const qualifiedSet = new Set(qualifiedDates.map((item) => item.dateKey));
+
+            let currentStreak = 0;
+            const cursor = new Date();
+            cursor.setHours(12, 0, 0, 0);
+            while (qualifiedSet.has(getLocalDateKey(cursor))) {
+                currentStreak += 1;
+                cursor.setDate(cursor.getDate() - 1);
+            }
+
+            let longestStreak = 0;
+            let runningStreak = 0;
+            for (let i = 0; i < qualifiedDates.length; i += 1) {
+                if (i === 0) {
+                    runningStreak = 1;
+                } else {
+                    const prevDate = qualifiedDates[i - 1].date;
+                    const currentDate = qualifiedDates[i].date;
+                    const diffDays = Math.round((currentDate.getTime() - prevDate.getTime()) / 86400000);
+                    runningStreak = diffDays === 1 ? runningStreak + 1 : 1;
+                }
+                if (runningStreak > longestStreak) {
+                    longestStreak = runningStreak;
+                }
+            }
+
+            return {
+                currentStreak,
+                longestStreak
+            };
+        };
+
+        const getLastStudiedDate = (studiedDateMap) => {
+            const entries = Object.entries(studiedDateMap || {})
+                .filter(([dateKey, seconds]) => isValidDateKey(dateKey) && toSafePositiveInt(seconds) > 0)
+                .map(([dateKey]) => ({
+                    dateKey,
+                    date: parseDateKeyToLocalDate(dateKey)
+                }))
+                .filter((item) => item.date)
+                .sort((a, b) => b.date.getTime() - a.date.getTime());
+
+            return entries.length > 0 ? entries[0].dateKey : null;
+        };
+
+        const recomputeStudyStats = (stats) => {
+            const normalized = normalizeStudyStats(stats);
+            const studiedDateMap = normalized.studiedDateMap || {};
+            const totalFromDateMap = Object.values(studiedDateMap).reduce(
+                (sum, seconds) => sum + toSafePositiveInt(seconds),
+                0
+            );
+            const totalSeconds = Math.max(normalized.totalSeconds, totalFromDateMap);
+            const todaySeconds = toSafePositiveInt(studiedDateMap[getLocalDateKey()]);
+            const streaks = computeStudyStreak(studiedDateMap);
+
+            return {
+                ...normalized,
+                totalSeconds,
+                todaySeconds,
+                currentStreak: streaks.currentStreak,
+                longestStreak: streaks.longestStreak,
+                lastStudiedDate: getLastStudiedDate(studiedDateMap)
+            };
+        };
+
+        const readStudyStats = () => {
+            const key = getStatsStorageKey();
+            try {
+                const raw = localStorage.getItem(key);
+                if (!raw) return createEmptyStudyStats();
+                return recomputeStudyStats(JSON.parse(raw));
+            } catch (error) {
+                console.warn('Failed to read study stats:', error);
+                return createEmptyStudyStats();
+            }
+        };
+
+        const writeStudyStats = (stats) => {
+            const normalized = recomputeStudyStats(stats);
+            try {
+                localStorage.setItem(getStatsStorageKey(), JSON.stringify(normalized));
+            } catch (error) {
+                console.warn('Failed to write study stats:', error);
+            }
+            return normalized;
+        };
+
+        const finalizeStudySession = (stats, endDate = new Date()) => {
+            const normalized = normalizeStudyStats(stats);
+            if (!normalized.activeSessionStartedAt) {
+                return recomputeStudyStats({ ...normalized, activeSessionStartedAt: null });
+            }
+
+            const startMs = Date.parse(normalized.activeSessionStartedAt);
+            const endMs = endDate.getTime();
+
+            if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) {
+                return recomputeStudyStats({ ...normalized, activeSessionStartedAt: null });
+            }
+
+            const addedByDate = splitSessionSecondsByDate(startMs, endMs);
+            const addedTotalSeconds = Object.values(addedByDate).reduce((sum, seconds) => sum + seconds, 0);
+            const mergedDateMap = mergeStudyDateSeconds(normalized.studiedDateMap, addedByDate);
+
+            return recomputeStudyStats({
+                ...normalized,
+                totalSeconds: normalized.totalSeconds + addedTotalSeconds,
+                studiedDateMap: mergedDateMap,
+                activeSessionStartedAt: null
+            });
+        };
+
+        const startStudySession = () => {
+            const stats = readStudyStats();
+            if (stats.activeSessionStartedAt) {
+                return stats;
+            }
+
+            return writeStudyStats({
+                ...stats,
+                sessionCount: stats.sessionCount + 1,
+                activeSessionStartedAt: new Date().toISOString()
+            });
+        };
+
+        const stopStudySession = () => {
+            const stats = readStudyStats();
+            if (!stats.activeSessionStartedAt) {
+                return recomputeStudyStats({ ...stats, activeSessionStartedAt: null });
+            }
+
+            const finalized = finalizeStudySession(stats, new Date());
+            return writeStudyStats(finalized);
+        };
+
+        const getStudyStatsForDisplay = (stats, nowDate = new Date()) => {
+            const normalized = recomputeStudyStats(stats);
+            if (!normalized.activeSessionStartedAt) {
+                return normalized;
+            }
+
+            const startMs = Date.parse(normalized.activeSessionStartedAt);
+            const endMs = nowDate.getTime();
+            if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) {
+                return normalized;
+            }
+
+            const runningByDate = splitSessionSecondsByDate(startMs, endMs);
+            const runningTotal = Object.values(runningByDate).reduce((sum, seconds) => sum + seconds, 0);
+            const mergedDateMap = mergeStudyDateSeconds(normalized.studiedDateMap, runningByDate);
+
+            return recomputeStudyStats({
+                ...normalized,
+                totalSeconds: normalized.totalSeconds + runningTotal,
+                studiedDateMap: mergedDateMap
+            });
+        };
+
+        const formatStudyDuration = (totalSeconds) => {
+            const safeSeconds = toSafePositiveInt(totalSeconds);
+            const days = Math.floor(safeSeconds / 86400);
+            const hours = Math.floor((safeSeconds % 86400) / 3600);
+            const minutes = Math.floor((safeSeconds % 3600) / 60);
+            const seconds = safeSeconds % 60;
+
+            if (days > 0) return `${days}d ${hours}h ${minutes}m`;
+            if (hours > 0) return `${hours}h ${minutes}m`;
+            if (minutes > 0) return `${minutes}m`;
+            return `${seconds}s`;
+        };
+
+        const formatStudyDate = (dateKey) => {
+            const date = parseDateKeyToLocalDate(dateKey);
+            if (!date) return '--';
+            return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
         };
 
         // === TOAST 系统 ===
@@ -1684,6 +2030,7 @@
 
         const Icons = {
             Lock: (props) => <Icon {...props} path={<><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></>} />,
+            BarChart3: (props) => <Icon {...props} path={<><path d="M3 3v18h18"></path><path d="M8 17v-3"></path><path d="M13 17V8"></path><path d="M18 17V5"></path></>} />,
             Plus: (props) => <Icon {...props} path={<><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></>} />,
             X: (props) => <Icon {...props} path={<><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></>} />,
             Search: (props) => <Icon {...props} path={<><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></>} />,
@@ -2422,6 +2769,8 @@
             const activeNoteIdRef = useRef(null);
             const autoSaveEnabledRef = useRef(isAutoSaveEnabled);
             const saveTimerRef = useRef(null);
+            const draftTitleRef = useRef('');
+            const draftBodyRef = useRef('');
 
             const activeNote = useMemo(() => {
                 return notes.find(note => note.id === activeNoteId) || null;
@@ -2481,6 +2830,19 @@
                     });
 
                     await refreshNotes(savedNote.id);
+
+                    // Only rehydrate same-note drafts when user has not typed new content
+                    // since this save request started. This prevents stale save loops
+                    // while preserving in-progress typing.
+                    if (
+                        activeNoteIdRef.current === savedNote.id &&
+                        draftTitleRef.current === titleValue &&
+                        draftBodyRef.current === bodyValue
+                    ) {
+                        setDraftTitle(savedNote.title);
+                        setDraftBody(savedNote.body);
+                    }
+
                     setSaveError('');
                 } catch (error) {
                     setSaveError(error.message || 'Unable to save note.');
@@ -2517,6 +2879,11 @@
                 autoSaveEnabledRef.current = isAutoSaveEnabled;
                 localStorage.setItem('notesapp-autosave', String(isAutoSaveEnabled));
             }, [isAutoSaveEnabled]);
+
+            useEffect(() => {
+                draftTitleRef.current = draftTitle;
+                draftBodyRef.current = draftBody;
+            }, [draftTitle, draftBody]);
 
             useEffect(() => {
                 window.notesAutoSave = async (text, sourceUrl) => {
@@ -2869,10 +3236,7 @@
                             {loading ? (
                                 <div className="ane-utility-empty">{t('Loading history...', language)}</div>
                             ) : filteredHistory.length === 0 ? (
-                                <div className="ane-utility-empty">
-                                    <Icons.History />
-                                    <div>{t('No history found', language)}</div>
-                                </div>
+                                <div className="ane-utility-empty">{t('No history found', language)}</div>
                             ) : (
                                 groupedHistoryEntries.map(([dateKey, items]) => (
                                     <div key={dateKey}>
@@ -3010,10 +3374,7 @@
                             {loading ? (
                                 <div className="ane-utility-empty">{t('Loading bookmarks...', language)}</div>
                             ) : filteredBookmarks.length === 0 ? (
-                                <div className="ane-utility-empty">
-                                    <Icons.Bookmark />
-                                    <div>{t('No bookmarks found', language)}</div>
-                                </div>
+                                <div className="ane-utility-empty">{t('No bookmarks found', language)}</div>
                             ) : (
                                 filteredBookmarks.map((bookmark) => (
                                     <button key={bookmark.url} type="button" className="ane-utility-row" onClick={() => onNavigate(bookmark.url)}>
@@ -4124,13 +4485,17 @@
 
         // Weather Module
         const WeatherModule = ({ isOpen, onClose, language }) => {
-            const [city, setCity] = useState('');
+            const [searchInput, setSearchInput] = useState('');
+            const [displayCity, setDisplayCity] = useState('');
             const [weather, setWeather] = useState(null);
             const [loading, setLoading] = useState(false);
             const [suggestions, setSuggestions] = useState([]);
             const [showSuggestions, setShowSuggestions] = useState(false);
             const [fetchTimer, setFetchTimer] = useState(null);
             const [expandedDayIndex, setExpandedDayIndex] = useState(null); // 追蹤目前展開的預報天數
+            const suggestionAbortRef = useRef(null);
+            const suggestionRequestIdRef = useRef(0);
+            const MIN_CITY_QUERY_LENGTH = 3;
 
             const POPULAR_CITIES = [
                 { name: 'Tokyo', country: 'Japan', admin1: 'Tokyo', latitude: 35.6895, longitude: 139.6917 },
@@ -4172,6 +4537,79 @@
                 return t(days[date.getDay()], language);
             };
 
+            const getCompactLength = (value = '') => {
+                return String(value).replace(/\s+/g, '').length;
+            };
+
+            const normalizeLocationText = (value = '') => {
+                return String(value)
+                    .toLowerCase()
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .replace(/[\s,./\\_-]+/g, ' ')
+                    .trim();
+            };
+
+            const compactLocationText = (value = '') => {
+                return String(value).replace(/\s+/g, '');
+            };
+
+            const mapUniqueSuggestions = (results = []) => {
+                const uniqueMap = new Map();
+                results.forEach(item => {
+                    const key = `${item.name}|${item.admin1 || ''}|${item.country || ''}`;
+                    if (!uniqueMap.has(key)) {
+                        uniqueMap.set(key, {
+                            name: item.name,
+                            country: item.country || '',
+                            admin1: item.admin1 || '',
+                            country_code: item.country_code || '',
+                            latitude: item.latitude,
+                            longitude: item.longitude
+                        });
+                    }
+                });
+                return Array.from(uniqueMap.values());
+            };
+
+            const cancelSuggestionRequest = () => {
+                if (suggestionAbortRef.current) {
+                    suggestionAbortRef.current.abort();
+                    suggestionAbortRef.current = null;
+                }
+            };
+
+            const getStrongMatchScore = (normalizedQuery, result) => {
+                const nameNorm = normalizeLocationText(result.name);
+                const adminNorm = normalizeLocationText(result.admin1 || '');
+                const countryNorm = normalizeLocationText(result.country || '');
+                const countryCodeNorm = normalizeLocationText(result.country_code || '');
+                const queryCompact = compactLocationText(normalizedQuery);
+                const candidates = [
+                    nameNorm,
+                    [nameNorm, adminNorm].filter(Boolean).join(' '),
+                    [nameNorm, countryNorm].filter(Boolean).join(' '),
+                    [nameNorm, countryCodeNorm].filter(Boolean).join(' '),
+                    [nameNorm, adminNorm, countryNorm].filter(Boolean).join(' '),
+                    [adminNorm, nameNorm].filter(Boolean).join(' '),
+                    [countryNorm, nameNorm].filter(Boolean).join(' ')
+                ];
+
+                let bestScore = 0;
+                candidates.forEach(candidate => {
+                    if (!candidate) return;
+                    if (candidate === normalizedQuery) {
+                        bestScore = Math.max(bestScore, 3);
+                        return;
+                    }
+                    if (queryCompact && compactLocationText(candidate) === queryCompact) {
+                        bestScore = Math.max(bestScore, 2);
+                    }
+                });
+
+                return bestScore;
+            };
+
             const showRecommendedCities = () => {
                 const shuffled = [...POPULAR_CITIES].sort(() => 0.5 - Math.random());
                 setSuggestions(shuffled.slice(0, 4));
@@ -4179,53 +4617,84 @@
             };
 
             const fetchCitySuggestions = async (query) => {
+                const trimmedQuery = query.trim();
+                if (!trimmedQuery || getCompactLength(trimmedQuery) < MIN_CITY_QUERY_LENGTH) {
+                    setSuggestions([]);
+                    return [];
+                }
+
+                const requestId = ++suggestionRequestIdRef.current;
+                cancelSuggestionRequest();
+                const controller = new AbortController();
+                suggestionAbortRef.current = controller;
+
                 try {
                     const response = await fetch(
-                        `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=10&language=en&format=json`
+                        `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(trimmedQuery)}&count=10&language=en&format=json`,
+                        { signal: controller.signal }
                     );
+                    if (!response.ok) {
+                        throw new Error('Suggestions API request failed');
+                    }
                     const data = await response.json();
+                    if (requestId !== suggestionRequestIdRef.current) {
+                        return [];
+                    }
+
                     if (data.results) {
-                        const uniqueMap = new Map();
-                        data.results.forEach(item => {
-                            const key = `${item.name}|${item.admin1 || ''}|${item.country}`;
-                            if (!uniqueMap.has(key)) { uniqueMap.set(key, item); }
-                        });
-                        const uniqueResults = Array.from(uniqueMap.values());
-                        setSuggestions(uniqueResults.map(item => ({
-                            name: item.name, country: item.country, admin1: item.admin1,
-                            latitude: item.latitude, longitude: item.longitude
-                        })));
+                        const uniqueResults = mapUniqueSuggestions(data.results);
+                        setSuggestions(uniqueResults);
+                        return uniqueResults;
                     } else {
                         setSuggestions([]);
+                        return [];
                     }
                 } catch (error) {
+                    if (error?.name === 'AbortError') {
+                        return [];
+                    }
                     console.error('Failed to fetch suggestions:', error);
-                    setSuggestions([]);
+                    if (requestId === suggestionRequestIdRef.current) {
+                        setSuggestions([]);
+                    }
+                    return [];
+                } finally {
+                    if (suggestionAbortRef.current === controller) {
+                        suggestionAbortRef.current = null;
+                    }
                 }
             };
 
             const handleInputChange = (e) => {
                 const value = e.target.value;
-                setCity(value);
+                const trimmed = value.trim();
+                setSearchInput(value);
                 setShowSuggestions(true);
 
                 if (fetchTimer) clearTimeout(fetchTimer);
 
-                if (!value.trim()) {
+                if (!trimmed) {
                     showRecommendedCities();
                     return;
                 }
 
+                if (getCompactLength(trimmed) < MIN_CITY_QUERY_LENGTH) {
+                    cancelSuggestionRequest();
+                    setSuggestions([]);
+                    return;
+                }
+
                 const timer = setTimeout(() => {
-                    fetchCitySuggestions(value);
+                    fetchCitySuggestions(trimmed);
                 }, 500);
                 setFetchTimer(timer);
             };
 
             const selectSuggestion = (suggestion) => {
-                setCity(suggestion.name);
+                setSearchInput(suggestion.name);
                 setShowSuggestions(false);
                 if (fetchTimer) clearTimeout(fetchTimer);
+                cancelSuggestionRequest();
                 searchWeatherWithCoords(suggestion.latitude, suggestion.longitude, suggestion.name);
             };
 
@@ -4242,8 +4711,16 @@
                         fetch(aqiUrl).catch(() => null) // AQI 抓取失敗不影響主要天氣
                     ]);
 
+                    if (!weatherResponse.ok) {
+                        throw new Error('Weather API request failed');
+                    }
+
                     const weatherData = await weatherResponse.json();
                     const aqiData = aqiResponse && aqiResponse.ok ? await aqiResponse.json() : null;
+
+                    if (!weatherData?.current_weather || !weatherData?.hourly) {
+                        throw new Error('Incomplete weather data');
+                    }
 
                     const forecastData = [];
                     if (weatherData.daily) {
@@ -4265,10 +4742,10 @@
                                 appMin: Math.round(weatherData.daily.apparent_temperature_min[i] || 0),
 
                                 // 詳細指標 (來自 hourly 的 12:00 取樣)
-                                humidity: weatherData.hourly.relative_humidity_2m[noonIndex] || 0,
-                                cloudCover: weatherData.hourly.cloudcover[noonIndex] || 0,
-                                pressure: Math.round(weatherData.hourly.surface_pressure[noonIndex] || 0),
-                                visibility: Math.round((weatherData.hourly.visibility[noonIndex] || 0) / 1000), // 將公尺轉換為公里
+                                humidity: weatherData.hourly.relative_humidity_2m?.[noonIndex] || 0,
+                                cloudCover: weatherData.hourly.cloudcover?.[noonIndex] || 0,
+                                pressure: Math.round(weatherData.hourly.surface_pressure?.[noonIndex] || 0),
+                                visibility: Math.round((weatherData.hourly.visibility?.[noonIndex] || 0) / 1000), // 將公尺轉換為公里
 
                                 // 空氣品質
                                 aqi: aqiData && aqiData.hourly && aqiData.hourly.european_aqi ? aqiData.hourly.european_aqi[noonIndex] || '--' : '--'
@@ -4280,12 +4757,13 @@
                         condition: getWeatherDescription(weatherData.current_weather.weathercode),
                         conditionCode: weatherData.current_weather.weathercode,
                         temperature: Math.round(weatherData.current_weather.temperature),
-                        humidity: weatherData.hourly.relative_humidity_2m[0] || 50,
-                        cloudCover: weatherData.hourly.cloudcover[0] || 0,
+                        humidity: weatherData.hourly.relative_humidity_2m?.[0] || 50,
+                        cloudCover: weatherData.hourly.cloudcover?.[0] || 0,
                         windSpeed: Math.round(weatherData.current_weather.windspeed),
                         forecast: forecastData
                     });
-                    setCity(name);
+                    setDisplayCity(name);
+                    setSearchInput(name);
                     showToast(t('Weather for', language) + ' ' + name);
                 } catch (error) {
                     console.error('Weather fetch error:', error);
@@ -4297,25 +4775,50 @@
 
             const searchWeather = async (e) => {
                 e.preventDefault();
-                if (!city.trim()) return;
+                const query = searchInput.trim();
+                if (!query) return;
 
-                setLoading(true);
+                if (fetchTimer) clearTimeout(fetchTimer);
+                cancelSuggestionRequest();
+                suggestionRequestIdRef.current += 1;
+
+                if (getCompactLength(query) < MIN_CITY_QUERY_LENGTH) {
+                    showRecommendedCities();
+                    showToast('Please select a city from suggestions', 'error');
+                    return;
+                }
+
                 try {
-                    const geoResponse = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1`);
+                    const geoResponse = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=10&language=en&format=json`);
+                    if (!geoResponse.ok) {
+                        throw new Error('Geocoding API request failed');
+                    }
                     const geoData = await geoResponse.json();
+                    const geoResults = mapUniqueSuggestions(geoData.results || []);
 
-                    if (!geoData.results || geoData.results.length === 0) {
+                    if (geoResults.length === 0) {
+                        setSuggestions([]);
+                        setShowSuggestions(true);
                         showToast(t('City not found', language), 'error');
-                        setLoading(false);
                         return;
                     }
 
-                    const { latitude, longitude, name } = geoData.results[0];
+                    const normalizedQuery = normalizeLocationText(query);
+                    const strongMatches = geoResults.filter(result => getStrongMatchScore(normalizedQuery, result) >= 2);
+
+                    if (strongMatches.length !== 1) {
+                        setSuggestions(geoResults);
+                        setShowSuggestions(true);
+                        showToast('Please select a city from suggestions', 'error');
+                        return;
+                    }
+
+                    const { latitude, longitude, name } = strongMatches[0];
+                    setShowSuggestions(false);
                     await searchWeatherWithCoords(latitude, longitude, name);
                 } catch (error) {
                     console.error('Weather fetch error:', error);
                     showToast(t('Failed to fetch weather', language), 'error');
-                    setLoading(false);
                 }
             };
 
@@ -4340,10 +4843,10 @@
                                     <Icons.MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
                                     <input
                                         type="text"
-                                        value={city}
+                                        value={searchInput}
                                         onChange={handleInputChange}
                                         onFocus={() => {
-                                            if (!city.trim()) showRecommendedCities();
+                                            if (!searchInput.trim()) showRecommendedCities();
                                             else setShowSuggestions(true);
                                         }}
                                         onBlur={handleBlur}
@@ -4351,12 +4854,12 @@
                                         className="w-full pl-10 pr-4 py-2 bg-gray-100/50 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-cyan-500"
                                     />
                                 </div>
-                                <button type="submit" disabled={loading || !city.trim()} className="px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"><Icons.Search className="w-4 h-4" /></button>
+                                <button type="submit" disabled={loading || !searchInput.trim()} className="px-4 py-2 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"><Icons.Search className="w-4 h-4" /></button>
                             </form>
 
                             {showSuggestions && suggestions.length > 0 && (
                                 <ul className="absolute left-4 right-4 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto z-10">
-                                    {!city.trim() && (
+                                    {!searchInput.trim() && (
                                         <li className="px-4 py-2 text-xs font-bold text-gray-400 bg-gray-50 border-b border-gray-100">{t('🌟 Recommended Cities', language)}</li>
                                     )}
                                     {suggestions.map((s, idx) => (
@@ -4379,7 +4882,7 @@
                             ) : weather ? (
                                 <div className="w-full">
                                     <div className="text-center mb-6">
-                                        <h2 className="text-3xl font-bold text-gray-800 tracking-tight mb-3">{city}</h2>
+                                        <h2 className="text-3xl font-bold text-gray-800 tracking-tight mb-3">{displayCity}</h2>
                                         <div className="text-6xl mb-2">{getWeatherIcon(weather.conditionCode)}</div>
                                         <div className="text-5xl font-bold text-gray-800 mb-2">{weather.temperature}°C</div>
                                         <div className="text-lg text-gray-600 mb-4 font-medium">{weather.condition}</div>
@@ -4477,6 +4980,95 @@
             );
         };
 
+        const StatisticsModule = ({ isOpen, onClose, language, stats }) => {
+            const [refreshTick, setRefreshTick] = useState(0);
+
+            useEffect(() => {
+                if (!isOpen || !stats?.activeSessionStartedAt) return undefined;
+                const intervalId = setInterval(() => {
+                    setRefreshTick((value) => value + 1);
+                }, 1000);
+
+                return () => clearInterval(intervalId);
+            }, [isOpen, stats?.activeSessionStartedAt]);
+
+            const displayStats = useMemo(
+                () => getStudyStatsForDisplay(stats || createEmptyStudyStats(), new Date()),
+                [stats, refreshTick]
+            );
+
+            const hasHistory = displayStats.totalSeconds > 0 ||
+                Object.keys(displayStats.studiedDateMap || {}).length > 0;
+
+            const statCards = [
+                {
+                    key: 'total-time',
+                    label: t('Total Study Time', language),
+                    value: formatStudyDuration(displayStats.totalSeconds)
+                },
+                {
+                    key: 'today-time',
+                    label: t('Today\'s Study Time', language),
+                    value: formatStudyDuration(displayStats.todaySeconds)
+                },
+                {
+                    key: 'current-streak',
+                    label: t('Current Streak', language),
+                    value: `${displayStats.currentStreak} ${displayStats.currentStreak === 1 ? 'day' : 'days'}`
+                },
+                {
+                    key: 'longest-streak',
+                    label: t('Longest Streak', language),
+                    value: `${displayStats.longestStreak} ${displayStats.longestStreak === 1 ? 'day' : 'days'}`
+                },
+                {
+                    key: 'last-studied',
+                    label: t('Last Studied Date', language),
+                    value: displayStats.lastStudiedDate ? formatStudyDate(displayStats.lastStudiedDate) : '--'
+                },
+                {
+                    key: 'session-count',
+                    label: t('Study Sessions', language),
+                    value: `${displayStats.sessionCount}`
+                }
+            ];
+
+            if (!isOpen) return null;
+
+            return (
+                <div className="ane-overlay-backdrop" onClick={onClose}>
+                    <div className="ane-utility-modal ane-utility-modal--statistics" onClick={(e) => e.stopPropagation()}>
+                        <div className="ane-utility-header">
+                            <span className="ane-utility-header__icon" style={{ background: 'rgba(117,112,204,0.1)', color: '#7570CC' }}>
+                                <Icons.BarChart3 />
+                            </span>
+                            <span className="ane-utility-header__title">{t('Statistics', language)}</span>
+                            {displayStats.activeSessionStartedAt && <span className="ane-statistics-live">Tracking now</span>}
+                            <button type="button" className="ane-utility-close" onClick={onClose}><Icons.X /></button>
+                        </div>
+
+                        <div className="ane-statistics-body">
+                            {!hasHistory && (
+                                <div className="ane-statistics-empty">
+                                    <p>{t('No study statistics yet', language)}</p>
+                                    <p>{t('Start Study Mode to build your streak.', language)}</p>
+                                </div>
+                            )}
+
+                            <div className="ane-statistics-grid">
+                                {statCards.map((item) => (
+                                    <div key={item.key} className="ane-statistics-card">
+                                        <span className="ane-statistics-card__label">{item.label}</span>
+                                        <span className="ane-statistics-card__value">{item.value}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         // VPN Module
         // 1. Sidebar Component
         const Sidebar = ({ isOpen, toggle, mode, setMode, onOpenModule, language }) => {
@@ -4519,6 +5111,13 @@
                             <>
                                 <div className="ane-sidebar__divider"></div>
                                 <div className="ane-sidebar__section">
+                                    <SidebarItem
+                                        icon={Icons.BarChart3}
+                                        label={t('Statistics', language)}
+                                        isOpen={isOpen}
+                                        active={activeItem === 'statistics'}
+                                        onClick={() => { setActiveItem('statistics'); onOpenModule('statistics'); }}
+                                    />
                                     <SidebarItem
                                         icon={Icons.Lock}
                                         label={t('Mute Mode', language) || 'Mute Mode'}
@@ -4564,7 +5163,7 @@
         );
 
         // 2. Browser Menu (Hierarchical: Main View + Settings View)
-        const BrowserMenu = ({ onClose, currentEngine, setEngine, user, onLogin, onLogout, themeSettings, handleThemeChange, resetTheme, onOpenModule, addTab, language, setLanguage, onClearBrowsingData }) => {
+        const BrowserMenu = ({ onClose, currentEngine, setEngine, user, onLogin, onLogout, onOpenModule, addTab, language, setLanguage, onClearBrowsingData }) => {
             const [view, setView] = useState('main');
             const accountInitial = ((user?.name || t('Guest User', language)).charAt(0) || 'G').toUpperCase();
 
@@ -4677,35 +5276,6 @@
                                     </section>
 
                                     <section className="ane-settings-section">
-                                        <span className="ane-settings-label">{t('Theme Colors', language)}</span>
-                                        <label className="ane-settings-color-row">
-                                            <input
-                                                type="color"
-                                                value={themeSettings.daily}
-                                                onChange={(e) => handleThemeChange('daily', e.target.value)}
-                                                className="ane-settings-color-row__swatch"
-                                            />
-                                            <span className="ane-settings-color-row__label">{t('Daily Mode', language)}</span>
-                                            <span className="ane-settings-color-row__hex">{themeSettings.daily.toUpperCase()}</span>
-                                        </label>
-                                        <label className="ane-settings-color-row">
-                                            <input
-                                                type="color"
-                                                value={themeSettings.learning}
-                                                onChange={(e) => handleThemeChange('learning', e.target.value)}
-                                                className="ane-settings-color-row__swatch"
-                                            />
-                                            <span className="ane-settings-color-row__label">{t('Learning Mode', language)}</span>
-                                            <span className="ane-settings-color-row__hex">{themeSettings.learning.toUpperCase()}</span>
-                                        </label>
-                                        <div className="ane-settings-reset-wrap">
-                                            <button type="button" className="ane-settings-reset" onClick={resetTheme}>
-                                                {t('Reset to Default', language)}
-                                            </button>
-                                        </div>
-                                    </section>
-
-                                    <section className="ane-settings-section">
                                         <span className="ane-settings-label">{t('Data', language)}</span>
                                         <button
                                             type="button"
@@ -4737,34 +5307,187 @@
         // 3. Home View (New Tab Page)
         const HomeView = ({ onNavigate, onOpenModule, language }) => {
             const [inputValue, setInputValue] = useState('');
-            const defaultShortcuts = [
-                { id: 1, title: 'Google', url: 'https://google.com', icon: 'G' },
-                { id: 2, title: 'Canvas', url: 'https://canvas.instructure.com', icon: 'C' },
-                { id: 3, title: 'YouTube', url: 'https://youtube.com', icon: 'Y' },
-                { id: 4, title: 'Gmail', url: 'https://gmail.com', icon: 'M' },
+            const [isAddShortcutOpen, setIsAddShortcutOpen] = useState(false);
+            const [shortcutNameInput, setShortcutNameInput] = useState('');
+            const [shortcutUrlInput, setShortcutUrlInput] = useState('');
+            const SHORTCUT_ACCENT_PRESETS = [
+                { id: 'coral', dot: '#D99A8E', bg: 'rgba(217, 154, 142, 0.14)', color: '#BF5F4E' },
+                { id: 'rose', dot: '#D59CB4', bg: 'rgba(213, 156, 180, 0.14)', color: '#B25A86' },
+                { id: 'plum', dot: '#B69ACB', bg: 'rgba(182, 154, 203, 0.15)', color: '#875FB3' },
+                { id: 'indigo', dot: '#93A8D7', bg: 'rgba(147, 168, 215, 0.15)', color: '#4E6FB0' },
+                { id: 'sky', dot: '#86BDD8', bg: 'rgba(134, 189, 216, 0.16)', color: '#2E7FA8' },
+                { id: 'teal', dot: '#84C5BA', bg: 'rgba(132, 197, 186, 0.16)', color: '#2F8F80' },
+                { id: 'mint', dot: '#9CCF9F', bg: 'rgba(156, 207, 159, 0.16)', color: '#4B9460' },
+                { id: 'lime', dot: '#BFD28B', bg: 'rgba(191, 210, 139, 0.16)', color: '#7A9440' },
+                { id: 'mocha', dot: '#C5A998', bg: 'rgba(197, 169, 152, 0.16)', color: '#8F6A57' },
+                { id: 'slate', dot: '#A9B2C0', bg: 'rgba(169, 178, 192, 0.16)', color: '#5F6F84' }
             ];
+            const DEFAULT_SHORTCUT_ACCENT_PRESET = 'coral';
+            const shortcutNameRef = useRef(null);
+            const MAX_SHORTCUTS = 16;
+            const accentPresetById = SHORTCUT_ACCENT_PRESETS.reduce((acc, preset) => {
+                acc[preset.id] = preset;
+                return acc;
+            }, {});
+            const createAccentFromPresetId = (presetId) => {
+                const preset = accentPresetById[presetId] || accentPresetById[DEFAULT_SHORTCUT_ACCENT_PRESET] || SHORTCUT_ACCENT_PRESETS[0];
+                return {
+                    presetId: preset.id,
+                    dot: preset.dot,
+                    bg: preset.bg,
+                    color: preset.color
+                };
+            };
+            const [selectedAccentPresetId, setSelectedAccentPresetId] = useState(DEFAULT_SHORTCUT_ACCENT_PRESET);
+            const LEGACY_TITLE_PRESET_MAP = {
+                Google: 'coral',
+                Canvas: 'coral',
+                YouTube: 'coral',
+                Gmail: 'mocha'
+            };
+            const defaultShortcuts = [
+                { id: 'default-google', title: 'Google', url: 'https://google.com', icon: 'G', accent: createAccentFromPresetId('coral'), isDefault: true },
+                { id: 'default-canvas', title: 'Canvas', url: 'https://canvas.instructure.com', icon: 'C', accent: createAccentFromPresetId('coral'), isDefault: true },
+                { id: 'default-youtube', title: 'YouTube', url: 'https://youtube.com', icon: 'Y', accent: createAccentFromPresetId('coral'), isDefault: true },
+                { id: 'default-gmail', title: 'Gmail', url: 'https://gmail.com', icon: 'M', accent: createAccentFromPresetId('mocha'), isDefault: true },
+            ];
+
+            const normalizeUrl = (value) => {
+                const trimmed = String(value || '').trim();
+                if (!trimmed) return '';
+
+                const withScheme = /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+                try {
+                    const parsed = new URL(withScheme);
+                    if (!['http:', 'https:'].includes(parsed.protocol)) return '';
+                    if (!parsed.hostname) return '';
+                    return parsed.toString();
+                } catch (error) {
+                    return '';
+                }
+            };
+
+            const getShortcutUrlKey = (value) => {
+                const normalized = normalizeUrl(value);
+                if (!normalized) return '';
+
+                try {
+                    const parsed = new URL(normalized);
+                    const cleanPath = parsed.pathname.replace(/\/+$/, '') || '/';
+                    return `${parsed.protocol}//${parsed.host}${cleanPath}${parsed.search}`.toLowerCase();
+                } catch (error) {
+                    return '';
+                }
+            };
+
+            const defaultShortcutUrlKeys = new Set(
+                defaultShortcuts
+                    .map(site => getShortcutUrlKey(site.url))
+                    .filter(Boolean)
+            );
+
+            const sanitizeShortcut = (item, index = 0) => {
+                const title = typeof item?.title === 'string' ? item.title.trim().slice(0, 20) : '';
+                const normalizedUrl = normalizeUrl(typeof item?.url === 'string' ? item.url : '');
+                if (!title || !normalizedUrl) {
+                    return null;
+                }
+
+                const normalizedUrlKey = getShortcutUrlKey(normalizedUrl);
+                const isDefaultShortcut = Boolean(item?.isDefault) || defaultShortcutUrlKeys.has(normalizedUrlKey);
+                const accentFromItem = item?.accent;
+                let accent = null;
+
+                if (accentFromItem && typeof accentFromItem === 'object') {
+                    if (typeof accentFromItem.presetId === 'string') {
+                        accent = createAccentFromPresetId(accentFromItem.presetId);
+                    } else if (typeof accentFromItem.bg === 'string' && typeof accentFromItem.color === 'string') {
+                        accent = {
+                            presetId: DEFAULT_SHORTCUT_ACCENT_PRESET,
+                            dot: typeof accentFromItem.dot === 'string' ? accentFromItem.dot : (accentPresetById[DEFAULT_SHORTCUT_ACCENT_PRESET]?.dot || '#D99A8E'),
+                            bg: accentFromItem.bg,
+                            color: accentFromItem.color
+                        };
+                    }
+                }
+
+                if (!accent) {
+                    const fallbackPresetId = LEGACY_TITLE_PRESET_MAP[title] || DEFAULT_SHORTCUT_ACCENT_PRESET;
+                    accent = createAccentFromPresetId(fallbackPresetId);
+                }
+
+                return {
+                    id: item?.id != null ? String(item.id) : `shortcut-${Date.now()}-${index}`,
+                    title,
+                    url: normalizedUrl,
+                    icon: title.charAt(0).toUpperCase() || 'N',
+                    accent,
+                    isDefault: isDefaultShortcut
+                };
+            };
+
             const [shortcuts, setShortcuts] = useState(() => {
                 try {
                     const saved = localStorage.getItem(getStorageKey('anechoic_shortcuts'));
                     const parsed = saved ? JSON.parse(saved) : null;
                     if (Array.isArray(parsed) && parsed.length > 0) {
-                        return parsed;
+                        const deduped = [];
+                        const seenUrlKeys = new Set();
+
+                        parsed.forEach((item, index) => {
+                            const next = sanitizeShortcut(item, index);
+                            if (!next) return;
+
+                            const urlKey = getShortcutUrlKey(next.url);
+                            if (!urlKey || seenUrlKeys.has(urlKey)) return;
+
+                            seenUrlKeys.add(urlKey);
+                            deduped.push(next);
+                        });
+
+                        if (deduped.length > 0) {
+                            return deduped.slice(0, MAX_SHORTCUTS);
+                        }
                     }
                 } catch (error) {
                     // ignore parse errors and fallback to defaults
                 }
                 return defaultShortcuts;
             });
-            const shortcutAccent = {
-                Google: { bg: 'rgba(200,138,66,0.08)', color: '#C88A42' },
-                Canvas: { bg: 'rgba(212,107,95,0.08)', color: '#D46B5F' },
-                YouTube: { bg: 'rgba(212,107,95,0.08)', color: '#D46B5F' },
-                Gmail: { bg: 'rgba(210,155,69,0.08)', color: '#D29B45' },
-            };
+            useEffect(() => {
+                const serializableShortcuts = shortcuts.slice(0, MAX_SHORTCUTS).map(site => ({
+                    id: site.id,
+                    title: site.title,
+                    url: site.url,
+                    icon: site.icon,
+                    accent: site.accent,
+                    isDefault: Boolean(site.isDefault)
+                }));
+                localStorage.setItem(getStorageKey('anechoic_shortcuts'), JSON.stringify(serializableShortcuts));
+            }, [shortcuts]);
 
             useEffect(() => {
-                localStorage.setItem(getStorageKey('anechoic_shortcuts'), JSON.stringify(shortcuts));
-            }, [shortcuts]);
+                if (!isAddShortcutOpen) return;
+
+                const timer = setTimeout(() => {
+                    shortcutNameRef.current?.focus();
+                }, 0);
+
+                return () => clearTimeout(timer);
+            }, [isAddShortcutOpen]);
+
+            useEffect(() => {
+                if (!isAddShortcutOpen) return;
+
+                const onKeyDown = (event) => {
+                    if (event.key === 'Escape') {
+                        setIsAddShortcutOpen(false);
+                    }
+                };
+
+                window.addEventListener('keydown', onKeyDown);
+                return () => window.removeEventListener('keydown', onKeyDown);
+            }, [isAddShortcutOpen]);
 
             const handleSubmit = (e) => {
                 e.preventDefault();
@@ -4773,30 +5496,65 @@
                 }
             };
 
-            const normalizeUrl = (value) => {
-                const trimmed = value.trim();
-                if (!trimmed) return '';
-                if (/^https?:\/\//i.test(trimmed)) return trimmed;
-                return `https://${trimmed}`;
+            const openAddShortcutModal = () => {
+                setShortcutNameInput('');
+                setShortcutUrlInput('');
+                setSelectedAccentPresetId(DEFAULT_SHORTCUT_ACCENT_PRESET);
+                setIsAddShortcutOpen(true);
             };
 
-            const handleAddShortcut = () => {
-                const title = window.prompt(t('Name', language), '');
-                if (!title || !title.trim()) return;
+            const closeAddShortcutModal = () => {
+                setIsAddShortcutOpen(false);
+            };
 
-                const rawUrl = window.prompt(t('URL', language), 'https://');
-                if (!rawUrl || !rawUrl.trim()) return;
+            const handleAddShortcut = (e) => {
+                e.preventDefault();
+
+                const title = shortcutNameInput.trim();
+                const rawUrl = shortcutUrlInput.trim();
+                if (!title || !rawUrl) {
+                    showToast(t('Please enter both name and URL', language), 'warning');
+                    return;
+                }
 
                 const normalizedUrl = normalizeUrl(rawUrl);
+                if (!normalizedUrl) {
+                    showToast(t('Please enter a valid URL', language), 'warning');
+                    return;
+                }
+
+                const newUrlKey = getShortcutUrlKey(normalizedUrl);
+                const hasDuplicate = shortcuts.some(site => getShortcutUrlKey(site.url) === newUrlKey);
+                if (hasDuplicate) {
+                    showToast(t('Shortcut already exists', language), 'info');
+                    return;
+                }
+
+                const safeTitle = title.slice(0, 20);
                 const newShortcut = {
-                    id: Date.now(),
-                    title: title.trim().slice(0, 20),
+                    id: `shortcut-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+                    title: safeTitle,
                     url: normalizedUrl,
-                    icon: title.trim().charAt(0).toUpperCase() || 'N'
+                    icon: safeTitle.charAt(0).toUpperCase() || 'N',
+                    accent: createAccentFromPresetId(selectedAccentPresetId),
+                    isDefault: false
                 };
 
-                setShortcuts(prev => [newShortcut, ...prev.slice(0, 15)]);
-                showToast(`Shortcut added: ${newShortcut.title}`, 'success');
+                setShortcuts(prev => [newShortcut, ...prev].slice(0, MAX_SHORTCUTS));
+                setIsAddShortcutOpen(false);
+                setShortcutNameInput('');
+                setShortcutUrlInput('');
+                showToast(t('Shortcut added', language), 'success');
+            };
+
+            const handleDeleteShortcut = (event, site) => {
+                event.preventDefault();
+                event.stopPropagation();
+
+                if (!site || site.isDefault) return;
+
+                setShortcuts(prev => prev.filter(item => item.id !== site.id));
+                showToast(t('Shortcut removed', language), 'info');
             };
 
             return (
@@ -4823,19 +5581,33 @@
                         <div className="ane-home__shortcuts">
                             {shortcuts.map(site => (
                                 <button
+                                    type="button"
                                     key={site.id}
                                     onClick={() => onNavigate(site.url)}
                                     className="ane-shortcut"
                                     style={{
-                                        '--ane-tile-accent-bg': (shortcutAccent[site.title] || {}).bg || 'rgba(200,138,66,0.08)',
-                                        '--ane-tile-accent-color': (shortcutAccent[site.title] || {}).color || '#C88A42',
+                                        '--ane-tile-accent-bg': site.accent?.bg || 'rgba(217, 177, 119, 0.14)',
+                                        '--ane-tile-accent-color': site.accent?.color || '#B6761C',
                                     }}
                                 >
-                                    <div className="ane-shortcut__tile">{site.icon}</div>
+                                    <div className="ane-shortcut__tile">
+                                        {site.icon}
+                                        {!site.isDefault && (
+                                            <button
+                                                type="button"
+                                                className="ane-shortcut__remove"
+                                                onClick={(event) => handleDeleteShortcut(event, site)}
+                                                aria-label={t('Delete', language)}
+                                                title={t('Delete', language)}
+                                            >
+                                                <Icons.X />
+                                            </button>
+                                        )}
+                                    </div>
                                     <p className="ane-shortcut__label">{site.title}</p>
                                 </button>
                             ))}
-                            <button className="ane-shortcut ane-shortcut--add" onClick={handleAddShortcut}>
+                            <button type="button" className="ane-shortcut ane-shortcut--add" onClick={openAddShortcutModal}>
                                 <div className="ane-shortcut__tile">
                                     <Icons.Plus />
                                 </div>
@@ -4843,6 +5615,69 @@
                             </button>
                         </div>
                     </div>
+
+                    {isAddShortcutOpen && (
+                        <div className="ane-overlay-backdrop ane-home-shortcut-backdrop" onClick={closeAddShortcutModal}>
+                            <div className="ane-home-shortcut-modal" onClick={(e) => e.stopPropagation()}>
+                                <h2 className="ane-home-shortcut-modal__title">{t('Add shortcut', language)}</h2>
+                                <form className="ane-home-shortcut-modal__form" onSubmit={handleAddShortcut}>
+                                    <label className="ane-home-shortcut-modal__label">{t('Name', language)}</label>
+                                    <input
+                                        ref={shortcutNameRef}
+                                        type="text"
+                                        value={shortcutNameInput}
+                                        onChange={(e) => setShortcutNameInput(e.target.value)}
+                                        placeholder={t('e.g. Google', language)}
+                                        className="ane-home-shortcut-modal__input"
+                                        maxLength={40}
+                                    />
+
+                                    <label className="ane-home-shortcut-modal__label">{t('URL', language)}</label>
+                                    <input
+                                        type="text"
+                                        value={shortcutUrlInput}
+                                        onChange={(e) => setShortcutUrlInput(e.target.value)}
+                                        placeholder="https://example.com"
+                                        className="ane-home-shortcut-modal__input"
+                                    />
+
+                                    <label className="ane-home-shortcut-modal__label">{t('Hover color', language)}</label>
+                                    <div className="ane-home-shortcut-palette" role="radiogroup" aria-label={t('Hover color', language)}>
+                                        {SHORTCUT_ACCENT_PRESETS.map((preset) => {
+                                            const isSelected = selectedAccentPresetId === preset.id;
+                                            return (
+                                                <button
+                                                    key={preset.id}
+                                                    type="button"
+                                                    className={`ane-home-shortcut-swatch ${isSelected ? 'is-selected' : ''}`}
+                                                    role="radio"
+                                                    aria-checked={isSelected}
+                                                    aria-pressed={isSelected}
+                                                    onClick={() => setSelectedAccentPresetId(preset.id)}
+                                                    title={preset.id}
+                                                    style={{
+                                                        '--ane-shortcut-swatch-dot': preset.dot,
+                                                        '--ane-shortcut-swatch-ring': preset.color
+                                                    }}
+                                                >
+                                                    <span className="ane-home-shortcut-swatch__dot"></span>
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+
+                                    <div className="ane-home-shortcut-modal__actions">
+                                        <button type="button" className="ane-home-shortcut-modal__button is-cancel" onClick={closeAddShortcutModal}>
+                                            {t('Cancel', language)}
+                                        </button>
+                                        <button type="submit" className="ane-home-shortcut-modal__button is-primary">
+                                            {t('Complete', language)}
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
                 </div>
             );
         };
@@ -4997,8 +5832,19 @@
             const [showSettings, setShowSettings] = useState(false);
             const [searchEngine, setSearchEngine] = useState('google');
             const [addressBarValue, setAddressBarValue] = useState('');
-            const [activeModule, setActiveModule] = useState(null); // 'ai-assistant' | 'notes' | 'history' | 'bookmarks' | 'downloads' | 'pomodoro' | 'todo' | 'schedule' | 'weather' | 'mute' | null
+            const [activeModule, setActiveModule] = useState(null); // 'ai-assistant' | 'notes' | 'history' | 'bookmarks' | 'downloads' | 'pomodoro' | 'todo' | 'schedule' | 'weather' | 'statistics' | 'mute' | null
             const [isBookmarked, setIsBookmarked] = useState(false);
+            const [studyStats, setStudyStats] = useState(() => {
+                const initialStats = readStudyStats();
+                if (initialStats.activeSessionStartedAt) {
+                    const cleanedStats = writeStudyStats({
+                        ...initialStats,
+                        activeSessionStartedAt: null
+                    });
+                    return cleanedStats;
+                }
+                return initialStats;
+            });
             const webviewRefs = useRef({});
             const [webview, setWebview] = useState(null); // Webview state
 
@@ -5008,9 +5854,6 @@
             const [isLoginMode, setIsLoginMode] = useState(true); // 預設為 true (登入模式)
             const [authForm, setAuthForm] = useState({ username: '', password: '', confirmPassword: '' });
 
-            // === Theme Customization State ===
-            const [themeSettings, setThemeSettings] = useState({ daily: '#c2410c', learning: '#1d4ed8' });
-
             // === [請在這裡補回遺失的 handleLogin] ===
             const handleLogin = () => {
                 setShowLoginModal(true);
@@ -5018,17 +5861,8 @@
                 setShowSettings(false); // 順便幫你加上這行，點擊登入後自動關閉設定選單，體驗更好
             };
 
-            const handleThemeChange = (themeMode, color) => {
-                setThemeSettings(prev => ({ ...prev, [themeMode]: color }));
-            };
-
-            const resetTheme = () => {
-                setThemeSettings({ daily: '#c2410c', learning: '#1d4ed8' });
-                showToast('Theme reset to default', 'success');
-            };
-
             const handleClearBrowsingData = async () => {
-                const confirmMessage = t('Are you sure you want to clear all user data? This will delete your history, bookmarks, and reset theme colors.', language);
+                const confirmMessage = t('Are you sure you want to clear all user data? This will delete your history and bookmarks.', language);
                 if (!window.confirm(confirmMessage)) {
                     return;
                 }
@@ -5051,6 +5885,7 @@
                     localStorage.removeItem(getStorageKey('anechoic_todos'));
                     localStorage.removeItem(getStorageKey('anechoic_schedule'));
                     localStorage.removeItem(getStorageKey('anechoic_shortcuts'));
+                    localStorage.removeItem(getStatsStorageKey());
                 } catch (error) {
                     errors.push(error.message);
                 }
@@ -5076,8 +5911,11 @@
 
                 setIsBookmarked(false);
                 setActiveModule(null);
-                setThemeSettings({ daily: '#c2410c', learning: '#1d4ed8' });
-
+                if (mode === 'learning' && document.visibilityState === 'visible') {
+                    setStudyStats(startStudySession());
+                } else {
+                    setStudyStats(createEmptyStudyStats());
+                }
                 if (errors.length === 0) {
                     showToast(t('All user data cleared', language), 'success');
                 } else {
@@ -5202,6 +6040,48 @@
                 }
 
             }, []);
+
+            useEffect(() => {
+                if (mode === 'learning' && document.visibilityState === 'visible') {
+                    setStudyStats(startStudySession());
+                    return;
+                }
+
+                setStudyStats(stopStudySession());
+            }, [mode]);
+
+            useEffect(() => {
+                if (mode !== 'learning' && activeModule === 'statistics') {
+                    setActiveModule(null);
+                }
+            }, [mode, activeModule]);
+
+            useEffect(() => {
+                const handleVisibilityChange = () => {
+                    if (document.visibilityState === 'hidden') {
+                        setStudyStats(stopStudySession());
+                        return;
+                    }
+
+                    if (mode === 'learning') {
+                        setStudyStats(startStudySession());
+                    }
+                };
+
+                const handlePageExit = () => {
+                    stopStudySession();
+                };
+
+                document.addEventListener('visibilitychange', handleVisibilityChange);
+                window.addEventListener('beforeunload', handlePageExit);
+                window.addEventListener('pagehide', handlePageExit);
+
+                return () => {
+                    document.removeEventListener('visibilitychange', handleVisibilityChange);
+                    window.removeEventListener('beforeunload', handlePageExit);
+                    window.removeEventListener('pagehide', handlePageExit);
+                };
+            }, [mode]);
 
             // 计算当前激活的 Tab
             const activeTab = tabs.find(t => t.id === activeTabId) || tabs[0];
@@ -5382,6 +6262,10 @@
                     return;
                 }
 
+                if (module === 'statistics' && mode !== 'learning') {
+                    return;
+                }
+
                 setActiveModule(module);
             };
 
@@ -5537,9 +6421,6 @@
                                         user={user}
                                         onLogin={handleLogin}
                                         onLogout={handleLogout}
-                                        themeSettings={themeSettings}
-                                        handleThemeChange={handleThemeChange}
-                                        resetTheme={resetTheme}
                                         onOpenModule={handleOpenModule}
                                         addTab={addTab}
                                         language={language}
@@ -5646,6 +6527,7 @@
                         <TodoListModule isOpen={activeModule === 'todo'} onClose={() => setActiveModule(null)} language={language} />
                         <ScheduleModule isOpen={activeModule === 'schedule'} onClose={() => setActiveModule(null)} language={language} />
                         <WeatherModule isOpen={activeModule === 'weather'} onClose={() => setActiveModule(null)} language={language} />
+                        <StatisticsModule isOpen={activeModule === 'statistics'} onClose={() => setActiveModule(null)} language={language} stats={studyStats} />
                         <MuteModeModule isOpen={activeModule === 'mute'} onClose={() => setActiveModule(null)} language={language} />
                     </div>
                 </div>
